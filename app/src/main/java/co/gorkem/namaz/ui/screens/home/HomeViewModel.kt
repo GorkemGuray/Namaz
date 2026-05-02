@@ -93,6 +93,17 @@ class HomeViewModel @Inject constructor(
         loadPrayerTimes(LocationInfo.DEFAULT)
     }
 
+    fun useMyLocation() {
+        if (locationTracker.hasLocationPermission()) {
+            viewModelScope.launch {
+                preferencesRepository.clearManualCity()
+            }
+            loadWithCurrentLocation()
+        } else {
+            _needsLocationPermission.value = true
+        }
+    }
+
     private fun loadWithCurrentLocation() {
         viewModelScope.launch {
             _isLoading.value = true
