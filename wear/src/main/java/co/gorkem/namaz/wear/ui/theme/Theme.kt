@@ -1,28 +1,48 @@
 package co.gorkem.namaz.wear.ui.theme
 
 import androidx.compose.runtime.Composable
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Colors
+import androidx.wear.compose.material3.ColorScheme
+import androidx.wear.compose.material3.MaterialTheme
 
-private val WearColors = Colors(
-    primary = androidx.compose.ui.graphics.Color(0xFF4CAF50),
-    primaryVariant = androidx.compose.ui.graphics.Color(0xFF388E3C),
-    secondary = androidx.compose.ui.graphics.Color(0xFF03DAC6),
-    secondaryVariant = androidx.compose.ui.graphics.Color(0xFF018786),
-    background = androidx.compose.ui.graphics.Color.Black,
-    surface = androidx.compose.ui.graphics.Color.Black,
-    error = androidx.compose.ui.graphics.Color(0xFFCF6679),
-    onPrimary = androidx.compose.ui.graphics.Color.Black,
-    onSecondary = androidx.compose.ui.graphics.Color.Black,
-    onBackground = androidx.compose.ui.graphics.Color.White,
-    onSurface = androidx.compose.ui.graphics.Color.White,
-    onError = androidx.compose.ui.graphics.Color.Black
+private val WearColorScheme = ColorScheme(
+    primary = WearPrimary,
+    onPrimary = WearOnPrimary,
+    primaryContainer = WearPrimaryContainer,
+    onPrimaryContainer = WearOnPrimaryContainer,
+    primaryDim = WearPrimaryContainer,
+    secondary = WearSecondary,
+    onSecondary = WearOnSecondary,
+    secondaryContainer = WearSecondaryContainer,
+    onSecondaryContainer = WearOnSecondaryContainer,
+    secondaryDim = WearSecondaryContainer,
+    tertiary = WearTertiary,
+    onTertiary = WearOnTertiary,
+    tertiaryContainer = WearTertiaryContainer,
+    onTertiaryContainer = WearOnTertiaryContainer,
+    tertiaryDim = WearTertiaryContainer,
+    background = WearBackground,
+    onBackground = WearOnBackground,
+    surfaceContainer = WearSurface,
+    surfaceContainerLow = WearBackground,
+    surfaceContainerHigh = WearSurface,
+    onSurface = WearOnSurface,
+    onSurfaceVariant = WearOnSurfaceVariant,
+    outline = WearOutline,
+    outlineVariant = WearOutlineVariant,
+    error = WearError,
+    onError = WearOnError,
+    errorContainer = WearErrorContainer,
+    onErrorContainer = WearOnErrorContainer,
+    errorDim = WearErrorContainer
 )
 
 @Composable
-fun WearTheme(content: @Composable () -> Unit) {
+fun WearTheme(
+    content: @Composable () -> Unit
+) {
     MaterialTheme(
-        colors = WearColors,
+        colorScheme = WearColorScheme,
+        typography = WearTypography,
         content = content
     )
 }

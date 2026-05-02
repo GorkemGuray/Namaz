@@ -36,7 +36,8 @@ android {
 }
 
 dependencies {
-    implementation(libs.wear.compose.material)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.wear.compose.material3)
     implementation(libs.wear.compose.foundation)
     implementation(libs.wear.compose.navigation)
     implementation(libs.wear.tooling.preview)

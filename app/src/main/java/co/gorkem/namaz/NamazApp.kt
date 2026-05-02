@@ -6,14 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import co.gorkem.namaz.ui.navigation.NavGraph
-import co.gorkem.namaz.ui.theme.NamazTheme
 
 @Composable
 fun NamazApp() {
-    NamazTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            val navController = rememberNavController()
-            NavGraph(navController = navController)
-        }
+    Surface(modifier = Modifier.fillMaxSize()) {
+        val navController = rememberNavController()
+        NavGraph(navController = navController)
     }
 }
