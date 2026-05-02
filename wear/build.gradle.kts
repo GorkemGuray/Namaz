@@ -66,6 +66,9 @@ dependencies {
     implementation(libs.horologist.composables)
     implementation(libs.horologist.tiles)
 
+    implementation(libs.wear.tiles.material)
+    implementation(libs.wear.complications.data.source)
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
 }
