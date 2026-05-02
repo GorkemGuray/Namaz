@@ -3,6 +3,8 @@ package co.gorkem.namaz.ui.screens.home
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.gorkem.namaz.data.local.datastore.UserPreferences
+import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.data.remote.NetworkResult
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
@@ -10,10 +12,12 @@ import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
 import co.gorkem.namaz.service.GeocoderHelper
 import co.gorkem.namaz.service.LocationTracker
+import co.gorkem.namaz.service.PrayerNotificationScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -25,6 +29,8 @@ class HomeViewModel @Inject constructor(
     private val getNextPrayerUseCase: GetNextPrayerUseCase,
     private val locationTracker: LocationTracker,
     private val geocoderHelper: GeocoderHelper,
+    private val notificationScheduler: PrayerNotificationScheduler,
+    private val preferencesRepository: UserPreferencesRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -46,7 +52,15 @@ class HomeViewModel @Inject constructor(
     private val _needsLocationPermission = MutableStateFlow(false)
     val needsLocationPermission: StateFlow<Boolean> = _needsLocationPermission.asStateFlow()
 
+    private var currentPreferences: UserPreferences = UserPreferences()
+
     init {
+        viewModelScope.launch {
+            preferencesRepository.preferences.collect { prefs ->
+                currentPreferences = prefs
+            }
+        }
+
         if (locationTracker.hasLocationPermission()) {
             loadWithCurrentLocation()
         } else {
@@ -112,7 +126,9 @@ class HomeViewModel @Inject constructor(
                         if (todayData != null) {
                             _nextPrayer.value = getNextPrayerUseCase(todayData)
                         }
+                        scheduleNotifications(result.data, location)
                     }
+
                     is NetworkResult.Error -> {
                         _isLoading.value = false
                         _error.value = result.message
@@ -120,6 +136,18 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun scheduleNotifications(prayerTimes: List<PrayerTime>, location: LocationInfo) {
+        if (!currentPreferences.notificationsEnabled) return
+
+        val prefs = currentPreferences
+        notificationScheduler.cancelAllNotifications()
+        notificationScheduler.schedulePrayerNotifications(
+            prayerTimes = prayerTimes,
+            minutesBefore = prefs.notificationMinutesBefore,
+            cityName = location.cityName
+        )
     }
 
     companion object {
