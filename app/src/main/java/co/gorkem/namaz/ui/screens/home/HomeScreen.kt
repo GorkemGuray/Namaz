@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
+import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
 import co.gorkem.namaz.ui.components.PrayerHeroCard
 import co.gorkem.namaz.ui.components.PrayerTimeCard
 import co.gorkem.namaz.ui.theme.prayerAmbientColor
@@ -122,67 +124,44 @@ fun HomeScreen(
             }
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Hero Section
-            if (nextPrayer != null) {
-                PrayerHeroCard(
-                    nextPrayer = nextPrayer!!,
-                    locationName = locationDisplay,
-                    onLocationClick = onLocationClick,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Content area
-            when {
-                isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(top = 32.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-                error != null -> {
+            }
+            error != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = error ?: "Bilinmeyen hata",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 32.dp)
+                        textAlign = TextAlign.Center
                     )
                 }
-                else -> {
-                    val todayKey = LocalDate.now().format(DATE_FORMAT)
-                    val todayTimes = prayerTimes.find { it.date == todayKey }
+            }
+            else -> {
+                val todayKey = LocalDate.now().format(DATE_FORMAT)
+                val todayTimes = prayerTimes.find { it.date == todayKey }
+                    ?: prayerTimes.firstOrNull()
 
-                    Text(
-                        text = "Günlük Vakitler",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp)
-                    )
-
-                    if (todayTimes != null) {
-                        PrayerTimesList(
-                            prayerTime = todayTimes,
-                            nextPrayerName = nextPrayer?.prayerName
-                        )
-                    } else if (prayerTimes.isNotEmpty()) {
-                        PrayerTimesList(
-                            prayerTime = prayerTimes.first(),
-                            nextPrayerName = nextPrayer?.prayerName
-                        )
-                    }
-                }
+                HomeContent(
+                    nextPrayer = nextPrayer,
+                    locationDisplay = locationDisplay,
+                    onLocationClick = onLocationClick,
+                    todayTimes = todayTimes,
+                    nextPrayerName = nextPrayer?.prayerName
+                )
             }
         }
     }
@@ -224,22 +203,56 @@ fun LocationPermissionScreen(
 }
 
 @Composable
-fun PrayerTimesList(
-    prayerTime: PrayerTime,
+private fun HomeContent(
+    nextPrayer: GetNextPrayerUseCase.NextPrayerInfo?,
+    locationDisplay: String,
+    onLocationClick: () -> Unit,
+    todayTimes: PrayerTime?,
     nextPrayerName: PrayerName?
 ) {
-    val prayers = prayerTime.getAllPrayers()
-
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 8.dp)
     ) {
-        items(prayers) { (name, time) ->
-            PrayerTimeCard(
-                name = name,
-                time = time,
-                isNext = name == nextPrayerName
+        // Hero card as first item — now scrolls with content
+        item {
+            if (nextPrayer != null) {
+                PrayerHeroCard(
+                    nextPrayer = nextPrayer,
+                    locationName = locationDisplay,
+                    onLocationClick = onLocationClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, bottom = 8.dp)
+                )
+            }
+        }
+
+        // Section header
+        item {
+            Text(
+                text = "Günlük Vakitler",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 4.dp)
             )
+        }
+
+        // Prayer cards
+        if (todayTimes != null) {
+            val prayers = todayTimes.getAllPrayers()
+            items(prayers, key = { it.first.name }) { (name, time) ->
+                PrayerTimeCard(
+                    name = name,
+                    time = time,
+                    isNext = name == nextPrayerName
+                )
+            }
         }
     }
 }
