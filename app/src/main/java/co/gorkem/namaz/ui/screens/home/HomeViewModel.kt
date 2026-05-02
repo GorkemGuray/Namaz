@@ -1,5 +1,6 @@
 package co.gorkem.namaz.ui.screens.home
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.data.remote.NetworkResult
@@ -23,7 +24,8 @@ class HomeViewModel @Inject constructor(
     private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
     private val getNextPrayerUseCase: GetNextPrayerUseCase,
     private val locationTracker: LocationTracker,
-    private val geocoderHelper: GeocoderHelper
+    private val geocoderHelper: GeocoderHelper,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _prayerTimes = MutableStateFlow<List<PrayerTime>>(emptyList())
@@ -50,6 +52,12 @@ class HomeViewModel @Inject constructor(
         } else {
             _needsLocationPermission.value = true
             loadPrayerTimes(LocationInfo.DEFAULT)
+        }
+
+        savedStateHandle.get<LocationInfo>("selected_city")?.let { city ->
+            _locationInfo.value = city
+            loadPrayerTimes(city)
+            savedStateHandle.remove<LocationInfo>("selected_city")
         }
     }
 
@@ -85,6 +93,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun loadPrayerTimes(location: LocationInfo) {
+        _locationInfo.value = location
         val today = LocalDate.now()
         viewModelScope.launch {
             getPrayerTimesUseCase(

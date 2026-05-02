@@ -20,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -27,20 +28,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import co.gorkem.namaz.domain.model.PrayerName
+import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
-import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
+import co.gorkem.namaz.ui.components.CountdownTimer
+import co.gorkem.namaz.ui.components.PrayerTimeCard
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    onNavigateToSettings: () -> Unit,
+    onNavigateToCitySelection: () -> Unit
 ) {
     val prayerTimes by viewModel.prayerTimes.collectAsState()
     val nextPrayer by viewModel.nextPrayer.collectAsState()
@@ -49,7 +52,6 @@ fun HomeScreen(
     val locationInfo by viewModel.locationInfo.collectAsState()
     val needsLocationPermission by viewModel.needsLocationPermission.collectAsState()
 
-    val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -72,9 +74,7 @@ fun HomeScreen(
                     )
                 )
             },
-            onSkip = {
-                viewModel.onLocationPermissionDenied()
-            }
+            onSkip = { viewModel.onLocationPermissionDenied() }
         )
         return
     }
@@ -85,7 +85,15 @@ fun HomeScreen(
                 title = { Text("Namaz Vakitleri") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                ),
+                actions = {
+                    TextButton(onClick = onNavigateToCitySelection) {
+                        Text("Şehir", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                    TextButton(onClick = onNavigateToSettings) {
+                        Text("Ayarlar", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -100,7 +108,12 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            NextPrayerCard(nextPrayer)
+            if (nextPrayer != null) {
+                CountdownTimer(
+                    nextPrayer = nextPrayer!!,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -111,9 +124,7 @@ fun HomeScreen(
                     color = MaterialTheme.colorScheme.error
                 )
                 else -> {
-                    val todayKey = LocalDate.now().format(
-                        DateTimeFormatter.ofPattern("dd-MM-yyyy")
-                    )
+                    val todayKey = LocalDate.now().format(DATE_FORMAT)
                     val todayTimes = prayerTimes.find { it.date == todayKey }
 
                     if (todayTimes != null) {
@@ -126,6 +137,8 @@ fun HomeScreen(
         }
     }
 }
+
+private val DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
 @Composable
 fun LocationPermissionScreen(
@@ -161,7 +174,7 @@ fun LocationPermissionScreen(
 }
 
 @Composable
-fun LocationInfoCard(locationInfo: co.gorkem.namaz.domain.model.LocationInfo) {
+fun LocationInfoCard(locationInfo: LocationInfo) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -170,52 +183,13 @@ fun LocationInfoCard(locationInfo: co.gorkem.namaz.domain.model.LocationInfo) {
     ) {
         Text(
             text = if (locationInfo.cityName.isNotEmpty())
-                "${locationInfo.cityName}, ${locationInfo.districtName}"
+                "${locationInfo.cityName}${if (locationInfo.districtName.isNotEmpty()) ", ${locationInfo.districtName}" else ""}"
             else
                 "Konum alınamadı",
             modifier = Modifier.padding(12.dp),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )
-    }
-}
-
-@Composable
-fun NextPrayerCard(nextPrayer: GetNextPrayerUseCase.NextPrayerInfo?) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Sıradaki Vakit",
-                style = MaterialTheme.typography.labelLarge
-            )
-            if (nextPrayer != null) {
-                Text(
-                    text = nextPrayer.prayerName.turkishName,
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Text(
-                    text = nextPrayer.prayerTime,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = "${nextPrayer.remainingMinutes} dakika kaldı",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            } else {
-                Text(
-                    text = "Yükleniyor...",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
     }
 }
 
@@ -228,27 +202,7 @@ fun PrayerTimesList(prayerTime: PrayerTime) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(prayers) { (name, time) ->
-            PrayerTimeItem(name = name, time = time)
-        }
-    }
-}
-
-@Composable
-fun PrayerTimeItem(name: PrayerName, time: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = name.turkishName,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = time,
-                style = MaterialTheme.typography.headlineSmall
-            )
+            PrayerTimeCard(name = name, time = time)
         }
     }
 }
