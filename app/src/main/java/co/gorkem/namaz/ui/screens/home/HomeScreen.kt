@@ -3,9 +3,11 @@ package co.gorkem.namaz.ui.screens.home
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,8 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,9 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.LocationInfo
+import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
-import co.gorkem.namaz.ui.components.CountdownTimer
+import co.gorkem.namaz.ui.components.PrayerHeroCard
 import co.gorkem.namaz.ui.components.PrayerTimeCard
+import co.gorkem.namaz.ui.theme.prayerAmbientColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -85,26 +87,54 @@ fun HomeScreen(
         return
     }
 
+    // Prayer-aware ambient background tint
+    val ambientColor = prayerAmbientColor(nextPrayer?.prayerName)
+    val animatedBackground by animateColorAsState(
+        targetValue = ambientColor,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow),
+        label = "bg_tint"
+    )
+
+    val locationDisplay = buildString {
+        if (locationInfo.cityName.isNotEmpty()) append(locationInfo.cityName)
+        if (locationInfo.districtName.isNotEmpty()) append(" - ").append(locationInfo.districtName)
+    }
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Namaz Vakitleri") },
+                title = {
+                    Text(
+                        text = "Namaz Vakitleri",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
                 ),
                 actions = {
                     IconButton(onClick = { viewModel.useMyLocation() }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_my_location),
                             contentDescription = "Konumumu Kullan",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     TextButton(onClick = onNavigateToCitySelection) {
-                        Text("Şehir", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(
+                            "Şehir",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                     TextButton(onClick = onNavigateToSettings) {
-                        Text("Ayarlar", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(
+                            "Ayarlar",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             )
@@ -114,36 +144,61 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            LocationInfoCard(locationInfo)
-
-            Spacer(modifier = Modifier.height(12.dp))
-
+            // Hero Section
             if (nextPrayer != null) {
-                CountdownTimer(
+                PrayerHeroCard(
                     nextPrayer = nextPrayer!!,
+                    locationName = locationDisplay,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Content area
             when {
-                isLoading -> CircularProgressIndicator()
-                error != null -> Text(
-                    text = error ?: "Bilinmeyen hata",
-                    color = MaterialTheme.colorScheme.error
-                )
+                isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.padding(top = 32.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                error != null -> {
+                    Text(
+                        text = error ?: "Bilinmeyen hata",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 32.dp)
+                    )
+                }
                 else -> {
                     val todayKey = LocalDate.now().format(DATE_FORMAT)
                     val todayTimes = prayerTimes.find { it.date == todayKey }
 
+                    Text(
+                        text = "Günlük Vakitler",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                    )
+
                     if (todayTimes != null) {
-                        PrayerTimesList(todayTimes)
+                        PrayerTimesList(
+                            prayerTime = todayTimes,
+                            nextPrayerName = nextPrayer?.prayerName
+                        )
                     } else if (prayerTimes.isNotEmpty()) {
-                        PrayerTimesList(prayerTimes.first())
+                        PrayerTimesList(
+                            prayerTime = prayerTimes.first(),
+                            nextPrayerName = nextPrayer?.prayerName
+                        )
                     }
                 }
             }
@@ -187,35 +242,22 @@ fun LocationPermissionScreen(
 }
 
 @Composable
-fun LocationInfoCard(locationInfo: LocationInfo) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Text(
-            text = if (locationInfo.cityName.isNotEmpty())
-                "${locationInfo.cityName}${if (locationInfo.districtName.isNotEmpty()) ", ${locationInfo.districtName}" else ""}"
-            else
-                "Konum alınamadı",
-            modifier = Modifier.padding(12.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-fun PrayerTimesList(prayerTime: PrayerTime) {
+fun PrayerTimesList(
+    prayerTime: PrayerTime,
+    nextPrayerName: PrayerName?
+) {
     val prayers = prayerTime.getAllPrayers()
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(prayers) { (name, time) ->
-            PrayerTimeCard(name = name, time = time)
+            PrayerTimeCard(
+                name = name,
+                time = time,
+                isNext = name == nextPrayerName
+            )
         }
     }
 }
