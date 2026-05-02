@@ -7,19 +7,23 @@ import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
+import co.gorkem.namaz.service.GeocoderHelper
+import co.gorkem.namaz.service.LocationTracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
-    private val getNextPrayerUseCase: GetNextPrayerUseCase
+    private val getNextPrayerUseCase: GetNextPrayerUseCase,
+    private val locationTracker: LocationTracker,
+    private val geocoderHelper: GeocoderHelper
 ) : ViewModel() {
 
     private val _prayerTimes = MutableStateFlow<List<PrayerTime>>(emptyList())
@@ -34,27 +38,68 @@ class HomeViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _locationInfo = MutableStateFlow(LocationInfo.DEFAULT)
+    val locationInfo: StateFlow<LocationInfo> = _locationInfo.asStateFlow()
+
+    private val _needsLocationPermission = MutableStateFlow(false)
+    val needsLocationPermission: StateFlow<Boolean> = _needsLocationPermission.asStateFlow()
+
     init {
-        loadPrayerTimes()
+        if (locationTracker.hasLocationPermission()) {
+            loadWithCurrentLocation()
+        } else {
+            _needsLocationPermission.value = true
+            loadPrayerTimes(LocationInfo.DEFAULT)
+        }
     }
 
-    private fun loadPrayerTimes() {
+    fun onLocationPermissionGranted() {
+        _needsLocationPermission.value = false
+        loadWithCurrentLocation()
+    }
+
+    fun onLocationPermissionDenied() {
+        _needsLocationPermission.value = false
+        loadPrayerTimes(LocationInfo.DEFAULT)
+    }
+
+    private fun loadWithCurrentLocation() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val location = locationTracker.getCurrentLocation()
+                if (location != null) {
+                    val info = geocoderHelper.getLocationInfo(
+                        latitude = location.latitude,
+                        longitude = location.longitude
+                    )
+                    _locationInfo.value = info
+                    loadPrayerTimes(info)
+                } else {
+                    loadPrayerTimes(LocationInfo.DEFAULT)
+                }
+            } catch (e: Exception) {
+                loadPrayerTimes(LocationInfo.DEFAULT)
+            }
+        }
+    }
+
+    fun loadPrayerTimes(location: LocationInfo) {
         val today = LocalDate.now()
         viewModelScope.launch {
             getPrayerTimesUseCase(
-                location = LocationInfo.DEFAULT,
+                location = location,
                 month = today.monthValue,
                 year = today.year
-            ).catch { e ->
-                _error.value = e.message
-                _isLoading.value = false
-            }.collect { result ->
+            ).collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> _isLoading.value = true
                     is NetworkResult.Success -> {
                         _isLoading.value = false
                         _prayerTimes.value = result.data
-                        val todayData = result.data.find { it.date == today.format(format) }
+                        val todayData = result.data.find {
+                            it.date == today.format(DATE_FORMAT)
+                        }
                         if (todayData != null) {
                             _nextPrayer.value = getNextPrayerUseCase(todayData)
                         }
@@ -69,6 +114,6 @@ class HomeViewModel @Inject constructor(
     }
 
     companion object {
-        private val format = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")
+        private val DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy")
     }
 }
