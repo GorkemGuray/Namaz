@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Namaz"
 include(":app")
+include(":wear")
