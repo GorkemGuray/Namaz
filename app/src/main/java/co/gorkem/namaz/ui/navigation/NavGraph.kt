@@ -37,12 +37,7 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(Routes.CITY_SELECTION) {
             CitySelectionScreen(
-                onCitySelected = { location ->
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("selected_city", location)
-                    navController.popBackStack()
-                },
+                onCitySelected = { navController.popBackStack() },
                 onBack = { navController.popBackStack() }
             )
         }

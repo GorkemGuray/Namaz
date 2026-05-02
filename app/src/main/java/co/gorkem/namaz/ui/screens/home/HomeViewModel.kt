@@ -1,6 +1,5 @@
 package co.gorkem.namaz.ui.screens.home
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.data.local.datastore.UserPreferences
@@ -21,7 +20,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -35,8 +33,7 @@ class HomeViewModel @Inject constructor(
     private val geocoderHelper: GeocoderHelper,
     private val notificationScheduler: PrayerNotificationScheduler,
     private val wearSyncManager: WearSyncManager,
-    private val preferencesRepository: UserPreferencesRepository,
-    private val savedStateHandle: SavedStateHandle
+    private val preferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _prayerTimes = MutableStateFlow<List<PrayerTime>>(emptyList())
@@ -57,26 +54,32 @@ class HomeViewModel @Inject constructor(
     private val _needsLocationPermission = MutableStateFlow(false)
     val needsLocationPermission: StateFlow<Boolean> = _needsLocationPermission.asStateFlow()
 
-    private var currentPreferences: UserPreferences = UserPreferences()
+    private var currentPreferences = UserPreferences()
 
     init {
         viewModelScope.launch {
+            var lastCityKey: String? = null
             preferencesRepository.preferences.collect { prefs ->
                 currentPreferences = prefs
+                val cityKey = "${prefs.manualLatitude},${prefs.manualLongitude},${prefs.manualCityName}"
+                if (cityKey != lastCityKey) {
+                    lastCityKey = cityKey
+                    if (prefs.manualCityName.isNotEmpty()) {
+                        _needsLocationPermission.value = false
+                        loadPrayerTimes(LocationInfo(
+                            latitude = prefs.manualLatitude,
+                            longitude = prefs.manualLongitude,
+                            timezone = "Europe/Istanbul",
+                            cityName = prefs.manualCityName
+                        ))
+                    } else if (locationTracker.hasLocationPermission()) {
+                        loadWithCurrentLocation()
+                    } else {
+                        _needsLocationPermission.value = true
+                        loadPrayerTimes(LocationInfo.DEFAULT)
+                    }
+                }
             }
-        }
-
-        if (locationTracker.hasLocationPermission()) {
-            loadWithCurrentLocation()
-        } else {
-            _needsLocationPermission.value = true
-            loadPrayerTimes(LocationInfo.DEFAULT)
-        }
-
-        savedStateHandle.get<LocationInfo>("selected_city")?.let { city ->
-            _locationInfo.value = city
-            loadPrayerTimes(city)
-            savedStateHandle.remove<LocationInfo>("selected_city")
         }
     }
 
@@ -100,7 +103,6 @@ class HomeViewModel @Inject constructor(
                         latitude = location.latitude,
                         longitude = location.longitude
                     )
-                    _locationInfo.value = info
                     loadPrayerTimes(info)
                 } else {
                     loadPrayerTimes(LocationInfo.DEFAULT)
