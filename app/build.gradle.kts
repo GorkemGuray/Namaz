@@ -7,11 +7,7 @@ plugins {
 
 android {
     namespace = "co.gorkem.namaz"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "co.gorkem.namaz"
@@ -72,6 +68,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.play.services.location)
+
+    implementation(libs.play.services.wearable)
 
     implementation(libs.datastore.preferences)
 

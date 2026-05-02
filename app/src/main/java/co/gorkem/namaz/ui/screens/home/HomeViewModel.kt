@@ -13,6 +13,10 @@ import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
 import co.gorkem.namaz.service.GeocoderHelper
 import co.gorkem.namaz.service.LocationTracker
 import co.gorkem.namaz.service.PrayerNotificationScheduler
+import co.gorkem.namaz.service.WearPrayerData
+import co.gorkem.namaz.service.WearPrayerItem
+import co.gorkem.namaz.service.WearNextPrayer
+import co.gorkem.namaz.service.WearSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +34,7 @@ class HomeViewModel @Inject constructor(
     private val locationTracker: LocationTracker,
     private val geocoderHelper: GeocoderHelper,
     private val notificationScheduler: PrayerNotificationScheduler,
+    private val wearSyncManager: WearSyncManager,
     private val preferencesRepository: UserPreferencesRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -127,6 +132,7 @@ class HomeViewModel @Inject constructor(
                             _nextPrayer.value = getNextPrayerUseCase(todayData)
                         }
                         scheduleNotifications(result.data, location)
+                        syncToWear(result.data, location)
                     }
 
                     is NetworkResult.Error -> {
@@ -148,6 +154,33 @@ class HomeViewModel @Inject constructor(
             minutesBefore = prefs.notificationMinutesBefore,
             cityName = location.cityName
         )
+    }
+
+    private fun syncToWear(prayerTimes: List<PrayerTime>, location: LocationInfo) {
+        val today = LocalDate.now()
+        val todayData = prayerTimes.find { it.date == today.format(DATE_FORMAT) } ?: return
+
+        viewModelScope.launch {
+            val wearData = WearPrayerData(
+                cityName = location.cityName,
+                prayers = todayData.getAllPrayers().map { (name, time) ->
+                    WearPrayerItem(
+                        name = name.name,
+                        time = time,
+                        turkishName = name.turkishName
+                    )
+                },
+                nextPrayer = _nextPrayer.value?.let {
+                    WearNextPrayer(
+                        name = it.prayerName.name,
+                        turkishName = it.prayerName.turkishName,
+                        time = it.prayerTime,
+                        remainingMinutes = it.remainingMinutes
+                    )
+                }
+            )
+            wearSyncManager.syncPrayerData(wearData)
+        }
     }
 
     companion object {

@@ -7,11 +7,7 @@ plugins {
 
 android {
     namespace = "co.gorkem.namaz.wear"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "co.gorkem.namaz.wear"
