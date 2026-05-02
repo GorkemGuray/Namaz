@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 data class CalendarResponse(
     val code: Int,
     val status: String,
-    val data: Map<String, DayData>
+    val data: List<DayData>
 )
 
 data class DayData(

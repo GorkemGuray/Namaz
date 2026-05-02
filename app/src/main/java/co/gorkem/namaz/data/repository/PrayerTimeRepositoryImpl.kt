@@ -29,7 +29,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 year = year
             )
             if (response.code == 200) {
-                val prayerTimes = response.data.map { (_, dayData) ->
+                val prayerTimes = response.data.map { dayData ->
                     PrayerTime(
                         date = dayData.date.gregorian.date,
                         gregorianDate = dayData.date.readable,
