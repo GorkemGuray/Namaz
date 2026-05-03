@@ -215,7 +215,7 @@ private fun HomeContent(
             .fillMaxSize()
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 8.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 8.dp, bottom = 16.dp)
     ) {
         // Hero card as first item — now scrolls with content
         item {
@@ -226,7 +226,7 @@ private fun HomeContent(
                     onLocationClick = onLocationClick,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp, bottom = 8.dp)
+                        .padding(bottom = 8.dp)
                 )
             }
         }
@@ -239,7 +239,7 @@ private fun HomeContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 4.dp)
+                    .padding(top = 4.dp, bottom = 4.dp)
             )
         }
 
