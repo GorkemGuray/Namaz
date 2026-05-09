@@ -1,6 +1,7 @@
 package co.gorkem.namaz.di
 
 import co.gorkem.namaz.data.remote.api.AladhanApiService
+import co.gorkem.namaz.data.remote.api.NominatimApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,13 +11,15 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://api.aladhan.com/"
+    private const val ALADHAN_BASE_URL = "https://api.aladhan.com/"
+    private const val NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/"
 
     @Provides
     @Singleton
@@ -37,7 +40,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(ALADHAN_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -47,5 +50,39 @@ object NetworkModule {
     @Singleton
     fun provideAladhanApiService(retrofit: Retrofit): AladhanApiService {
         return retrofit.create(AladhanApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @Named("nominatim")
+    fun provideNominatimOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("User-Agent", "NamazVakitleri/1.0 (Android)")
+                    .build()
+                chain.proceed(request)
+            }
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @Named("nominatim")
+    fun provideNominatimRetrofit(@Named("nominatim") okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(NOMINATIM_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNominatimApiService(@Named("nominatim") retrofit: Retrofit): NominatimApiService {
+        return retrofit.create(NominatimApiService::class.java)
     }
 }
