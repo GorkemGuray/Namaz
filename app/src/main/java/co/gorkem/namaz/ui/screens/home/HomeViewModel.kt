@@ -8,18 +8,23 @@ import co.gorkem.namaz.data.remote.NetworkResult
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
+import co.gorkem.namaz.domain.usecase.GetPrayerDashboardUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
+import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.service.GeocoderHelper
 import co.gorkem.namaz.service.LocationTracker
 import co.gorkem.namaz.service.PrayerNotificationScheduler
+import co.gorkem.namaz.service.WearNextPrayer
 import co.gorkem.namaz.service.WearPrayerData
 import co.gorkem.namaz.service.WearPrayerItem
-import co.gorkem.namaz.service.WearNextPrayer
 import co.gorkem.namaz.service.WearSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -29,6 +34,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
     private val getNextPrayerUseCase: GetNextPrayerUseCase,
+    private val getPrayerDashboardUseCase: GetPrayerDashboardUseCase,
     private val locationTracker: LocationTracker,
     private val geocoderHelper: GeocoderHelper,
     private val notificationScheduler: PrayerNotificationScheduler,
@@ -41,6 +47,9 @@ class HomeViewModel @Inject constructor(
 
     private val _nextPrayer = MutableStateFlow<GetNextPrayerUseCase.NextPrayerInfo?>(null)
     val nextPrayer: StateFlow<GetNextPrayerUseCase.NextPrayerInfo?> = _nextPrayer.asStateFlow()
+
+    private val _dashboardData = MutableStateFlow<PrayerDashboardData?>(null)
+    val dashboardData: StateFlow<PrayerDashboardData?> = _dashboardData.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -55,6 +64,8 @@ class HomeViewModel @Inject constructor(
     val needsLocationPermission: StateFlow<Boolean> = _needsLocationPermission.asStateFlow()
 
     private var currentPreferences = UserPreferences()
+    private var todayPrayerTime: PrayerTime? = null
+    private var dashboardRefreshJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -142,17 +153,34 @@ class HomeViewModel @Inject constructor(
                             it.date == today.format(DATE_FORMAT)
                         }
                         if (todayData != null) {
+                            todayPrayerTime = todayData
                             _nextPrayer.value = getNextPrayerUseCase(todayData)
+                            refreshDashboard()
+                            startDashboardRefresh()
                         }
                         scheduleNotifications(result.data, location)
                         syncToWear(result.data, location)
                     }
-
                     is NetworkResult.Error -> {
                         _isLoading.value = false
                         _error.value = result.message
                     }
                 }
+            }
+        }
+    }
+
+    private fun refreshDashboard() {
+        val today = todayPrayerTime ?: return
+        _dashboardData.value = getPrayerDashboardUseCase.execute(today)
+    }
+
+    private fun startDashboardRefresh() {
+        dashboardRefreshJob?.cancel()
+        dashboardRefreshJob = viewModelScope.launch {
+            while (isActive) {
+                delay(30_000L)
+                refreshDashboard()
             }
         }
     }

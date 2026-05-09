@@ -3,22 +3,31 @@ package co.gorkem.namaz.ui.screens.home
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,21 +37,30 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
-import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
-import co.gorkem.namaz.ui.components.PrayerHeroCard
+import co.gorkem.namaz.domain.usecase.KerahatInfo
+import co.gorkem.namaz.domain.usecase.PrayerDashboardData
+import co.gorkem.namaz.domain.usecase.PrayerPeriod
 import co.gorkem.namaz.ui.components.PrayerTimeCard
-import co.gorkem.namaz.ui.theme.prayerAmbientColor
+import co.gorkem.namaz.ui.theme.HeroCardShape
+import co.gorkem.namaz.ui.theme.prayerHeroGradient
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -54,7 +72,7 @@ fun HomeScreen(
     onLocationClick: () -> Unit
 ) {
     val prayerTimes by viewModel.prayerTimes.collectAsState()
-    val nextPrayer by viewModel.nextPrayer.collectAsState()
+    val dashboard by viewModel.dashboardData.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val locationInfo by viewModel.locationInfo.collectAsState()
@@ -73,28 +91,19 @@ fun HomeScreen(
     }
 
     if (needsLocationPermission) {
-        Box(modifier = modifier.fillMaxSize()) {
-            LocationPermissionScreen(
-                onGrantPermission = {
-                    permissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
+        LocationPermissionScreen(
+            onGrantPermission = {
+                permissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
                     )
-                },
-                onSkip = { viewModel.onLocationPermissionDenied() }
-            )
-        }
+                )
+            },
+            onSkip = { viewModel.onLocationPermissionDenied() }
+        )
         return
     }
-
-    val ambientColor = prayerAmbientColor(nextPrayer?.prayerName)
-    val animatedBackground by animateColorAsState(
-        targetValue = ambientColor,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow),
-        label = "bg_tint"
-    )
 
     val locationDisplay = buildString {
         if (locationInfo.cityName.isNotEmpty()) append(locationInfo.cityName)
@@ -127,9 +136,7 @@ fun HomeScreen(
         when {
             isLoading -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -154,14 +161,30 @@ fun HomeScreen(
                 val todayKey = LocalDate.now().format(DATE_FORMAT)
                 val todayTimes = prayerTimes.find { it.date == todayKey }
                     ?: prayerTimes.firstOrNull()
+                val dash = dashboard
 
-                HomeContent(
-                    nextPrayer = nextPrayer,
-                    locationDisplay = locationDisplay,
-                    onLocationClick = onLocationClick,
-                    todayTimes = todayTimes,
-                    nextPrayerName = nextPrayer?.prayerName
-                )
+                if (dash != null) {
+                    DashboardContent(
+                        dashboard = dash,
+                        locationDisplay = locationDisplay,
+                        onLocationClick = onLocationClick,
+                        todayTimes = todayTimes
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (todayTimes != null) {
+                            val prayers = todayTimes.getAllPrayers()
+                            items(prayers, key = { it.first.name }) { (name, time) ->
+                                PrayerTimeCard(name = name, time = time)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -203,56 +226,270 @@ fun LocationPermissionScreen(
 }
 
 @Composable
-private fun HomeContent(
-    nextPrayer: GetNextPrayerUseCase.NextPrayerInfo?,
+private fun DashboardContent(
+    dashboard: PrayerDashboardData,
     locationDisplay: String,
     onLocationClick: () -> Unit,
-    todayTimes: PrayerTime?,
-    nextPrayerName: PrayerName?
+    todayTimes: PrayerTime?
 ) {
+    val gradient = prayerHeroGradient(dashboard.currentPeriod.prayerName)
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 8.dp, bottom = 16.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 8.dp, bottom = 24.dp)
     ) {
-        // Hero card as first item — now scrolls with content
         item {
-            if (nextPrayer != null) {
-                PrayerHeroCard(
-                    nextPrayer = nextPrayer,
-                    locationName = locationDisplay,
-                    onLocationClick = onLocationClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                )
-            }
+            ModernHeroCard(
+                currentPeriod = dashboard.currentPeriod,
+                locationDisplay = locationDisplay,
+                onLocationClick = onLocationClick,
+                gradient = gradient
+            )
         }
 
-        // Section header
+        item {
+            DashboardInfoRow(
+                dashboard = dashboard
+            )
+        }
+
         item {
             Text(
                 text = "Günlük Vakitler",
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 4.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
             )
         }
 
-        // Prayer cards
         if (todayTimes != null) {
             val prayers = todayTimes.getAllPrayers()
             items(prayers, key = { it.first.name }) { (name, time) ->
                 PrayerTimeCard(
                     name = name,
                     time = time,
-                    isNext = name == nextPrayerName
+                    isNext = name == dashboard.nextPrayer.prayerName
                 )
             }
         }
     }
 }
+
+@Composable
+private fun ModernHeroCard(
+    currentPeriod: PrayerPeriod,
+    locationDisplay: String,
+    onLocationClick: () -> Unit,
+    gradient: Brush
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(HeroCardShape)
+            .background(gradient)
+            .padding(horizontal = 24.dp, vertical = 24.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Location
+            HeroLocationChip(
+                locationName = locationDisplay,
+                onClick = onLocationClick
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Current period label
+            Text(
+                text = currentPeriod.label,
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "vaktindesiniz",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = currentPeriod.startTime.format(TIME_FORMAT),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = "  →  ",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White.copy(alpha = 0.4f)
+                )
+                Text(
+                    text = currentPeriod.endTime.format(TIME_FORMAT),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashboardInfoRow(dashboard: PrayerDashboardData) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            DashboardCard(
+                title = "Vaktin Çıkışı",
+                value = formatDuration(dashboard.remainingToEndOfPeriodMinutes),
+                subtitle = "${dashboard.nextPrayer.prayerName.turkishName} ezanına kalan",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
+            )
+            DashboardCard(
+                title = "Sıradaki Vakit",
+                value = dashboard.nextPrayer.prayerTime,
+                subtitle = dashboard.nextPrayer.prayerName.turkishName,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            val kerahat = dashboard.kerahatInfo
+            val nextKerahat = dashboard.nextKerahatInfo
+
+            if (kerahat != null) {
+                DashboardCard(
+                    title = "Kerahat Vakti",
+                    value = "Aktif",
+                    subtitle = "${kerahat.label} · ${kerahat.remainingToEndMinutes}dk sonra biter",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.weight(1f)
+                )
+            } else if (nextKerahat != null) {
+                DashboardCard(
+                    title = "Kerahat",
+                    value = formatDuration(nextKerahat.remainingToStartMinutes),
+                    subtitle = "${nextKerahat.label} başlamasına",
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                DashboardCard(
+                    title = "Kerahat",
+                    value = "—",
+                    subtitle = "Yakın kerahat yok",
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            DashboardCard(
+                title = "Vakit Bitişi",
+                value = formatDuration(dashboard.remainingToEndOfPeriodMinutes),
+                subtitle = "${dashboard.currentPeriod.prayerName.turkishName} çıkmasına",
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeroLocationChip(
+    locationName: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(Color.Black.copy(alpha = 0.25f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_my_location),
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = Color.White.copy(alpha = 0.85f)
+        )
+        Text(
+            text = locationName,
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.9f)
+        )
+    }
+}
+
+@Composable
+private fun DashboardCard(
+    title: String,
+    value: String,
+    subtitle: String,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                color = tint
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                maxLines = 1
+            )
+        }
+    }
+}
+
+private fun formatDuration(totalMinutes: Long): String {
+    if (totalMinutes <= 0) return "0dk"
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+    return when {
+        hours > 0 -> "${hours}s ${minutes}dk"
+        else -> "${minutes}dk"
+    }
+}
+
+private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
