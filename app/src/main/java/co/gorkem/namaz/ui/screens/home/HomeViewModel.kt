@@ -135,23 +135,10 @@ class HomeViewModel @Inject constructor(
     }
 
     fun loadPrayerTimes(location: LocationInfo) {
+        _locationInfo.value = location
         val today = LocalDate.now()
         val todayKey = today.format(DATE_FORMAT)
 
-        val cached = _prayerTimes.value
-        val cachedToday = cached.find { it.date == todayKey }
-        val sameCity = cached.isNotEmpty() && _locationInfo.value.cityName == location.cityName
-
-        if (cachedToday != null && sameCity) {
-            _locationInfo.value = location
-            todayPrayerTime = cachedToday
-            _nextPrayer.value = getNextPrayerUseCase(cachedToday)
-            refreshDashboard()
-            startDashboardRefresh()
-            return
-        }
-
-        _locationInfo.value = location
         viewModelScope.launch {
             getPrayerTimesUseCase(
                 location = location,
