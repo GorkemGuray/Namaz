@@ -47,7 +47,8 @@ class PrayerRefreshWorker @AssistedInject constructor(
                 location = location,
                 month = today.monthValue,
                 year = today.year,
-                method = prefs.calculationMethod
+                method = prefs.calculationMethod,
+                school = prefs.school
             )
 
             if (result.isSuccess) {

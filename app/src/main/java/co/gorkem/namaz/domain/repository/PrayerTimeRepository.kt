@@ -10,6 +10,7 @@ interface PrayerTimeRepository {
         location: LocationInfo,
         month: Int,
         year: Int,
-        method: Int = 13
+        method: Int = 13,
+        school: Int = 1
     ): Flow<NetworkResult<List<PrayerTime>>>
 }

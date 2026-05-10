@@ -55,6 +55,9 @@
     <string name="settings_language">Dil</string>
     <string name="settings_language_turkish">Türkçe</string>
     <string name="settings_language_english">English</string>
+    <string name="settings_school">Mezhep</string>
+    <string name="school_hanafi">Hanefi</string>
+    <string name="school_shafi">Şafii</string>
 
     <!-- Calculation Methods -->
     <string name="method_diyanet">Diyanet İşleri Başkanlığı</string>

@@ -2,6 +2,7 @@ package co.gorkem.namaz.ui.screens.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.gorkem.namaz.R
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,10 @@ class SettingsViewModel @Inject constructor(
 
     val notificationMinutesOptions = listOf(15, 30, 45)
     val calculationMethods = listOf(13, 3, 4, 2)
+    val schoolOptions: List<Pair<Int, Int>> = listOf(
+        Pair(1, R.string.school_hanafi),
+        Pair(0, R.string.school_shafi)
+    )
 
     init {
         viewModelScope.launch {
@@ -51,6 +56,12 @@ class SettingsViewModel @Inject constructor(
     fun setLanguage(language: String) {
         viewModelScope.launch {
             preferencesRepository.setLanguage(language)
+        }
+    }
+
+    fun setSchool(school: Int) {
+        viewModelScope.launch {
+            preferencesRepository.setSchool(school)
         }
     }
 }

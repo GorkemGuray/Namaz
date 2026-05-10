@@ -66,18 +66,22 @@ class HomeViewModel @Inject constructor(
     private var currentPreferences = UserPreferences()
     private var todayPrayerTime: PrayerTime? = null
     private var dashboardRefreshJob: Job? = null
+    private var prayerTimesJob: Job? = null
 
     init {
         viewModelScope.launch {
             var lastCityKey: String? = null
             var lastMethod: Int = -1
+            var lastSchool: Int = -1
             preferencesRepository.preferences.collect { prefs ->
                 currentPreferences = prefs
                 val cityKey = "${prefs.manualLatitude},${prefs.manualLongitude},${prefs.manualCityName}"
                 val methodChanged = prefs.calculationMethod != lastMethod
-                if (cityKey != lastCityKey || methodChanged) {
+                val schoolChanged = prefs.school != lastSchool
+                if (cityKey != lastCityKey || methodChanged || schoolChanged) {
                     lastCityKey = cityKey
                     lastMethod = prefs.calculationMethod
+                    lastSchool = prefs.school
                     if (prefs.manualCityName.isNotEmpty()) {
                         _needsLocationPermission.value = false
                         loadPrayerTimes(LocationInfo(
@@ -112,7 +116,6 @@ class HomeViewModel @Inject constructor(
             viewModelScope.launch {
                 preferencesRepository.clearManualCity()
             }
-            loadWithCurrentLocation()
         } else {
             _needsLocationPermission.value = true
         }
@@ -138,16 +141,22 @@ class HomeViewModel @Inject constructor(
     }
 
     fun loadPrayerTimes(location: LocationInfo) {
+        prayerTimesJob?.cancel()
         _locationInfo.value = location
+        _prayerTimes.value = emptyList()
+        _error.value = null
+        _nextPrayer.value = null
+        _dashboardData.value = null
         val today = LocalDate.now()
         val todayKey = today.format(DATE_FORMAT)
 
-        viewModelScope.launch {
+        prayerTimesJob = viewModelScope.launch {
             getPrayerTimesUseCase(
                 location = location,
                 month = today.monthValue,
                 year = today.year,
-                method = currentPreferences.calculationMethod
+                method = currentPreferences.calculationMethod,
+                school = currentPreferences.school
             ).collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> _isLoading.value = true

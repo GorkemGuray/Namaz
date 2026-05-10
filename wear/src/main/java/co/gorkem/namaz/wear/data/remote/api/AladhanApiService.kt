@@ -10,6 +10,7 @@ interface AladhanApiService {
         @Query("latitude") latitude: Double,
         @Query("longitude") longitude: Double,
         @Query("method") method: Int = 13,
+        @Query("school") school: Int = 1,
         @Query("month") month: Int,
         @Query("year") year: Int
     ): CalendarResponse

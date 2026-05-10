@@ -24,6 +24,7 @@ data class UserPreferences(
     val notificationsEnabled: Boolean = true,
     val notificationMinutesBefore: Int = 15,
     val calculationMethod: Int = 13,
+    val school: Int = 1,
     val language: String = "tr",
     val manualCityName: String = "",
     val manualLatitude: Double = 0.0,
@@ -42,6 +43,7 @@ class UserPreferencesRepository @Inject constructor(
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val NOTIFICATION_MINUTES_BEFORE = intPreferencesKey("notification_minutes_before")
         val CALCULATION_METHOD = intPreferencesKey("calculation_method")
+        val SCHOOL = intPreferencesKey("school")
         val LANGUAGE = stringPreferencesKey("language")
         val MANUAL_CITY_NAME = stringPreferencesKey("manual_city_name")
         val MANUAL_LATITUDE = stringPreferencesKey("manual_latitude")
@@ -62,6 +64,7 @@ class UserPreferencesRepository @Inject constructor(
             notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
             notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
             calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
+            school = prefs[SCHOOL] ?: 1,
             language = prefs[LANGUAGE] ?: "tr",
             manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
             manualLatitude = (prefs[MANUAL_LATITUDE] ?: "0.0").toDouble(),
@@ -80,6 +83,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setCalculationMethod(method: Int) {
         dataStore.edit { prefs -> prefs[CALCULATION_METHOD] = method }
+    }
+
+    suspend fun setSchool(school: Int) {
+        dataStore.edit { prefs -> prefs[SCHOOL] = school }
     }
 
     suspend fun setLanguage(language: String) {

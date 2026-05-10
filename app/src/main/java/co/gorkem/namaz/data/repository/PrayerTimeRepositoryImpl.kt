@@ -22,7 +22,8 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         location: LocationInfo,
         month: Int,
         year: Int,
-        method: Int
+        method: Int,
+        school: Int
     ): Flow<NetworkResult<List<PrayerTime>>> = flow {
         val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method)
 
@@ -37,6 +38,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 latitude = location.latitude,
                 longitude = location.longitude,
                 method = method,
+                school = school,
                 month = month,
                 year = year
             )
@@ -75,12 +77,13 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun refreshPrayerTimes(location: LocationInfo, month: Int, year: Int, method: Int): Result<List<PrayerTime>> {
+    suspend fun refreshPrayerTimes(location: LocationInfo, month: Int, year: Int, method: Int, school: Int): Result<List<PrayerTime>> {
         return try {
             val response = apiService.getPrayerTimes(
                 latitude = location.latitude,
                 longitude = location.longitude,
                 method = method,
+                school = school,
                 month = month,
                 year = year
             )

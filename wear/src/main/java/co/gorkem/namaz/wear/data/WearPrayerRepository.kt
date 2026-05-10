@@ -15,7 +15,8 @@ class WearPrayerRepository @Inject constructor(
     fun getPrayerTimesFromApi(
         latitude: Double,
         longitude: Double,
-        method: Int = 13
+        method: Int = 13,
+        school: Int = 1
     ): Flow<Result<List<WearPrayerItem>>> = flow {
         try {
             val today = LocalDate.now()
@@ -23,6 +24,7 @@ class WearPrayerRepository @Inject constructor(
                 latitude = latitude,
                 longitude = longitude,
                 method = method,
+                school = school,
                 month = today.monthValue,
                 year = today.year
             )

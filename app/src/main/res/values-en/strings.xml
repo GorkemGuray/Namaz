@@ -55,6 +55,9 @@
     <string name="settings_language">Language</string>
     <string name="settings_language_turkish">Türkçe</string>
     <string name="settings_language_english">English</string>
+    <string name="settings_school">School</string>
+    <string name="school_hanafi">Hanafi</string>
+    <string name="school_shafi">Shafi</string>
 
     <!-- Calculation Methods -->
     <string name="method_diyanet">Diyanet (Turkey)</string>
