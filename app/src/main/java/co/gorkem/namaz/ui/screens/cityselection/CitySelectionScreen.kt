@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -118,7 +119,7 @@ fun CitySelectionScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             MyLocationButton(
                 onClick = {
@@ -186,7 +187,7 @@ private fun SearchField(
         modifier = modifier,
         placeholder = {
             Text(
-                text = "Şehir ara... (dünya geneli)",
+                text = "Şehir ara...",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -250,7 +251,7 @@ private fun MyLocationButton(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -259,7 +260,7 @@ private fun MyLocationButton(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Konumumu Kullan",
@@ -302,7 +303,7 @@ private fun RecentCitiesSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -316,7 +317,7 @@ private fun RecentCitiesSection(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     }
 }
 
@@ -349,7 +350,7 @@ private fun RecentCityChip(
             text = city.name,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -364,14 +365,14 @@ private fun SearchResultsList(
 ) {
     LazyColumn(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         item {
             Text(
-                text = "${results.size} konum bulundu",
+                text = results.size.toString() + " konum bulundu",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
         }
         items(results, key = { it.displayName + it.latitude + it.longitude }) { result ->
@@ -412,16 +413,16 @@ private fun LocationResultCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 18.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.Public,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(22.dp)
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = result.cityName.ifBlank { result.displayName },
@@ -486,7 +487,7 @@ private fun EmptySearchState(
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "\"$query\" için sonuç bulunamadı",
+            text = "\"" + query + "\" için sonuç bulunamadı",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

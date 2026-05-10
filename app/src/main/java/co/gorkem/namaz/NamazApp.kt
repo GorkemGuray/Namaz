@@ -105,13 +105,13 @@ fun NamazApp() {
             transitionSpec = {
                 val direction = if (targetState > initialState) 1 else -1
                 slideInHorizontally(
-                    animationSpec = tween(350, easing = EaseInOut),
-                    initialOffsetX = { fullWidth -> fullWidth / 4 * direction }
-                ) + fadeIn(tween(350)) togetherWith
+                    animationSpec = tween(300, easing = EaseInOut),
+                    initialOffsetX = { fullWidth -> fullWidth / 5 * direction }
+                ) + fadeIn(tween(300)) togetherWith
                 slideOutHorizontally(
-                    animationSpec = tween(350, easing = EaseInOut),
-                    targetOffsetX = { fullWidth -> fullWidth / 4 * -direction }
-                ) + fadeOut(tween(350))
+                    animationSpec = tween(300, easing = EaseInOut),
+                    targetOffsetX = { fullWidth -> fullWidth / 5 * -direction }
+                ) + fadeOut(tween(300))
             },
             label = "tab_switch"
         ) { tab ->

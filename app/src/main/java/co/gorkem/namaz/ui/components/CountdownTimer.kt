@@ -5,6 +5,7 @@ import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
@@ -19,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.unit.dp
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
 import kotlinx.coroutines.delay
@@ -48,15 +50,18 @@ fun CountdownTimer(
         modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
+        ),
+        shape = MaterialTheme.shapes.large
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = "Sıradaki Vakit",
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
             AnimatedContent(
                 targetState = nextPrayer.prayerName.turkishName,
@@ -66,12 +71,16 @@ fun CountdownTimer(
             ) { name ->
                 Text(
                     text = name,
-                    style = MaterialTheme.typography.headlineMedium
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
             Text(
                 text = nextPrayer.prayerTime,
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFeatureSettings = "tnum"
+                ),
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
             )
             AnimatedContent(
                 targetState = remainingSeconds,
@@ -82,7 +91,9 @@ fun CountdownTimer(
             ) { _ ->
                 Text(
                     text = formatCountdown(hours, minutes, seconds),
-                    style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontFeatureSettings = "tnum"
+                ),
                     color = MaterialTheme.colorScheme.primary
                 )
             }

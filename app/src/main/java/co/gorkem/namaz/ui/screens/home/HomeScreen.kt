@@ -3,17 +3,16 @@ package co.gorkem.namaz.ui.screens.home
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseInOut
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,13 +20,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,30 +32,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.gorkem.namaz.R
-import co.gorkem.namaz.domain.model.PrayerName
-import co.gorkem.namaz.domain.model.PrayerTime
-import co.gorkem.namaz.domain.usecase.KerahatInfo
 import co.gorkem.namaz.domain.usecase.PrayerDashboardData
-import co.gorkem.namaz.domain.usecase.PrayerPeriod
-import co.gorkem.namaz.ui.components.PrayerTimeCard
-import co.gorkem.namaz.ui.theme.HeroCardShape
-import co.gorkem.namaz.ui.theme.prayerHeroGradient
+import co.gorkem.namaz.ui.components.CountdownTimer
+import co.gorkem.namaz.ui.components.PrayerHeroCard
+import co.gorkem.namaz.ui.components.PrayerTimesList
+import co.gorkem.namaz.ui.theme.PillShape
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -77,6 +64,7 @@ fun HomeScreen(
     val error by viewModel.error.collectAsState()
     val locationInfo by viewModel.locationInfo.collectAsState()
     val needsLocationPermission by viewModel.needsLocationPermission.collectAsState()
+    val nextPrayer by viewModel.nextPrayer.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -146,7 +134,7 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -163,34 +151,156 @@ fun HomeScreen(
                     ?: prayerTimes.firstOrNull()
                 val dash = dashboard
 
-                if (dash != null) {
-                    DashboardContent(
-                        dashboard = dash,
-                        locationDisplay = locationDisplay,
-                        onLocationClick = onLocationClick,
-                        todayTimes = todayTimes
-                    )
-                } else {
+                if (dash != null && todayTimes != null) {
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (todayTimes != null) {
-                            val prayers = todayTimes.getAllPrayers()
-                            items(prayers, key = { it.first.name }) { (name, time) ->
-                                PrayerTimeCard(name = name, time = time)
-                            }
+                        item {
+                            PrayerHeroCard(
+                                dashboard = dash,
+                                locationName = locationDisplay,
+                                onLocationClick = onLocationClick
+                            )
                         }
+
+                        item {
+                            KerahatBanner(dashboard = dash)
+                        }
+
+                        item {
+                            Text(
+                                text = "Bugünün Vakitleri",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                            )
+                        }
+
+                        item {
+                            PrayerTimesList(
+                                prayerTime = todayTimes,
+                                nextPrayer = dash.nextPrayer,
+                                currentPrayerName = dash.currentPeriod.prayerName
+                            )
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                } else if (todayTimes != null) {
+                    val np = nextPrayer
+                    if (np != null) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            CountdownTimer(nextPrayer = np)
+                        }
+
+                        item {
+                            Text(
+                                text = "Bugünün Vakitleri",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        item {
+                            PrayerTimesList(
+                                prayerTime = todayTimes,
+                                nextPrayer = np,
+                                currentPrayerName = null
+                            )
+                        }
+                    }
+                    }
                     }
                 }
             }
         }
     }
+
+@Composable
+private fun KerahatBanner(dashboard: PrayerDashboardData) {
+    val kerahat = dashboard.kerahatInfo
+    val nextKerahat = dashboard.nextKerahatInfo
+
+    AnimatedVisibility(
+        visible = kerahat != null || (nextKerahat != null && nextKerahat.remainingToStartMinutes <= 30),
+        enter = slideInVertically { it / 2 } + fadeIn(),
+        exit = slideOutVertically { it / 2 } + fadeOut()
+    ) {
+        when {
+            kerahat != null -> {
+                KerahatChip(
+                    text = kerahat.label + " aktif",
+                    subtext = kerahat.remainingToEndMinutes.toString() + " dk sonra biter",
+                    isActive = true
+                )
+            }
+            nextKerahat != null && nextKerahat.remainingToStartMinutes <= 30 -> {
+                KerahatChip(
+                    text = nextKerahat.label + " yaklaşıyor",
+                    subtext = nextKerahat.remainingToStartMinutes.toString() + " dk sonra başlar",
+                    isActive = false
+                )
+            }
+        }
+    }
 }
 
-private val DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+@Composable
+private fun KerahatChip(
+    text: String,
+    subtext: String,
+    isActive: Boolean
+) {
+    val backgroundColor = if (isActive) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.tertiaryContainer
+    }
+
+    val contentColor = if (isActive) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(PillShape)
+            .background(backgroundColor)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.WarningAmber,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = contentColor
+        )
+        Column {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                color = contentColor
+            )
+            Text(
+                text = subtext,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor.copy(alpha = 0.8f)
+            )
+        }
+    }
+}
 
 @Composable
 fun LocationPermissionScreen(
@@ -215,281 +325,14 @@ fun LocationPermissionScreen(
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onGrantPermission) {
+        androidx.compose.material3.Button(onClick = onGrantPermission) {
             Text("Konum İzni Ver")
         }
         Spacer(modifier = Modifier.height(12.dp))
-        Button(onClick = onSkip) {
+        androidx.compose.material3.TextButton(onClick = onSkip) {
             Text("Varsayılan Konumla Devam Et")
         }
     }
 }
 
-@Composable
-private fun DashboardContent(
-    dashboard: PrayerDashboardData,
-    locationDisplay: String,
-    onLocationClick: () -> Unit,
-    todayTimes: PrayerTime?
-) {
-    val gradient = prayerHeroGradient(dashboard.currentPeriod.prayerName)
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 8.dp, bottom = 24.dp)
-    ) {
-        item {
-            ModernHeroCard(
-                currentPeriod = dashboard.currentPeriod,
-                locationDisplay = locationDisplay,
-                onLocationClick = onLocationClick,
-                gradient = gradient
-            )
-        }
-
-        item {
-            DashboardInfoRow(
-                dashboard = dashboard
-            )
-        }
-
-        item {
-            Text(
-                text = "Günlük Vakitler",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
-            )
-        }
-
-        if (todayTimes != null) {
-            val prayers = todayTimes.getAllPrayers()
-            items(prayers, key = { it.first.name }) { (name, time) ->
-                PrayerTimeCard(
-                    name = name,
-                    time = time,
-                    isNext = name == dashboard.nextPrayer.prayerName
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ModernHeroCard(
-    currentPeriod: PrayerPeriod,
-    locationDisplay: String,
-    onLocationClick: () -> Unit,
-    gradient: Brush
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(HeroCardShape)
-            .background(gradient)
-            .padding(horizontal = 24.dp, vertical = 24.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Location
-            HeroLocationChip(
-                locationName = locationDisplay,
-                onClick = onLocationClick
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Current period label
-            Text(
-                text = currentPeriod.label,
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "vaktindesiniz",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = currentPeriod.startTime.format(TIME_FORMAT),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.White.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = "  →  ",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.White.copy(alpha = 0.4f)
-                )
-                Text(
-                    text = currentPeriod.endTime.format(TIME_FORMAT),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.White.copy(alpha = 0.6f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DashboardInfoRow(dashboard: PrayerDashboardData) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            DashboardCard(
-                title = "Vaktin Çıkışı",
-                value = formatDuration(dashboard.remainingToEndOfPeriodMinutes),
-                subtitle = "${dashboard.nextPrayer.prayerName.turkishName} ezanına kalan",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f)
-            )
-            DashboardCard(
-                title = "Sıradaki Vakit",
-                value = dashboard.nextPrayer.prayerTime,
-                subtitle = dashboard.nextPrayer.prayerName.turkishName,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            val kerahat = dashboard.kerahatInfo
-            val nextKerahat = dashboard.nextKerahatInfo
-
-            if (kerahat != null) {
-                DashboardCard(
-                    title = "Kerahat Vakti",
-                    value = "Aktif",
-                    subtitle = "${kerahat.label} · ${kerahat.remainingToEndMinutes}dk sonra biter",
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.weight(1f)
-                )
-            } else if (nextKerahat != null) {
-                DashboardCard(
-                    title = "Kerahat",
-                    value = formatDuration(nextKerahat.remainingToStartMinutes),
-                    subtitle = "${nextKerahat.label} başlamasına",
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                DashboardCard(
-                    title = "Kerahat",
-                    value = "—",
-                    subtitle = "Yakın kerahat yok",
-                    tint = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            DashboardCard(
-                title = "Vakit Bitişi",
-                value = formatDuration(dashboard.remainingToEndOfPeriodMinutes),
-                subtitle = "${dashboard.currentPeriod.prayerName.turkishName} çıkmasına",
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun HeroLocationChip(
-    locationName: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.small)
-            .background(Color.Black.copy(alpha = 0.25f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_my_location),
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = Color.White.copy(alpha = 0.85f)
-        )
-        Text(
-            text = locationName,
-            style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.9f)
-        )
-    }
-}
-
-@Composable
-private fun DashboardCard(
-    title: String,
-    value: String,
-    subtitle: String,
-    tint: Color,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                color = tint
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                maxLines = 1
-            )
-        }
-    }
-}
-
-private fun formatDuration(totalMinutes: Long): String {
-    if (totalMinutes <= 0) return "0dk"
-    val hours = totalMinutes / 60
-    val minutes = totalMinutes % 60
-    return when {
-        hours > 0 -> "${hours}s ${minutes}dk"
-        else -> "${minutes}dk"
-    }
-}
-
-private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
+private val DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy")

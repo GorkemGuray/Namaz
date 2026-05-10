@@ -1,7 +1,6 @@
 package co.gorkem.namaz.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -31,29 +30,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import co.gorkem.namaz.R
-import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
+import co.gorkem.namaz.domain.model.PrayerName
+import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.ui.theme.HeroCardShape
-import co.gorkem.namaz.ui.theme.countdownAccentColor
 import co.gorkem.namaz.ui.theme.prayerHeroGradient
-import kotlinx.coroutines.delay
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun PrayerHeroCard(
-    nextPrayer: GetNextPrayerUseCase.NextPrayerInfo,
+    dashboard: PrayerDashboardData,
     locationName: String,
     onLocationClick: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -62,12 +59,12 @@ fun PrayerHeroCard(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
+        targetValue = if (isPressed) 0.98f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "hero_scale"
     )
 
-    val gradient = prayerHeroGradient(nextPrayer.prayerName)
+    val gradient = prayerHeroGradient(dashboard.currentPeriod.prayerName)
 
     Box(
         modifier = modifier
@@ -78,18 +75,16 @@ fun PrayerHeroCard(
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(color = Color.White.copy(alpha = 0.3f)),
-                onClick = { /* Hero tap action if needed */ }
+                onClick = { }
             )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Location chip — semi-transparent dark background so it
-            // reads well over any gradient tone
             if (locationName.isNotBlank()) {
                 HeroLocationChip(
                     locationName = locationName,
@@ -97,48 +92,82 @@ fun PrayerHeroCard(
                 )
             }
 
-            // Label
+            Text(
+                text = dashboard.currentPeriod.label,
+                style = MaterialTheme.typography.headlineLarge,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+
+            Text(
+                text = "vaktindesiniz",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White.copy(alpha = 0.75f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = dashboard.currentPeriod.startTime.format(TIME_FORMAT),
+                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                    color = Color.White.copy(alpha = 0.65f)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(Color.White.copy(alpha = 0.4f))
+                )
+                Text(
+                    text = dashboard.currentPeriod.endTime.format(TIME_FORMAT),
+                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                    color = Color.White.copy(alpha = 0.65f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.White.copy(alpha = 0.15f))
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = "Sıradaki Vakit",
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.75f)
+                color = Color.White.copy(alpha = 0.7f)
             )
 
-            // Prayer name with animated transition
             AnimatedContent(
-                targetState = nextPrayer.prayerName.turkishName,
+                targetState = dashboard.nextPrayer.prayerName.turkishName,
                 transitionSpec = {
                     scaleIn(
                         initialScale = 0.85f,
                         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
                     ) + fadeIn() togetherWith
-                    scaleOut(
-                        targetScale = 1.15f,
-                        animationSpec = spring()
-                    ) + fadeOut()
+                    scaleOut(targetScale = 1.15f) + fadeOut()
                 },
-                label = "prayer_name_anim"
+                label = "next_prayer_name"
             ) { name ->
                 Text(
                     text = name,
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = MaterialTheme.typography.headlineMedium,
                     color = Color.White,
                     textAlign = TextAlign.Center
                 )
             }
 
-            // Prayer time
-            Text(
-                text = nextPrayer.prayerTime,
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White.copy(alpha = 0.85f)
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            // Countdown — pure white for guaranteed readability on any gradient
             CountdownDisplay(
-                remainingMinutes = nextPrayer.remainingMinutes,
+                remainingMinutes = dashboard.nextPrayer.remainingMinutes,
                 textColor = Color.White
             )
         }
@@ -168,7 +197,7 @@ private fun HeroLocationChip(
                 indication = ripple(color = Color.White.copy(alpha = 0.2f)),
                 onClick = onClick
             )
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -176,36 +205,35 @@ private fun HeroLocationChip(
             painter = painterResource(id = R.drawable.ic_my_location),
             contentDescription = null,
             modifier = Modifier.size(14.dp),
-            tint = Color.White.copy(alpha = 0.85f)
+            tint = Color.White.copy(alpha = 0.9f)
         )
         Text(
             text = locationName,
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.9f)
+            color = Color.White.copy(alpha = 0.95f)
         )
     }
 }
 
 @Composable
-private fun CountdownDisplay(
+fun CountdownDisplay(
     remainingMinutes: Long,
-    textColor: Color
+    textColor: Color,
+    modifier: Modifier = Modifier
 ) {
-    var remainingSeconds by remember {
-        mutableLongStateOf(remainingMinutes * 60L)
-    }
+    val remainingSeconds = remember { androidx.compose.runtime.mutableStateOf(remainingMinutes * 60L) }
 
-    LaunchedEffect(remainingMinutes) {
-        remainingSeconds = remainingMinutes * 60L
-        while (remainingSeconds > 0) {
-            delay(1000L)
-            remainingSeconds--
+    androidx.compose.runtime.LaunchedEffect(remainingMinutes) {
+        remainingSeconds.value = remainingMinutes * 60L
+        while (remainingSeconds.value > 0) {
+            kotlinx.coroutines.delay(1000L)
+            remainingSeconds.value--
         }
     }
 
-    val hours = remainingSeconds / 3600
-    val minutes = (remainingSeconds % 3600) / 60
-    val seconds = remainingSeconds % 60
+    val hours = remainingSeconds.value / 3600
+    val minutes = (remainingSeconds.value % 3600) / 60
+    val seconds = remainingSeconds.value % 60
 
     val displayText = when {
         hours > 0 -> String.format("%02d:%02d:%02d", hours, minutes, seconds)
@@ -213,23 +241,22 @@ private fun CountdownDisplay(
         else -> String.format("%02ds", seconds)
     }
 
-    Crossfade(
+    androidx.compose.animation.Crossfade(
         targetState = displayText,
         animationSpec = tween(durationMillis = 150, easing = EaseInOut),
-        label = "countdown_anim"
+        label = "countdown_crossfade"
     ) { text ->
         Text(
             text = text,
-            style = MaterialTheme.typography.displayMedium.copy(
+            style = MaterialTheme.typography.displaySmall.copy(
                 fontFeatureSettings = "tnum"
             ),
             color = textColor,
             textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(min = 140.dp)
+            modifier = modifier.widthIn(min = 160.dp)
         )
     }
 
-    // Sub-label
     val subLabel = when {
         hours > 0 -> "saat kaldı"
         minutes > 0 -> "dakika kaldı"
@@ -238,7 +265,9 @@ private fun CountdownDisplay(
     Text(
         text = subLabel,
         style = MaterialTheme.typography.labelSmall,
-        color = Color.White.copy(alpha = 0.6f),
+        color = textColor.copy(alpha = 0.6f),
         textAlign = TextAlign.Center
     )
 }
+
+private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")

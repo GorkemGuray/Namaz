@@ -12,36 +12,37 @@ import androidx.compose.ui.unit.sp
  * Uses expanded display sizes for hero content (countdown),
  * expressive headline/title styles for prayer names,
  * and refined body sizes for supporting text.
+ * Increased contrast between scale steps for stronger hierarchy.
  */
 
 val ExpressiveTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Bold,
-        fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.25).sp
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 64.sp,
+        lineHeight = 72.sp,
+        letterSpacing = (-0.5).sp
     ),
     displayMedium = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Bold,
-        fontSize = 45.sp,
-        lineHeight = 52.sp,
-        letterSpacing = 0.sp
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 52.sp,
+        lineHeight = 60.sp,
+        letterSpacing = (-0.25).sp
     ),
     displaySmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
+        fontSize = 40.sp,
+        lineHeight = 48.sp,
         letterSpacing = 0.sp
     ),
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 32.sp,
-        lineHeight = 40.sp,
-        letterSpacing = 0.sp
+        fontWeight = FontWeight.Bold,
+        fontSize = 34.sp,
+        lineHeight = 42.sp,
+        letterSpacing = (-0.25).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Default,
@@ -59,7 +60,7 @@ val ExpressiveTypography = Typography(
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp

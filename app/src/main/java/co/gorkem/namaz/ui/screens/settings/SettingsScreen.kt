@@ -1,26 +1,34 @@
 package co.gorkem.namaz.ui.screens.settings
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.LocationCity
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -61,92 +69,101 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
             // Bildirimler Section
-            SettingsSectionCard(title = "Bildirimler") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.medium)
-                        .clickable {
-                            viewModel.setNotificationsEnabled(
-                                !preferences.notificationsEnabled
-                            )
-                        }
-                        .padding(horizontal = 4.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
+            SettingsSection(title = "Bildirimler") {
+                ListItem(
+                    headlineContent = {
                         Text(
                             text = "Bildirimleri Aç",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.bodyLarge
                         )
+                    },
+                    supportingContent = {
                         Text(
                             text = "Vakit geldiğinde bildirim al",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.bodyMedium
                         )
-                    }
-                    Switch(
-                        checked = preferences.notificationsEnabled,
-                        onCheckedChange = { viewModel.setNotificationsEnabled(it) }
-                    )
-                }
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Rounded.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = preferences.notificationsEnabled,
+                            onCheckedChange = { viewModel.setNotificationsEnabled(it) }
+                        )
+                    },
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    modifier = Modifier.clip(MaterialTheme.shapes.large)
+                )
 
-                if (preferences.notificationsEnabled) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
+                AnimatedVisibility(
+                    visible = preferences.notificationsEnabled,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Text(
-                        text = "Bildirim Zamanı",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp)
-                    )
+                        Text(
+                            text = "Bildirim Zamanı",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                        )
 
-                    Column(modifier = Modifier.selectableGroup()) {
-                        viewModel.notificationMinutesOptions.forEach { minutes ->
-                            val selected = preferences.notificationMinutesBefore == minutes
-                            val containerColor by animateColorAsState(
-                                targetValue = if (selected) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceContainer
-                                },
-                                label = "radio_container"
-                            )
+                        Surface(
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.selectableGroup()) {
+                                viewModel.notificationMinutesOptions.forEachIndexed { index, minutes ->
+                                    val selected = preferences.notificationMinutesBefore == minutes
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(MaterialTheme.shapes.medium)
-                                    .selectable(
-                                        selected = selected,
-                                        onClick = {
-                                            viewModel.setNotificationMinutesBefore(minutes)
-                                        },
-                                        role = Role.RadioButton
-                                    )
-                                    .padding(horizontal = 4.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = selected,
-                                    onClick = null
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "$minutes dakika önce",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .selectable(
+                                                selected = selected,
+                                                onClick = {
+                                                    viewModel.setNotificationMinutesBefore(minutes)
+                                                },
+                                                role = Role.RadioButton
+                                            )
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = selected,
+                                            onClick = null
+                                        )
+                                        Spacer(modifier = Modifier.padding(start = 16.dp))
+                                        Text(
+                                            text = minutes.toString() + " dakika önce",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+
+                                    if (index < viewModel.notificationMinutesOptions.lastIndex) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(start = 52.dp),
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -154,50 +171,55 @@ fun SettingsScreen(
             }
 
             // Hesaplama Yöntemi Section
-            SettingsSectionCard(title = "Hesaplama Yöntemi") {
-                Text(
-                    text = "Namaz vakitlerinin hesaplanma yöntemini seçin",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                )
+            SettingsSection(title = "Hesaplama Yöntemi") {
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.selectableGroup()) {
+                        viewModel.calculationMethods.forEachIndexed { index, (method, name) ->
+                            val selected = preferences.calculationMethod == method
 
-                Column(modifier = Modifier.selectableGroup()) {
-                    viewModel.calculationMethods.forEach { (method, name) ->
-                        val selected = preferences.calculationMethod == method
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.medium)
-                                .selectable(
-                                    selected = selected,
-                                    onClick = {
-                                        viewModel.setCalculationMethod(method)
-                                    },
-                                    role = Role.RadioButton
-                                )
-                                .padding(horizontal = 4.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = selected,
-                                onClick = null
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                if (method == 13) {
-                                    Text(
-                                        text = "Varsayılan",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = selected,
+                                        onClick = {
+                                            viewModel.setCalculationMethod(method)
+                                        },
+                                        role = Role.RadioButton
                                     )
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selected,
+                                    onClick = null
+                                )
+                                Spacer(modifier = Modifier.padding(start = 16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (method == 13) {
+                                        Text(
+                                            text = "Varsayılan",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
+                            }
+
+                            if (index < viewModel.calculationMethods.lastIndex) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 52.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                )
                             }
                         }
                     }
@@ -208,29 +230,18 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsSectionCard(
+private fun SettingsSection(
     title: String,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            content()
-        }
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+        )
+        content()
     }
 }
