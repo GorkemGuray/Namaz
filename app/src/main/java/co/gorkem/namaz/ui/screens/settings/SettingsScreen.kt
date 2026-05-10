@@ -39,12 +39,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import co.gorkem.namaz.MainActivity
 import co.gorkem.namaz.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -186,7 +184,6 @@ fun SettingsScreen(
                             "tr" to R.string.settings_language_turkish,
                             "en" to R.string.settings_language_english
                         )
-                        val context = LocalContext.current
                         languages.forEachIndexed { index, (code, nameRes) ->
                             val selected = preferences.language == code
                             Row(
@@ -197,7 +194,6 @@ fun SettingsScreen(
                                         onClick = {
                                             if (preferences.language != code) {
                                                 viewModel.setLanguage(code)
-                                                (context as? MainActivity)?.recreate()
                                             }
                                         },
                                         role = Role.RadioButton

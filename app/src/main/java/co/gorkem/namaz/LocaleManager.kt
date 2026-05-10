@@ -24,6 +24,11 @@ object LocaleManager {
 
     fun applyLocale(context: Context): Context {
         val language = getLanguage(context)
+        return applyLocale(context, language)
+    }
+
+    fun applyLocale(context: Context, language: String): Context {
+        setLanguage(context, language)
         return updateResources(context, language)
     }
 
