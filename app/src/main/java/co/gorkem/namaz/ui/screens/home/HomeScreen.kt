@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -153,6 +154,10 @@ fun HomeScreen(
                 val dash = dashboard
 
                 if (dash != null && todayTimes != null) {
+                    val hijriMonths = stringArrayResource(R.array.hijri_months)
+                    val hijriMonthName = hijriMonths.getOrElse(todayTimes.hijriMonthNumber - 1) { "" }
+                    val hijriDateDisplay = todayTimes.hijriDay + " " + hijriMonthName + " " + todayTimes.hijriYear
+
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
@@ -162,7 +167,7 @@ fun HomeScreen(
                             PrayerHeroCard(
                                 dashboard = dash,
                                 locationName = locationDisplay,
-                                hijriDate = todayTimes.hijriDate,
+                                hijriDate = hijriDateDisplay,
                                 onLocationClick = onLocationClick
                             )
                         }

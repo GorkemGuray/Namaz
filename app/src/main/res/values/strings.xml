@@ -99,6 +99,22 @@
     <string name="wear_prayer_times">Namaz Vakitleri</string>
     <string name="wear_minutes_left"> dk kaldı</string>
 
+    <!-- Hijri Months -->
+    <string-array name="hijri_months">
+        <item>Muharrem</item>
+        <item>Safer</item>
+        <item>Rebiülevvel</item>
+        <item>Rebiülahir</item>
+        <item>Cemaziyelevvel</item>
+        <item>Cemaziyelahir</item>
+        <item>Recep</item>
+        <item>Şaban</item>
+        <item>Ramazan</item>
+        <item>Şevval</item>
+        <item>Zilkade</item>
+        <item>Zilhicce</item>
+    </string-array>
+
     <!-- Default Location -->
     <string name="default_city">İstanbul</string>
     <string name="default_district">Fatih</string>

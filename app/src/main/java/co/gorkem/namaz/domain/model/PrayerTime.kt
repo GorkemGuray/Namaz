@@ -3,7 +3,9 @@ package co.gorkem.namaz.domain.model
 data class PrayerTime(
     val date: String,
     val gregorianDate: String,
-    val hijriDate: String,
+    val hijriDay: String,
+    val hijriMonthNumber: Int,
+    val hijriYear: String,
     val imsak: String,
     val gunes: String,
     val ogle: String,
