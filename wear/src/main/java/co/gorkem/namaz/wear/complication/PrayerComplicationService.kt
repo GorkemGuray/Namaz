@@ -9,7 +9,9 @@ import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import co.gorkem.namaz.wear.MainActivity
+import co.gorkem.namaz.wear.R
 import co.gorkem.namaz.wear.di.WearDataEntryPoint
+import co.gorkem.namaz.wear.prayerNameFromEnum
 import dagger.hilt.EntryPoints
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -22,8 +24,8 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
 
     override fun getPreviewData(type: ComplicationType): ComplicationData {
         return ShortTextComplicationData.Builder(
-            text = PlainComplicationText.Builder(text = "Namaz").build(),
-            contentDescription = PlainComplicationText.Builder(text = "Namaz Vakti").build()
+            text = PlainComplicationText.Builder(text = getString(R.string.wear_prayer)).build(),
+            contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
         ).build()
     }
 
@@ -54,11 +56,11 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
         val builder = ShortTextComplicationData.Builder(
             text = PlainComplicationText.Builder(
                 text = if (nextPrayer != null)
-                    "${nextPrayer.turkishName} ${nextPrayer.time}"
+                    "${prayerNameFromEnum(this, nextPrayer.name)} ${nextPrayer.time}"
                 else "--:--"
             ).build(),
             contentDescription = PlainComplicationText.Builder(
-                text = "Namaz Vakti"
+                text = getString(R.string.wear_prayer_time)
             ).build()
         )
 

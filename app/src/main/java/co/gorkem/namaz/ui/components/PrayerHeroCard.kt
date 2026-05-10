@@ -39,9 +39,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.usecase.PrayerDashboardData
+import co.gorkem.namaz.domain.usecase.PeriodType
 import co.gorkem.namaz.ui.theme.HeroCardShape
 import co.gorkem.namaz.ui.theme.prayerHeroGradient
 import java.time.format.DateTimeFormatter
@@ -110,14 +112,20 @@ fun PrayerHeroCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
+                val periodLabel = when (dashboard.currentPeriod.periodType) {
+                    PeriodType.SABAH -> stringResource(R.string.period_sabah)
+                    PeriodType.KUSLUK -> stringResource(R.string.period_kusluk)
+                    else -> stringResource(dashboard.currentPeriod.prayerName.nameRes)
+                } + " " + stringResource(R.string.period_vakti)
+
                 Text(
-                    text = dashboard.currentPeriod.label,
+                    text = periodLabel,
                     style = MaterialTheme.typography.headlineLarge,
                     color = Color.White,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "vaktindesiniz",
+                    text = stringResource(R.string.home_in_prayer_time),
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White.copy(alpha = 0.75f),
                     textAlign = TextAlign.Center
@@ -162,27 +170,27 @@ fun PrayerHeroCard(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = "Sıradaki Vakit",
+                        text = stringResource(R.string.home_next_prayer),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.7f)
                     )
-                    AnimatedContent(
-                        targetState = dashboard.nextPrayer.prayerName.turkishName,
-                        transitionSpec = {
-                            scaleIn(
-                                initialScale = 0.85f,
-                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-                            ) + fadeIn() togetherWith
-                            scaleOut(targetScale = 1.15f) + fadeOut()
-                        },
-                        label = "next_prayer_name"
-                    ) { name ->
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White
-                        )
-                    }
+            AnimatedContent(
+                targetState = dashboard.nextPrayer.prayerName,
+                transitionSpec = {
+                    scaleIn(
+                        initialScale = 0.85f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                    ) + fadeIn() togetherWith
+                    scaleOut(targetScale = 1.15f) + fadeOut()
+                },
+                label = "next_prayer_name"
+            ) { name ->
+                Text(
+                    text = stringResource(name.nameRes),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White
+                )
+            }
                 }
 
                 CountdownDisplay(
@@ -274,9 +282,9 @@ fun CountdownDisplay(
     )
 
     val subLabel = when {
-        hours > 0 -> "saat kaldı"
-        minutes > 0 -> "dakika kaldı"
-        else -> "saniye kaldı"
+        hours > 0 -> stringResource(R.string.home_hours_left)
+        minutes > 0 -> stringResource(R.string.home_minutes_left)
+        else -> stringResource(R.string.home_seconds_left)
     }
     Text(
         text = subLabel,

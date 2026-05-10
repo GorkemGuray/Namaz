@@ -42,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.res.stringResource
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.ui.components.CountdownTimer
@@ -102,7 +103,7 @@ fun HomeScreen(
         TopAppBar(
             title = {
                 Text(
-                    text = "Namaz Vakitleri",
+                    text = stringResource(R.string.home_title),
                     style = MaterialTheme.typography.titleLarge
                 )
             },
@@ -113,7 +114,7 @@ fun HomeScreen(
                 IconButton(onClick = { viewModel.useMyLocation() }) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_my_location),
-                        contentDescription = "Konumumu Kullan",
+                        contentDescription = stringResource(R.string.home_use_my_location),
                         modifier = Modifier.size(22.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -138,7 +139,7 @@ fun HomeScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = error ?: "Bilinmeyen hata",
+                        text = error ?: stringResource(R.string.home_unknown_error),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center
@@ -172,7 +173,7 @@ fun HomeScreen(
 
                         item {
                             Text(
-                                text = "Bugünün Vakitleri",
+                                text = stringResource(R.string.home_today_prayers),
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 2.dp, bottom = 0.dp)
@@ -201,7 +202,7 @@ fun HomeScreen(
 
                         item {
                             Text(
-                                text = "Bugünün Vakitleri",
+                                text = stringResource(R.string.home_today_prayers),
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 2.dp)
@@ -236,15 +237,15 @@ private fun KerahatBanner(dashboard: PrayerDashboardData) {
         when {
             kerahat != null -> {
                 KerahatChip(
-                    text = kerahat.label + " aktif",
-                    subtext = kerahat.remainingToEndMinutes.toString() + " dk sonra biter",
+                    text = stringResource(kerahat.prayerName.nameRes) + stringResource(R.string.period_kerahati) + stringResource(R.string.kerahat_active),
+                    subtext = kerahat.remainingToEndMinutes.toString() + stringResource(R.string.kerahat_ends_in),
                     isActive = true
                 )
             }
             nextKerahat != null && nextKerahat.remainingToStartMinutes <= 30 -> {
                 KerahatChip(
-                    text = nextKerahat.label + " yaklaşıyor",
-                    subtext = nextKerahat.remainingToStartMinutes.toString() + " dk sonra başlar",
+                    text = stringResource(nextKerahat.prayerName.nameRes) + stringResource(R.string.period_kerahati) + stringResource(R.string.kerahat_approaching),
+                    subtext = nextKerahat.remainingToStartMinutes.toString() + stringResource(R.string.kerahat_starts_in),
                     isActive = false
                 )
             }
@@ -313,22 +314,22 @@ fun LocationPermissionScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Konum İzni",
+            text = stringResource(R.string.location_permission_title),
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Namaz vakitlerini bulunduğunuz konuma göre doğru hesaplayabilmek için konum iznine ihtiyacımız var.",
+            text = stringResource(R.string.location_permission_desc),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(24.dp))
         androidx.compose.material3.Button(onClick = onGrantPermission) {
-            Text("Konum İzni Ver")
+            Text(stringResource(R.string.location_permission_grant))
         }
         Spacer(modifier = Modifier.height(12.dp))
         androidx.compose.material3.TextButton(onClick = onSkip) {
-            Text("Varsayılan Konumla Devam Et")
+            Text(stringResource(R.string.location_permission_skip))
         }
     }
 }

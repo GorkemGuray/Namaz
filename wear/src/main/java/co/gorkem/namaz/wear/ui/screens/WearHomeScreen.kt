@@ -43,9 +43,12 @@ import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
+import androidx.compose.ui.res.stringResource
+import co.gorkem.namaz.wear.R
 import co.gorkem.namaz.wear.data.WearNextPrayer
 import co.gorkem.namaz.wear.data.WearPrayerItem
 import co.gorkem.namaz.wear.ui.WearViewModel
+import co.gorkem.namaz.wear.ui.prayerNameFromEnum
 import kotlinx.coroutines.delay
 
 @Composable
@@ -128,7 +131,7 @@ private fun LoadingState() {
             strokeWidth = 3.dp
         )
         Text(
-            text = "Yükleniyor...",
+            text = stringResource(R.string.wear_loading),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -197,7 +200,7 @@ private fun WearCountdownHero(
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                text = nextPrayer.turkishName,
+                text = prayerNameFromEnum(nextPrayer.name),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center
@@ -240,7 +243,7 @@ private fun SourceIndicator(
     isPhoneSource: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val label = if (isPhoneSource) "Telefondan senkronize" else "Bağımsız mod"
+    val label = if (isPhoneSource) stringResource(R.string.wear_synced_from_phone) else stringResource(R.string.wear_standalone_mode)
     val color = if (isPhoneSource) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -317,7 +320,7 @@ private fun WearPrayerRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = prayer.turkishName,
+                text = prayerNameFromEnum(prayer.name),
                 style = if (isNext) {
                     MaterialTheme.typography.titleMedium
                 } else {

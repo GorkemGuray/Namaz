@@ -20,12 +20,7 @@ class SettingsViewModel @Inject constructor(
     val preferences: StateFlow<UserPreferences> = _preferences.asStateFlow()
 
     val notificationMinutesOptions = listOf(15, 30, 45)
-    val calculationMethods = listOf(
-        13 to "Diyanet İşleri Başkanlığı",
-        3 to "Muslim World League",
-        4 to "Umm Al-Qura",
-        2 to "ISNA"
-    )
+    val calculationMethods = listOf(13, 3, 4, 2)
 
     init {
         viewModelScope.launch {
@@ -50,6 +45,12 @@ class SettingsViewModel @Inject constructor(
     fun setCalculationMethod(method: Int) {
         viewModelScope.launch {
             preferencesRepository.setCalculationMethod(method)
+        }
+    }
+
+    fun setLanguage(language: String) {
+        viewModelScope.launch {
+            preferencesRepository.setLanguage(language)
         }
     }
 }

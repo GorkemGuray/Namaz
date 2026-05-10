@@ -24,6 +24,7 @@ data class UserPreferences(
     val notificationsEnabled: Boolean = true,
     val notificationMinutesBefore: Int = 15,
     val calculationMethod: Int = 13,
+    val language: String = "tr",
     val manualCityName: String = "",
     val manualLatitude: Double = 0.0,
     val manualLongitude: Double = 0.0,
@@ -41,6 +42,7 @@ class UserPreferencesRepository @Inject constructor(
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val NOTIFICATION_MINUTES_BEFORE = intPreferencesKey("notification_minutes_before")
         val CALCULATION_METHOD = intPreferencesKey("calculation_method")
+        val LANGUAGE = stringPreferencesKey("language")
         val MANUAL_CITY_NAME = stringPreferencesKey("manual_city_name")
         val MANUAL_LATITUDE = stringPreferencesKey("manual_latitude")
         val MANUAL_LONGITUDE = stringPreferencesKey("manual_longitude")
@@ -60,6 +62,7 @@ class UserPreferencesRepository @Inject constructor(
             notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
             notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
             calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
+            language = prefs[LANGUAGE] ?: "tr",
             manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
             manualLatitude = (prefs[MANUAL_LATITUDE] ?: "0.0").toDouble(),
             manualLongitude = (prefs[MANUAL_LONGITUDE] ?: "0.0").toDouble(),
@@ -77,6 +80,11 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setCalculationMethod(method: Int) {
         dataStore.edit { prefs -> prefs[CALCULATION_METHOD] = method }
+    }
+
+    suspend fun setLanguage(language: String) {
+        dataStore.edit { prefs -> prefs[LANGUAGE] = language }
+        co.gorkem.namaz.LocaleManager.setLanguage(context, language)
     }
 
     suspend fun setManualCity(

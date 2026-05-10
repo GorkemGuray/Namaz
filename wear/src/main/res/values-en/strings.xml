@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Namaz Wear</string>
+    <string name="prayer_imsak">Fajr</string>
+    <string name="prayer_gunes">Sunrise</string>
+    <string name="prayer_ogle">Dhuhr</string>
+    <string name="prayer_ikindi">Asr</string>
+    <string name="prayer_aksam">Maghrib</string>
+    <string name="prayer_yatsi">Isha</string>
+    <string name="wear_loading">Loading…</string>
+    <string name="wear_synced_from_phone">Synced from phone</string>
+    <string name="wear_standalone_mode">Standalone mode</string>
+    <string name="wear_prayer">Prayer</string>
+    <string name="wear_prayer_time">Prayer Time</string>
+    <string name="wear_prayer_times">Prayer Times</string>
+    <string name="wear_minutes_left"> min left</string>
+</resources>

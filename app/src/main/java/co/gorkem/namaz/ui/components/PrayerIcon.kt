@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerName
 
 fun prayerIcon(name: PrayerName): ImageVector = when (name) {
@@ -41,7 +43,7 @@ fun PrayerIcon(
 ) {
     Icon(
         imageVector = prayerIcon(name),
-        contentDescription = name.turkishName,
+        contentDescription = stringResource(name.nameRes),
         modifier = modifier,
         tint = tint
     )

@@ -1,0 +1,106 @@
+<resources>
+    <string name="app_name">Namaz</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_times">Times</string>
+    <string name="nav_qibla">Qibla</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">Prayer Times</string>
+    <string name="home_use_my_location">Use My Location</string>
+    <string name="home_today_prayers">Today\'s Prayer Times</string>
+    <string name="home_unknown_error">Unknown error</string>
+    <string name="home_in_prayer_time">time</string>
+    <string name="home_next_prayer">Next Prayer</string>
+    <string name="home_hours_left">hours left</string>
+    <string name="home_minutes_left">minutes left</string>
+    <string name="home_seconds_left">seconds left</string>
+
+    <!-- Kerahat -->
+    <string name="kerahat_active"> active</string>
+    <string name="kerahat_ends_in"> min until end</string>
+    <string name="kerahat_approaching"> approaching</string>
+    <string name="kerahat_starts_in"> min until start</string>
+
+    <!-- Location Permission -->
+    <string name="location_permission_title">Location Permission</string>
+    <string name="location_permission_desc">We need location permission to accurately calculate prayer times based on your location.</string>
+    <string name="location_permission_grant">Grant Location Permission</string>
+    <string name="location_permission_skip">Continue with Default Location</string>
+
+    <!-- City Selection -->
+    <string name="city_select_title">Select Location</string>
+    <string name="city_back">Back</string>
+    <string name="city_search_hint">Search city…</string>
+    <string name="city_clear">Clear</string>
+    <string name="city_use_location">Use My Location</string>
+    <string name="city_use_gps_desc">Determine location automatically via GPS</string>
+    <string name="city_recent">Recently Selected</string>
+    <string name="city_results_found"> locations found</string>
+    <string name="city_searching">Searching…</string>
+    <string name="city_no_results_prefix">\</string>
+    <string name="city_no_results_suffix">\ no results found</string>
+    <string name="city_try_different">Try a different search term</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_enable_notifications">Enable Notifications</string>
+    <string name="settings_notifications_desc">Receive notification when prayer time arrives</string>
+    <string name="settings_notification_time">Notification Time</string>
+    <string name="settings_minutes_before"> minutes before</string>
+    <string name="settings_calculation_method">Calculation Method</string>
+    <string name="settings_default">Default</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_turkish">Türkçe</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- Calculation Methods -->
+    <string name="method_diyanet">Diyanet (Turkey)</string>
+    <string name="method_mwl">Muslim World League</string>
+    <string name="method_umm_al_qura">Umm Al-Qura</string>
+    <string name="method_isna">ISNA</string>
+
+    <!-- Qibla -->
+    <string name="qibla_title">Qibla</string>
+    <string name="qibla_coming_soon">Coming Soon</string>
+    <string name="qibla_desc">Qibla direction feature will be available soon.</string>
+
+    <!-- Period Labels -->
+    <string name="period_vakti">Time</string>
+    <string name="period_sabah">Morning</string>
+    <string name="period_kusluk">Late Morning</string>
+    <string name="period_kerahati">Karahat</string>
+
+    <!-- Prayer Names -->
+    <string name="prayer_imsak">Fajr</string>
+    <string name="prayer_gunes">Sunrise</string>
+    <string name="prayer_ogle">Dhuhr</string>
+    <string name="prayer_ikindi">Asr</string>
+    <string name="prayer_aksam">Maghrib</string>
+    <string name="prayer_yatsi">Isha</string>
+
+    <!-- Prayer List -->
+    <string name="prayer_next_badge">Next</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Prayer Times</string>
+    <string name="notification_channel_desc">Prayer time notifications</string>
+    <string name="notification_prayer_time"> Time</string>
+    <string name="notification_separator"> - </string>
+
+    <!-- Wear -->
+    <string name="wear_loading">Loading…</string>
+    <string name="wear_synced_from_phone">Synced from phone</string>
+    <string name="wear_standalone_mode">Standalone mode</string>
+    <string name="wear_prayer">Prayer</string>
+    <string name="wear_prayer_time">Prayer Time</string>
+    <string name="wear_prayer_times">Prayer Times</string>
+    <string name="wear_minutes_left"> min left</string>
+
+    <!-- Default Location -->
+    <string name="default_city">Istanbul</string>
+    <string name="default_district">Fatih</string>
+    <string name="default_timezone">Europe/Istanbul</string>
+</resources>

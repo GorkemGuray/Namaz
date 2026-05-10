@@ -11,13 +11,11 @@ data class WearPrayerData(
 
 data class WearPrayerItem(
     val name: String,
-    val time: String,
-    val turkishName: String
+    val time: String
 )
 
 data class WearNextPrayer(
     val name: String,
-    val turkishName: String,
     val time: String,
     val remainingMinutes: Long
 ) {

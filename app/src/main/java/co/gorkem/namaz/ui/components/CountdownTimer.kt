@@ -13,6 +13,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.res.stringResource
+import co.gorkem.namaz.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
@@ -58,18 +60,18 @@ fun CountdownTimer(
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                text = "Sıradaki Vakit",
+                text = stringResource(R.string.home_next_prayer),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
             AnimatedContent(
-                targetState = nextPrayer.prayerName.turkishName,
+                targetState = nextPrayer.prayerName,
                 transitionSpec = {
                     fadeIn() togetherWith fadeOut()
                 }
             ) { name ->
                 Text(
-                    text = name,
+                    text = stringResource(name.nameRes),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )

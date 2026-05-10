@@ -29,12 +29,12 @@ class WearPrayerRepository @Inject constructor(
             if (response.code == 200 && response.data.isNotEmpty()) {
                 val todayData = response.data.first()
                 val prayers = listOf(
-                    WearPrayerItem("IMSAK", cleanTime(todayData.timings.imsak), "İmsak"),
-                    WearPrayerItem("GUNES", cleanTime(todayData.timings.sunrise), "Güneş"),
-                    WearPrayerItem("OGLE", cleanTime(todayData.timings.dhuhr), "Öğle"),
-                    WearPrayerItem("IKINDI", cleanTime(todayData.timings.asr), "İkindi"),
-                    WearPrayerItem("AKSAM", cleanTime(todayData.timings.maghrib), "Akşam"),
-                    WearPrayerItem("YATSI", cleanTime(todayData.timings.isha), "Yatsı")
+                    WearPrayerItem("IMSAK", cleanTime(todayData.timings.imsak)),
+                    WearPrayerItem("GUNES", cleanTime(todayData.timings.sunrise)),
+                    WearPrayerItem("OGLE", cleanTime(todayData.timings.dhuhr)),
+                    WearPrayerItem("IKINDI", cleanTime(todayData.timings.asr)),
+                    WearPrayerItem("AKSAM", cleanTime(todayData.timings.maghrib)),
+                    WearPrayerItem("YATSI", cleanTime(todayData.timings.isha))
                 )
                 emit(Result.success(prayers))
             } else {

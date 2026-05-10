@@ -31,8 +31,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import co.gorkem.namaz.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,9 +43,9 @@ fun QiblaScreen(modifier: Modifier = Modifier) {
         TopAppBar(
             title = {
                 Text(
-                    text = "Kıble",
-                    style = MaterialTheme.typography.titleLarge
-                )
+                text = stringResource(R.string.qibla_title),
+                style = MaterialTheme.typography.titleLarge
+            )
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
@@ -62,13 +64,13 @@ fun QiblaScreen(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Yakında",
+                text = stringResource(R.string.qibla_coming_soon),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Kıble yönü bulma özelliği çok yakında kullanıma sunulacak.",
+                text = stringResource(R.string.qibla_desc),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center

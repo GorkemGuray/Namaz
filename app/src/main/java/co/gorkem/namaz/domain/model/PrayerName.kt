@@ -1,12 +1,15 @@
 package co.gorkem.namaz.domain.model
 
-enum class PrayerName(val turkishName: String) {
-    IMSAK("İmsak"),
-    GUNES("Güneş"),
-    OGLE("Öğle"),
-    IKINDI("İkindi"),
-    AKSAM("Akşam"),
-    YATSI("Yatsı");
+import androidx.annotation.StringRes
+import co.gorkem.namaz.R
+
+enum class PrayerName(@StringRes val nameRes: Int) {
+    IMSAK(R.string.prayer_imsak),
+    GUNES(R.string.prayer_gunes),
+    OGLE(R.string.prayer_ogle),
+    IKINDI(R.string.prayer_ikindi),
+    AKSAM(R.string.prayer_aksam),
+    YATSI(R.string.prayer_yatsi);
 
     companion object {
         fun fromName(name: String): PrayerName {

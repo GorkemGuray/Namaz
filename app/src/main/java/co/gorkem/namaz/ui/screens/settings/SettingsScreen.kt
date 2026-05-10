@@ -39,9 +39,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import co.gorkem.namaz.MainActivity
+import co.gorkem.namaz.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +59,7 @@ fun SettingsScreen(
         TopAppBar(
             title = {
                 Text(
-                    text = "Ayarlar",
+                    text = stringResource(R.string.settings_title),
                     style = MaterialTheme.typography.titleLarge
                 )
             },
@@ -75,17 +79,17 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             // Bildirimler Section
-            SettingsSection(title = "Bildirimler") {
+            SettingsSection(title = stringResource(R.string.settings_notifications)) {
                 ListItem(
                     headlineContent = {
                         Text(
-                            text = "Bildirimleri Aç",
+                            text = stringResource(R.string.settings_enable_notifications),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     },
                     supportingContent = {
                         Text(
-                            text = "Vakit geldiğinde bildirim al",
+                            text = stringResource(R.string.settings_notifications_desc),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },
@@ -117,7 +121,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "Bildirim Zamanı",
+                            text = stringResource(R.string.settings_notification_time),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
@@ -151,7 +155,7 @@ fun SettingsScreen(
                                         )
                                         Spacer(modifier = Modifier.padding(start = 16.dp))
                                         Text(
-                                            text = minutes.toString() + " dakika önce",
+                                            text = minutes.toString() + stringResource(R.string.settings_minutes_before),
                                             style = MaterialTheme.typography.bodyLarge,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -170,16 +174,77 @@ fun SettingsScreen(
                 }
             }
 
-            // Hesaplama Yöntemi Section
-            SettingsSection(title = "Hesaplama Yöntemi") {
+            // Dil Section
+            SettingsSection(title = stringResource(R.string.settings_language)) {
                 Surface(
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.selectableGroup()) {
-                        viewModel.calculationMethods.forEachIndexed { index, (method, name) ->
+                        val languages = listOf(
+                            "tr" to R.string.settings_language_turkish,
+                            "en" to R.string.settings_language_english
+                        )
+                        val context = LocalContext.current
+                        languages.forEachIndexed { index, (code, nameRes) ->
+                            val selected = preferences.language == code
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = selected,
+                                        onClick = {
+                                            if (preferences.language != code) {
+                                                viewModel.setLanguage(code)
+                                                (context as? MainActivity)?.recreate()
+                                            }
+                                        },
+                                        role = Role.RadioButton
+                                    )
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selected,
+                                    onClick = null
+                                )
+                                Spacer(modifier = Modifier.padding(start = 16.dp))
+                                Text(
+                                    text = stringResource(nameRes),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (index < languages.lastIndex) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 52.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Hesaplama Yöntemi Section
+            SettingsSection(title = stringResource(R.string.settings_calculation_method)) {
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.selectableGroup()) {
+                        viewModel.calculationMethods.forEachIndexed { index, method ->
                             val selected = preferences.calculationMethod == method
+                            val nameRes = when (method) {
+                                13 -> R.string.method_diyanet
+                                3 -> R.string.method_mwl
+                                4 -> R.string.method_umm_al_qura
+                                2 -> R.string.method_isna
+                                else -> R.string.method_diyanet
+                            }
 
                             Row(
                                 modifier = Modifier
@@ -201,13 +266,13 @@ fun SettingsScreen(
                                 Spacer(modifier = Modifier.padding(start = 16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = name,
+                                        text = stringResource(nameRes),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     if (method == 13) {
                                         Text(
-                                            text = "Varsayılan",
+                                            text = stringResource(R.string.settings_default),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.primary
                                         )

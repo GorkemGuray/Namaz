@@ -7,16 +7,20 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
+enum class PeriodType {
+    SABAH, KUSLUK, OGLE, IKINDI, AKSAM, YATSI
+}
+
 data class PrayerPeriod(
     val prayerName: PrayerName,
-    val label: String,
+    val periodType: PeriodType,
     val startTime: LocalTime,
     val endTime: LocalTime
 )
 
 data class KerahatInfo(
     val isCurrentlyKerahat: Boolean,
-    val label: String,
+    val prayerName: PrayerName,
     val startTime: LocalTime,
     val endTime: LocalTime,
     val remainingToStartMinutes: Long,
@@ -83,38 +87,38 @@ class GetPrayerDashboardUseCase @Inject constructor(
                 val isEarly = now >= yatsi || now < imsak
                 PrayerPeriod(
                     prayerName = PrayerName.YATSI,
-                    label = if (isEarly) "Yatsı Vakti" else "Sabah Vakti",
+                    periodType = if (isEarly) PeriodType.YATSI else PeriodType.SABAH,
                     startTime = if (isEarly) yatsi else imsak,
                     endTime = if (isEarly) LocalTime.MAX else gunes
                 )
             }
             now in gunes..ogle -> PrayerPeriod(
                 prayerName = PrayerName.GUNES,
-                label = "Kuşluk Vakti",
+                periodType = PeriodType.KUSLUK,
                 startTime = gunes,
                 endTime = ogle
             )
             now in ogle..ikindi -> PrayerPeriod(
                 prayerName = PrayerName.OGLE,
-                label = "Öğle Vakti",
+                periodType = PeriodType.OGLE,
                 startTime = ogle,
                 endTime = ikindi
             )
             now in ikindi..aksam -> PrayerPeriod(
                 prayerName = PrayerName.IKINDI,
-                label = "İkindi Vakti",
+                periodType = PeriodType.IKINDI,
                 startTime = ikindi,
                 endTime = aksam
             )
             now in aksam..yatsi -> PrayerPeriod(
                 prayerName = PrayerName.AKSAM,
-                label = "Akşam Vakti",
+                periodType = PeriodType.AKSAM,
                 startTime = aksam,
                 endTime = yatsi
             )
             else -> PrayerPeriod(
                 prayerName = PrayerName.YATSI,
-                label = "Yatsı Vakti",
+                periodType = PeriodType.YATSI,
                 startTime = yatsi,
                 endTime = LocalTime.MAX
             )
@@ -130,17 +134,17 @@ class GetPrayerDashboardUseCase @Inject constructor(
 
         return listOf(
             KerahatPeriod(
-                label = "Güneş Kerahati",
+                prayerName = PrayerName.GUNES,
                 start = gunes,
                 end = gunes.plusMinutes(45)
             ),
             KerahatPeriod(
-                label = "Öğle Kerahati",
+                prayerName = PrayerName.OGLE,
                 start = ogle.minusMinutes(10),
                 end = ogle
             ),
             KerahatPeriod(
-                label = "Akşam Kerahati",
+                prayerName = PrayerName.AKSAM,
                 start = aksam.minusMinutes(45),
                 end = aksam
             )
@@ -154,7 +158,7 @@ class GetPrayerDashboardUseCase @Inject constructor(
         val current = periods.find { now >= it.start && now < it.end } ?: return null
         return KerahatInfo(
             isCurrentlyKerahat = true,
-            label = current.label,
+            prayerName = current.prayerName,
             startTime = current.start,
             endTime = current.end,
             remainingToStartMinutes = 0,
@@ -169,7 +173,7 @@ class GetPrayerDashboardUseCase @Inject constructor(
         val next = periods.find { it.start > now } ?: return null
         return KerahatInfo(
             isCurrentlyKerahat = false,
-            label = next.label,
+            prayerName = next.prayerName,
             startTime = next.start,
             endTime = next.end,
             remainingToStartMinutes = Duration.between(now, next.start).toMinutes().coerceAtLeast(0),
@@ -178,7 +182,7 @@ class GetPrayerDashboardUseCase @Inject constructor(
     }
 
     private data class KerahatPeriod(
-        val label: String,
+        val prayerName: PrayerName,
         val start: LocalTime,
         val end: LocalTime
     )

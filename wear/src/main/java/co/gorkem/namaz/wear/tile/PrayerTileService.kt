@@ -6,8 +6,10 @@ import androidx.wear.tiles.TileService
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.ResourceBuilders as ProtoResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders as ProtoTimelineBuilders
+import co.gorkem.namaz.wear.R
 import co.gorkem.namaz.wear.data.WearPrayerData
 import co.gorkem.namaz.wear.di.WearDataEntryPoint
+import co.gorkem.namaz.wear.prayerNameFromEnum
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.EntryPoints
 import kotlinx.coroutines.flow.first
@@ -54,12 +56,12 @@ class PrayerTileService : TileService() {
         val nextPrayer = data?.nextPrayer
 
         val text = if (nextPrayer != null) {
-            "${nextPrayer.turkishName}: ${nextPrayer.time}"
-        } else "Namaz Vakitleri"
+            "${prayerNameFromEnum(this, nextPrayer.name)}: ${nextPrayer.time}"
+        } else getString(R.string.wear_prayer_times)
 
         val subText = if (nextPrayer != null) {
-            "${nextPrayer.remainingMinutes} dk kaldı"
-        } else data?.cityName ?: "Yükleniyor..."
+            "${nextPrayer.remainingMinutes}" + getString(R.string.wear_minutes_left)
+        } else data?.cityName ?: getString(R.string.wear_loading)
 
         return LayoutElementBuilders.Layout.Builder()
             .setRoot(

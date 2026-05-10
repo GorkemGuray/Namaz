@@ -1,3 +1,106 @@
 <resources>
     <string name="app_name">Namaz</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_times">Vakitler</string>
+    <string name="nav_qibla">Kıble</string>
+    <string name="nav_settings">Ayarlar</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">Namaz Vakitleri</string>
+    <string name="home_use_my_location">Konumumu Kullan</string>
+    <string name="home_today_prayers">Bugünün Vakitleri</string>
+    <string name="home_unknown_error">Bilinmeyen hata</string>
+    <string name="home_in_prayer_time">vaktindesiniz</string>
+    <string name="home_next_prayer">Sıradaki Vakit</string>
+    <string name="home_hours_left">saat kaldı</string>
+    <string name="home_minutes_left">dakika kaldı</string>
+    <string name="home_seconds_left">saniye kaldı</string>
+
+    <!-- Kerahat -->
+    <string name="kerahat_active"> aktif</string>
+    <string name="kerahat_ends_in"> dk sonra biter</string>
+    <string name="kerahat_approaching"> yaklaşıyor</string>
+    <string name="kerahat_starts_in"> dk sonra başlar</string>
+
+    <!-- Location Permission -->
+    <string name="location_permission_title">Konum İzni</string>
+    <string name="location_permission_desc">Namaz vakitlerini bulunduğunuz konuma göre doğru hesaplayabilmek için konum iznine ihtiyacımız var.</string>
+    <string name="location_permission_grant">Konum İzni Ver</string>
+    <string name="location_permission_skip">Varsayılan Konumla Devam Et</string>
+
+    <!-- City Selection -->
+    <string name="city_select_title">Konum Seç</string>
+    <string name="city_back">Geri</string>
+    <string name="city_search_hint">Şehir ara…</string>
+    <string name="city_clear">Temizle</string>
+    <string name="city_use_location">Konumumu Kullan</string>
+    <string name="city_use_gps_desc">GPS ile otomatik konum belirle</string>
+    <string name="city_recent">Son Seçilenler</string>
+    <string name="city_results_found"> konum bulundu</string>
+    <string name="city_searching">Aranıyor…</string>
+    <string name="city_no_results_prefix">\</string>
+    <string name="city_no_results_suffix">\ için sonuç bulunamadı</string>
+    <string name="city_try_different">Farklı bir arama terimi deneyin</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="settings_notifications">Bildirimler</string>
+    <string name="settings_enable_notifications">Bildirimleri Aç</string>
+    <string name="settings_notifications_desc">Vakit geldiğinde bildirim al</string>
+    <string name="settings_notification_time">Bildirim Zamanı</string>
+    <string name="settings_minutes_before"> dakika önce</string>
+    <string name="settings_calculation_method">Hesaplama Yöntemi</string>
+    <string name="settings_default">Varsayılan</string>
+    <string name="settings_language">Dil</string>
+    <string name="settings_language_turkish">Türkçe</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- Calculation Methods -->
+    <string name="method_diyanet">Diyanet İşleri Başkanlığı</string>
+    <string name="method_mwl">Muslim World League</string>
+    <string name="method_umm_al_qura">Umm Al-Qura</string>
+    <string name="method_isna">ISNA</string>
+
+    <!-- Qibla -->
+    <string name="qibla_title">Kıble</string>
+    <string name="qibla_coming_soon">Yakında</string>
+    <string name="qibla_desc">Kıble yönü bulma özelliği çok yakında kullanıma sunulacak.</string>
+
+    <!-- Period Labels -->
+    <string name="period_vakti">Vakti</string>
+    <string name="period_sabah">Sabah</string>
+    <string name="period_kusluk">Kuşluk</string>
+    <string name="period_kerahati">Kerahati</string>
+
+    <!-- Prayer Names -->
+    <string name="prayer_imsak">İmsak</string>
+    <string name="prayer_gunes">Güneş</string>
+    <string name="prayer_ogle">Öğle</string>
+    <string name="prayer_ikindi">İkindi</string>
+    <string name="prayer_aksam">Akşam</string>
+    <string name="prayer_yatsi">Yatsı</string>
+
+    <!-- Prayer List -->
+    <string name="prayer_next_badge">Sıradaki</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Namaz Vakitleri</string>
+    <string name="notification_channel_desc">Namaz vakti bildirimleri</string>
+    <string name="notification_prayer_time"> Vakti</string>
+    <string name="notification_separator"> - </string>
+
+    <!-- Wear -->
+    <string name="wear_loading">Yükleniyor…</string>
+    <string name="wear_synced_from_phone">Telefondan senkronize</string>
+    <string name="wear_standalone_mode">Bağımsız mod</string>
+    <string name="wear_prayer">Namaz</string>
+    <string name="wear_prayer_time">Namaz Vakti</string>
+    <string name="wear_prayer_times">Namaz Vakitleri</string>
+    <string name="wear_minutes_left"> dk kaldı</string>
+
+    <!-- Default Location -->
+    <string name="default_city">İstanbul</string>
+    <string name="default_district">Fatih</string>
+    <string name="default_timezone">Europe/Istanbul</string>
 </resources>

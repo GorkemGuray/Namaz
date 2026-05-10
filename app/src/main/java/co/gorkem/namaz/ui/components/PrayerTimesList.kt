@@ -36,6 +36,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
@@ -155,7 +157,7 @@ private fun PrayerListRow(
         Spacer(modifier = Modifier.width(12.dp))
 
         Text(
-            text = name.turkishName,
+            text = stringResource(name.nameRes),
             style = if (isNext) {
                 MaterialTheme.typography.titleMedium.copy(
                     fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
@@ -186,7 +188,7 @@ private fun PrayerListRow(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "Sıradaki",
+                        text = stringResource(R.string.prayer_next_badge),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimary
                     )

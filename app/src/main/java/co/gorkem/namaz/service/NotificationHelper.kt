@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import co.gorkem.namaz.MainActivity
+import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerName
 
 object NotificationHelper {
@@ -62,8 +63,8 @@ object NotificationHelper {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("${prayerName.turkishName} Vakti")
-            .setContentText("$prayerTime - $cityName")
+            .setContentTitle(context.getString(prayerName.nameRes) + context.getString(R.string.notification_prayer_time))
+            .setContentText(prayerTime + context.getString(R.string.notification_separator) + cityName)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

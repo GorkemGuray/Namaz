@@ -207,14 +207,12 @@ class HomeViewModel @Inject constructor(
                 prayers = todayData.getAllPrayers().map { (name, time) ->
                     WearPrayerItem(
                         name = name.name,
-                        time = time,
-                        turkishName = name.turkishName
+                        time = time
                     )
                 },
                 nextPrayer = _nextPrayer.value?.let {
                     WearNextPrayer(
                         name = it.prayerName.name,
-                        turkishName = it.prayerName.turkishName,
                         time = it.prayerTime,
                         remainingMinutes = it.remainingMinutes
                     )

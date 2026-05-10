@@ -35,29 +35,31 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import co.gorkem.namaz.R
 import co.gorkem.namaz.ui.screens.cityselection.CitySelectionScreen
 import co.gorkem.namaz.ui.screens.home.HomeScreen
 import co.gorkem.namaz.ui.screens.qibla.QiblaScreen
 import co.gorkem.namaz.ui.screens.settings.SettingsScreen
 
 sealed class BottomNavItem(
-    val title: String,
+    val titleRes: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
     data object Times : BottomNavItem(
-        title = "Vakitler",
+        titleRes = R.string.nav_times,
         selectedIcon = Icons.Filled.Schedule,
         unselectedIcon = Icons.Rounded.Schedule
     )
     data object Qibla : BottomNavItem(
-        title = "Kıble",
+        titleRes = R.string.nav_qibla,
         selectedIcon = Icons.Filled.Explore,
         unselectedIcon = Icons.Rounded.Explore
     )
     data object Settings : BottomNavItem(
-        title = "Ayarlar",
+        titleRes = R.string.nav_settings,
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Rounded.Settings
     )
@@ -84,12 +86,12 @@ fun NamazApp() {
                         icon = {
                             Icon(
                                 imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = item.title
+                                contentDescription = stringResource(item.titleRes)
                             )
                         },
                         label = {
                             Text(
-                                text = item.title,
+                                text = stringResource(item.titleRes),
                                 style = MaterialTheme.typography.labelMedium
                             )
                         },

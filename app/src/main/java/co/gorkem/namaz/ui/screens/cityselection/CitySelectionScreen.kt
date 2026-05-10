@@ -57,9 +57,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import co.gorkem.namaz.R
 import co.gorkem.namaz.data.local.datastore.RecentCity
 import kotlinx.coroutines.launch
 
@@ -87,7 +89,7 @@ fun CitySelectionScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Konum Seç",
+                        text = stringResource(R.string.city_select_title),
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
@@ -95,7 +97,7 @@ fun CitySelectionScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Geri",
+                            contentDescription = stringResource(R.string.city_back),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -187,7 +189,7 @@ private fun SearchField(
         modifier = modifier,
         placeholder = {
             Text(
-                text = "Şehir ara...",
+                text = stringResource(R.string.city_search_hint),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -204,7 +206,7 @@ private fun SearchField(
                 IconButton(onClick = onClear) {
                     Icon(
                         imageVector = Icons.Default.Clear,
-                        contentDescription = "Temizle",
+                        contentDescription = stringResource(R.string.city_clear),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -263,12 +265,12 @@ private fun MyLocationButton(
             Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Konumumu Kullan",
+                    text = stringResource(R.string.city_use_location),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = "GPS ile otomatik konum belirle",
+                    text = stringResource(R.string.city_use_gps_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
@@ -291,13 +293,13 @@ private fun RecentCitiesSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Son Seçilenler",
+                text = stringResource(R.string.city_recent),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             TextButton(onClick = onClearAll) {
                 Text(
-                    text = "Temizle",
+                    text = stringResource(R.string.city_clear),
                     style = MaterialTheme.typography.labelMedium
                 )
             }
@@ -369,7 +371,7 @@ private fun SearchResultsList(
     ) {
         item {
             Text(
-                text = results.size.toString() + " konum bulundu",
+                text = results.size.toString() + stringResource(R.string.city_results_found),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -461,7 +463,7 @@ private fun SearchingState(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Aranıyor...",
+            text = stringResource(R.string.city_searching),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -487,13 +489,13 @@ private fun EmptySearchState(
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "\"" + query + "\" için sonuç bulunamadı",
+            text = stringResource(R.string.city_no_results_prefix) + query + stringResource(R.string.city_no_results_suffix),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "Farklı bir arama terimi deneyin",
+            text = stringResource(R.string.city_try_different),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
