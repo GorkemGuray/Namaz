@@ -68,7 +68,7 @@
     <string name="qibla_desc">Qibla direction feature will be available soon.</string>
 
     <!-- Period Labels -->
-    <string name="period_vakti">Time</string>
+    <string name="period_vakti">Prayer</string>
     <string name="period_sabah">Morning</string>
     <string name="period_kusluk">Late Morning</string>
     <string name="period_kerahati">Karahat</string>
