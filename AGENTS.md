@@ -64,9 +64,11 @@ Desugar:     2.1.5
 
 Aladhan Calendar API kullanılıyor:
 ```
-GET https://api.aladhan.com/v1/calendar?latitude={lat}&longitude={lon}&method=13&month={month}&year={year}
+GET https://api.aladhan.com/v1/calendar?latitude={lat}&longitude={lon}&method=13&school=1&month={month}&year={year}
 ```
-Method=13: Diyanet İşleri Başkanlığı hesaplama yöntemi.
+- `method=13`: Diyanet İşleri Başkanlığı hesaplama yöntemi.
+- `school=1`: Hanafi mezhebi (Türkiye'de varsayılan). `school=0`: Şafii.
+- Eksik `school` parametresi API'nin Şafii hesaplamasına düşmesine ve Fajr/İmsak gibi vakitlerde ~10 dk sapmaya neden olur.
 
 ---
 
@@ -131,7 +133,7 @@ app/
     │   │   ├── repository/
     │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache
     │   │   └── local/datastore/
-    │   │       ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, recentCities
+    │   │       ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, recentCities
     │   │       ├── UserPreferencesSerializer.kt
     │   │       └── UserPreferencesDataStore.kt  # preferencesDataStore extension
     │   │
@@ -165,13 +167,13 @@ app/
     │       └── screens/
     │           ├── home/
     │           │   ├── HomeScreen.kt      # Dashboard: permission → hero card → prayer list → location
-    │           │   └── HomeViewModel.kt   # Loads prayer times, handles permissions, syncs to wear, schedules notifications
+    │           │   └── HomeViewModel.kt   # Loads prayer times, cancels previous job on new load, handles permissions, syncs to wear, schedules notifications
     │           ├── cityselection/
     │           │   ├── CitySelectionScreen.kt    # Search, province/district browser, recent cities, location button
     │           │   ├── CitySelectionViewModel.kt # Search logic, save/clear preferences
     │           │   └── TurkishCities.kt          # 81 il + tüm ilçeler + koordinatlar
     │           ├── settings/
-    │           │   ├── SettingsScreen.kt    # Notification toggle, minutes-before radio, calculation method
+    │           │   ├── SettingsScreen.kt    # Notification toggle, minutes-before radio, calculation method, mezhep (school)
     │           │   └── SettingsViewModel.kt # UserPreferences via DataStore
     │           └── qibla/
     │               └── QiblaScreen.kt      # Placeholder "Yakında" (Coming Soon)
@@ -243,7 +245,7 @@ wear/
    - İzin verilirse: FusedLocationProviderClient ile lat/lon alınır → Geocoder ile il/ilçe çözülür → Aladhan API'den vakitler çekilir
    - İzin verilmezse: CitySelectionScreen gösterilir, varsayılan İstanbul
 2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit) + 6 vakit listesi + konum chip'i
-3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), hesaplama yöntemi
+3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), hesaplama yöntemi, mezhep (school)
 4. **Şehir seçimi**: Arama + 81 il tarayıcısı + son seçilenler
 5. **Kıble**: "Yakında" placeholder
 6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum bilgisi gönderir
@@ -260,3 +262,5 @@ wear/
 - **Tile**: TileService ile next prayer bilgisi gösterilir
 - **Navigate**: `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)
 - **Code style**: Yorum yok (AGENTS.md convention)
+- **Race condition fix**: HomeViewModel'de prayerTimesJob takip edilir, yeni yükleme önceki job'ı iptal eder. Konum değişince eski API çağrısı yeni veriyi ezemez.
+- **School param**: Aladhan API'ye `school` parametresi eklendi (1=Hanafi, 0=Shafi). Eksik parametre ~10 dk sapmaya neden oluyordu.
