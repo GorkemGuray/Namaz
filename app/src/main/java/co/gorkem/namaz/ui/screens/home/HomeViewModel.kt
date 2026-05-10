@@ -174,7 +174,9 @@ class HomeViewModel @Inject constructor(
 
     private fun refreshDashboard() {
         val today = todayPrayerTime ?: return
-        _dashboardData.value = getPrayerDashboardUseCase.execute(today)
+        val tomorrowKey = LocalDate.now().plusDays(1).format(DATE_FORMAT)
+        val tomorrow = _prayerTimes.value.find { it.date == tomorrowKey }
+        _dashboardData.value = getPrayerDashboardUseCase.execute(today, tomorrow)
     }
 
     private fun startDashboardRefresh() {

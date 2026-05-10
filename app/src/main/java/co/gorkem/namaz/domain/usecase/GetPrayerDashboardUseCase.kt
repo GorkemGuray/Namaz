@@ -40,7 +40,10 @@ class GetPrayerDashboardUseCase @Inject constructor(
 ) {
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    fun execute(todayPrayerTimes: PrayerTime): PrayerDashboardData? {
+    fun execute(
+        todayPrayerTimes: PrayerTime,
+        tomorrowPrayerTimes: PrayerTime? = null
+    ): PrayerDashboardData? {
         val now = LocalTime.now()
 
         val prayers = todayPrayerTimes.getAllPrayers()
@@ -49,10 +52,22 @@ class GetPrayerDashboardUseCase @Inject constructor(
             }
             .toMap()
 
+        val tomorrowPrayers = tomorrowPrayerTimes?.getAllPrayers()
+            ?.map { (name, timeStr) ->
+                name to LocalTime.parse(timeStr, timeFormatter)
+            }
+            ?.toMap()
+
         val nextPrayerInfo = getNextPrayerUseCase(todayPrayerTimes) ?: return null
 
-        val currentPeriod = computeCurrentPeriod(now, prayers)
-        val remainingToEnd = Duration.between(now, currentPeriod.endTime).toMinutes().coerceAtLeast(0)
+        val currentPeriod = computeCurrentPeriod(now, prayers, tomorrowPrayers)
+        val remainingToEnd = if (currentPeriod.endTime.isBefore(now)) {
+            val toMidnight = Duration.between(now, LocalTime.MAX).plusMinutes(1)
+            val fromMidnight = Duration.between(LocalTime.MIN, currentPeriod.endTime)
+            toMidnight.plus(fromMidnight)
+        } else {
+            Duration.between(now, currentPeriod.endTime)
+        }.toMinutes().coerceAtLeast(0)
 
         val allKerahatPeriods = computeAllKerahatPeriods(prayers)
         val kerahatInfo = findCurrentKerahat(now, allKerahatPeriods)
@@ -73,7 +88,8 @@ class GetPrayerDashboardUseCase @Inject constructor(
 
     private fun computeCurrentPeriod(
         now: LocalTime,
-        prayers: Map<PrayerName, LocalTime>
+        prayers: Map<PrayerName, LocalTime>,
+        tomorrowPrayers: Map<PrayerName, LocalTime>?
     ): PrayerPeriod {
         val imsak = prayers[PrayerName.IMSAK]!!
         val gunes = prayers[PrayerName.GUNES]!!
@@ -85,11 +101,16 @@ class GetPrayerDashboardUseCase @Inject constructor(
         return when {
             now in imsak..gunes || now >= yatsi || now < imsak -> {
                 val isEarly = now >= yatsi || now < imsak
+                val endTime = when {
+                    !isEarly -> gunes
+                    now < imsak -> imsak
+                    else -> tomorrowPrayers?.get(PrayerName.IMSAK) ?: LocalTime.MAX
+                }
                 PrayerPeriod(
                     prayerName = PrayerName.YATSI,
                     periodType = if (isEarly) PeriodType.YATSI else PeriodType.SABAH,
                     startTime = if (isEarly) yatsi else imsak,
-                    endTime = if (isEarly) LocalTime.MAX else gunes
+                    endTime = endTime
                 )
             }
             now in gunes..ogle -> PrayerPeriod(
@@ -120,7 +141,7 @@ class GetPrayerDashboardUseCase @Inject constructor(
                 prayerName = PrayerName.YATSI,
                 periodType = PeriodType.YATSI,
                 startTime = yatsi,
-                endTime = LocalTime.MAX
+                endTime = tomorrowPrayers?.get(PrayerName.IMSAK) ?: LocalTime.MAX
             )
         }
     }
