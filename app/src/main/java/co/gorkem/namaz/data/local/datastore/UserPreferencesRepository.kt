@@ -84,7 +84,6 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setLanguage(language: String) {
         dataStore.edit { prefs -> prefs[LANGUAGE] = language }
-        co.gorkem.namaz.LocaleManager.setLanguage(context, language)
     }
 
     suspend fun setManualCity(

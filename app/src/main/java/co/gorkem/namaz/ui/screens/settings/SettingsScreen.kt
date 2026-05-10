@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import co.gorkem.namaz.LocaleManager
 import co.gorkem.namaz.MainActivity
 import co.gorkem.namaz.R
 
@@ -196,6 +197,7 @@ fun SettingsScreen(
                                         selected = selected,
                                         onClick = {
                                             if (preferences.language != code) {
+                                                LocaleManager.setLanguage(context, code)
                                                 viewModel.setLanguage(code)
                                                 (context as? MainActivity)?.recreate()
                                             }
