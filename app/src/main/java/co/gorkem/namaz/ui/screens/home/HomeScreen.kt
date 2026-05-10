@@ -154,13 +154,14 @@ fun HomeScreen(
                 if (dash != null && todayTimes != null) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         item {
                             PrayerHeroCard(
                                 dashboard = dash,
                                 locationName = locationDisplay,
+                                hijriDate = todayTimes.hijriDate,
                                 onLocationClick = onLocationClick
                             )
                         }
@@ -174,7 +175,7 @@ fun HomeScreen(
                                 text = "Bugünün Vakitleri",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                                modifier = Modifier.padding(top = 2.dp, bottom = 0.dp)
                             )
                         }
 
@@ -185,18 +186,14 @@ fun HomeScreen(
                                 currentPrayerName = dash.currentPeriod.prayerName
                             )
                         }
-
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
                     }
                 } else if (todayTimes != null) {
                     val np = nextPrayer
                     if (np != null) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         item {
                             CountdownTimer(nextPrayer = np)
@@ -206,7 +203,8 @@ fun HomeScreen(
                             Text(
                                 text = "Bugünün Vakitleri",
                                 style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp)
                             )
                         }
 

@@ -33,6 +33,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                     PrayerTime(
                         date = dayData.date.gregorian.date,
                         gregorianDate = dayData.date.readable,
+                        hijriDate = dayData.date.hijri.day + " " + dayData.date.hijri.month.en + " " + dayData.date.hijri.year,
                         imsak = cleanTime(dayData.timings.imsak),
                         gunes = cleanTime(dayData.timings.sunrise),
                         ogle = cleanTime(dayData.timings.dhuhr),

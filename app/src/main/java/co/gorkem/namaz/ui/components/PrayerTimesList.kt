@@ -62,7 +62,7 @@ fun PrayerTimesList(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = 4.dp)
         ) {
             prayers.forEachIndexed { index, (name, time) ->
                 val isNext = name == nextPrayer?.prayerName
@@ -122,15 +122,15 @@ private fun PrayerListRow(
 
     Row(
         modifier = modifier
-            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = 2.dp)
             .clip(ListItemShape)
             .background(containerColor)
-            .padding(horizontal = 12.dp, vertical = 14.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(32.dp)
                 .clip(CircleShape)
                 .background(
                     if (isNext || isCurrent) {
@@ -143,7 +143,7 @@ private fun PrayerListRow(
         ) {
             PrayerIcon(
                 name = name,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(18.dp),
                 tint = if (isNext || isCurrent) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -152,7 +152,7 @@ private fun PrayerListRow(
             )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         Text(
             text = name.turkishName,

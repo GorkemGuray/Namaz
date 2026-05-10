@@ -1,7 +1,6 @@
 package co.gorkem.namaz.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -54,13 +53,13 @@ fun CountdownTimer(
         shape = MaterialTheme.shapes.large
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
                 text = "Sıradaki Vakit",
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
             AnimatedContent(
@@ -71,32 +70,24 @@ fun CountdownTimer(
             ) { name ->
                 Text(
                     text = name,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
             Text(
                 text = nextPrayer.prayerTime,
-                style = MaterialTheme.typography.titleLarge.copy(
+                style = MaterialTheme.typography.titleMedium.copy(
                     fontFeatureSettings = "tnum"
                 ),
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
             )
-            AnimatedContent(
-                targetState = remainingSeconds,
-                transitionSpec = {
-                    (fadeIn() togetherWith fadeOut())
-                        .using(SizeTransform(clip = false))
-                }
-            ) { _ ->
-                Text(
-                    text = formatCountdown(hours, minutes, seconds),
-                style = MaterialTheme.typography.displaySmall.copy(
+            Text(
+                text = formatCountdown(hours, minutes, seconds),
+                style = MaterialTheme.typography.headlineMedium.copy(
                     fontFeatureSettings = "tnum"
                 ),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

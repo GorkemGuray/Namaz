@@ -1,11 +1,9 @@
 package co.gorkem.namaz.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -52,6 +50,7 @@ import java.time.format.DateTimeFormatter
 fun PrayerHeroCard(
     dashboard: PrayerDashboardData,
     locationName: String,
+    hijriDate: String = "",
     onLocationClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -81,95 +80,117 @@ fun PrayerHeroCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            if (locationName.isNotBlank()) {
-                HeroLocationChip(
-                    locationName = locationName,
-                    onClick = onLocationClick
-                )
-            }
-
-            Text(
-                text = dashboard.currentPeriod.label,
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-
-            Text(
-                text = "vaktindesiniz",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White.copy(alpha = 0.75f),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = dashboard.currentPeriod.startTime.format(TIME_FORMAT),
-                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                    color = Color.White.copy(alpha = 0.65f)
-                )
-                Box(
-                    modifier = Modifier
-                        .size(4.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(Color.White.copy(alpha = 0.4f))
-                )
-                Text(
-                    text = dashboard.currentPeriod.endTime.format(TIME_FORMAT),
-                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                    color = Color.White.copy(alpha = 0.65f)
-                )
+                if (locationName.isNotBlank()) {
+                    HeroLocationChip(
+                        locationName = locationName,
+                        onClick = onLocationClick
+                    )
+                }
+                if (hijriDate.isNotBlank()) {
+                    Text(
+                        text = hijriDate,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.65f)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = dashboard.currentPeriod.label,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "vaktindesiniz",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White.copy(alpha = 0.75f),
+                    textAlign = TextAlign.Center
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = dashboard.currentPeriod.startTime.format(TIME_FORMAT),
+                        style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                        color = Color.White.copy(alpha = 0.65f)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(4.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(Color.White.copy(alpha = 0.4f))
+                    )
+                    Text(
+                        text = dashboard.currentPeriod.endTime.format(TIME_FORMAT),
+                        style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                        color = Color.White.copy(alpha = 0.65f)
+                    )
+                }
+            }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(vertical = 4.dp)
                     .height(1.dp)
                     .background(Color.White.copy(alpha = 0.15f))
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "Sıradaki Vakit",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    AnimatedContent(
+                        targetState = dashboard.nextPrayer.prayerName.turkishName,
+                        transitionSpec = {
+                            scaleIn(
+                                initialScale = 0.85f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                            ) + fadeIn() togetherWith
+                            scaleOut(targetScale = 1.15f) + fadeOut()
+                        },
+                        label = "next_prayer_name"
+                    ) { name ->
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White
+                        )
+                    }
+                }
 
-            Text(
-                text = "Sıradaki Vakit",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.7f)
-            )
-
-            AnimatedContent(
-                targetState = dashboard.nextPrayer.prayerName.turkishName,
-                transitionSpec = {
-                    scaleIn(
-                        initialScale = 0.85f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-                    ) + fadeIn() togetherWith
-                    scaleOut(targetScale = 1.15f) + fadeOut()
-                },
-                label = "next_prayer_name"
-            ) { name ->
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
+                CountdownDisplay(
+                    remainingMinutes = dashboard.nextPrayer.remainingMinutes,
+                    textColor = Color.White,
+                    textAlign = TextAlign.End
                 )
             }
-
-            CountdownDisplay(
-                remainingMinutes = dashboard.nextPrayer.remainingMinutes,
-                textColor = Color.White
-            )
         }
     }
 }
@@ -219,7 +240,8 @@ private fun HeroLocationChip(
 fun CountdownDisplay(
     remainingMinutes: Long,
     textColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.Center
 ) {
     val remainingSeconds = remember { androidx.compose.runtime.mutableStateOf(remainingMinutes * 60L) }
 
@@ -241,21 +263,15 @@ fun CountdownDisplay(
         else -> String.format("%02ds", seconds)
     }
 
-    androidx.compose.animation.Crossfade(
-        targetState = displayText,
-        animationSpec = tween(durationMillis = 150, easing = EaseInOut),
-        label = "countdown_crossfade"
-    ) { text ->
-        Text(
-            text = text,
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontFeatureSettings = "tnum"
-            ),
-            color = textColor,
-            textAlign = TextAlign.Center,
-            modifier = modifier.widthIn(min = 160.dp)
-        )
-    }
+    Text(
+        text = displayText,
+        style = MaterialTheme.typography.displaySmall.copy(
+            fontFeatureSettings = "tnum"
+        ),
+        color = textColor,
+        textAlign = textAlign,
+        modifier = modifier
+    )
 
     val subLabel = when {
         hours > 0 -> "saat kaldı"
@@ -266,7 +282,8 @@ fun CountdownDisplay(
         text = subLabel,
         style = MaterialTheme.typography.labelSmall,
         color = textColor.copy(alpha = 0.6f),
-        textAlign = TextAlign.Center
+        textAlign = textAlign,
+        modifier = Modifier.padding(top = 2.dp)
     )
 }
 

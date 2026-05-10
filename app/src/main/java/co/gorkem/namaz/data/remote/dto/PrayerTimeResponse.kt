@@ -31,10 +31,21 @@ data class Timings(
 data class DateInfo(
     val readable: String,
     val timestamp: String,
-    val gregorian: GregorianDate
+    val gregorian: GregorianDate,
+    val hijri: HijriDate
 )
 
 data class GregorianDate(
+    val date: String,
+    val format: String,
+    val day: String,
+    val weekday: Weekday,
+    val month: MonthInfo,
+    val year: String,
+    val designation: Designation
+)
+
+data class HijriDate(
     val date: String,
     val format: String,
     val day: String,
