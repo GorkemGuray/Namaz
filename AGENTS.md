@@ -4,7 +4,7 @@ Sen uzman bir Android ve Wear OS uygulama geliştiricisisin. Bu proje konum bazl
 
 ## Projenin Mevcut Durumu
 
-Tüm 7 geliştirme adımı tamamlanmıştır. Uygulama build alıp başarıyla derlenmektedir.
+Uygulama build alıp başarıyla derlenmektedir. Temel özellikler tamamlanmıştır.
 
 ### Build & Run
 
@@ -20,9 +20,6 @@ Tüm 7 geliştirme adımı tamamlanmıştır. Uygulama build alıp başarıyla d
 
 # Test
 ./gradlew test
-
-# Lint (henüz tanımlı değil - script eklenmeli)
-./gradlew lint
 ```
 
 ### Konfigürasyon
@@ -60,15 +57,22 @@ Desugar:     2.1.5
 
 ---
 
-## API
+## API'lar
 
-Aladhan Calendar API kullanılıyor:
+### Aladhan Calendar API (Namaz Vakitleri)
 ```
 GET https://api.aladhan.com/v1/calendar?latitude={lat}&longitude={lon}&method=13&school=1&month={month}&year={year}
 ```
 - `method=13`: Diyanet İşleri Başkanlığı hesaplama yöntemi.
 - `school=1`: Hanafi mezhebi (Türkiye'de varsayılan). `school=0`: Şafii.
 - Eksik `school` parametresi API'nin Şafii hesaplamasına düşmesine ve Fajr/İmsak gibi vakitlerde ~10 dk sapmaya neden olur.
+
+### Nominatim / OpenStreetMap (Şehir Arama)
+```
+GET https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdetails=1&limit=20&accept-language=tr
+```
+- CitySelectionScreen'te şehir arama için kullanılır.
+- `@Named("nominatim")` ile ayrı OkHttpClient + Retrofit instance (User-Agent header gerekli).
 
 ---
 
@@ -97,7 +101,7 @@ GET https://api.aladhan.com/v1/calendar?latitude={lat}&longitude={lon}&method=13
 
 ## Proje Yapısı
 
-### app/ (Mobil Modül) — `co.gorkem.namaz`
+### app/ (Mobil Modül) — `co.gorkem.namaz` — 48 Kotlin dosyası
 
 ```
 app/
@@ -109,51 +113,62 @@ app/
     │   @HiltAndroidApp NamazApplication, @AndroidEntryPoint MainActivity
     ├── java/co/gorkem/namaz/
     │   ├── NamazApp.kt                    # Root composable, 3-tab bottom nav (Vakitler/Kıble/Ayarlar)
-    │   ├── NamazApplication.kt            # @HiltAndroidApp
-    │   ├── MainActivity.kt                # @AndroidEntryPoint, edge-to-edge
+    │   ├── NamazApplication.kt            # @HiltAndroidApp, notification channel + worker schedule
+    │   ├── MainActivity.kt                # @AndroidEntryPoint, edge-to-edge, LocaleManager.attachBaseContext
+    │   ├── LocaleManager.kt               # i18n: SharedPreferences-based locale, activity recreate
     │   │
     │   ├── domain/
     │   │   ├── model/
     │   │   │   ├── PrayerTime.kt          # data class: imsak, gunes, ogle, ikindi, aksam, yatsi
-    │   │   │   ├── PrayerName.kt          # enum: IMSAK, GUNES, OGLE, IKINDI, AKSAM, YATSI
+    │   │   │   ├── PrayerName.kt          # enum: IMSAK, GUNES, OGLE, IKINDI, AKSAM, YATSI (@StringRes)
     │   │   │   └── LocationInfo.kt        # data class: lat, lon, city, district, timezone. DEFAULT=Istanbul
     │   │   ├── repository/
     │   │   │   └── PrayerTimeRepository.kt # interface: getPrayerTimes() → Flow<NetworkResult<List<PrayerTime>>>
     │   │   └── usecase/
-    │   │       ├── GetNextPrayerUseCase.kt  # next prayer + remaining minutes hesabı
-    │   │       └── GetPrayerTimesUseCase.kt # repository delegasyonu
+    │   │       ├── GetNextPrayerUseCase.kt    # next prayer + remaining minutes
+    │   │       ├── GetPrayerTimesUseCase.kt   # repository delegasyonu
+    │   │       └── GetPrayerDashboardUseCase.kt # PeriodType + kerahat windows + current period logic
     │   │
     │   ├── data/
     │   │   ├── remote/
     │   │   │   ├── NetworkResult.kt        # sealed: Success, Error, Loading
     │   │   │   ├── api/
-    │   │   │   │   └── AladhanApiService.kt # Retrofit: GET calendar
+    │   │   │   │   ├── AladhanApiService.kt   # Retrofit: GET calendar (method, school params)
+    │   │   │   │   └── NominatimApiService.kt # Retrofit: GET search (OpenStreetMap geocoding)
     │   │   │   └── dto/
-    │   │   │       └── PrayerTimeResponse.kt # CalendarResponse, DayData, Timings, DateInfo, Meta
+    │   │   │       ├── PrayerTimeResponse.kt  # CalendarResponse, DayData, Timings, DateInfo, Meta
+    │   │   │       └── NominatimResponse.kt   # NominatimPlace, NominatimAddress
     │   │   ├── repository/
-    │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache
-    │   │   └── local/datastore/
-    │   │       ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, recentCities
-    │   │       ├── UserPreferencesSerializer.kt
-    │   │       └── UserPreferencesDataStore.kt  # preferencesDataStore extension
+    │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache, method-aware cache key
+    │   │   └── local/
+    │   │       ├── room/
+    │   │       │   ├── NamazDatabase.kt        # Room v2, PrayerTimeEntity, fallbackToDestructiveMigration(true)
+    │   │       │   ├── PrayerTimeDao.kt        # Queries by city+month+year+method, deleteOlderThan
+    │   │       │   └── PrayerTimeEntity.kt     # date (PK), cityName, 6 prayer times, hijri fields, cache metadata
+    │   │       └── datastore/
+    │   │           ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, language, recentCities
+    │   │           ├── UserPreferencesSerializer.kt # NO-OP stub (not actively used; standard Preferences keys used)
+    │   │           └── UserPreferencesDataStore.kt  # preferencesDataStore extension
     │   │
     │   ├── di/
-    │   │   ├── NetworkModule.kt       # @Module: OkHttpClient, Retrofit, AladhanApiService
+    │   │   ├── NetworkModule.kt       # @Module: OkHttp (logging, 30s), Retrofit, AladhanApiService
     │   │   ├── RepositoryModule.kt    # @Module: binds PrayerTimeRepository → Impl
-    │   │   └── LocationModule.kt      # @Module: FusedLocationProviderClient
+    │   │   ├── LocationModule.kt      # @Module: FusedLocationProviderClient
+    │   │   └── RoomModule.kt          # @Module: NamazDatabase + PrayerTimeDao singleton
     │   │
     │   ├── service/
-    │   │   ├── LocationTracker.kt           # FusedLocationProviderClient ile konum
-    │   │   ├── GeocoderHelper.kt            # Reverse geocode: lat/lon → il/ilçe
-    │   │   ├── NotificationHelper.kt        # Notification channel + bildirim gösterme
+    │   │   ├── LocationTracker.kt           # FusedLocationProviderClient, hasLocationPermission()
+    │   │   ├── GeocoderHelper.kt            # Reverse geocode: lat/lon → il/ilçe (Turkish locale)
+    │   │   ├── NotificationHelper.kt        # Notification channel + bildirim gösterme (POST_NOTIFICATIONS check)
     │   │   ├── PrayerNotificationWorker.kt  # @HiltWorker, tek vakit bildirimi
-    │   │   ├── PrayerNotificationScheduler.kt # 6 vakit bildirimi zamanlaması (WorkManager)
-    │   │   ├── WearSyncManager.kt           # Data Layer API ile Wear'a veri gönderimi
-    │   │   └── WearPrayerData.kt            # WearPrayerData, WearPrayerItem, WearNextPrayer
+    │   │   ├── PrayerNotificationScheduler.kt # 6 vakit bildirimi zamanlaması (WorkManager OneTimeWorkRequest)
+    │   │   ├── PrayerRefreshWorker.kt         # @HiltWorker, every 6h periodic refresh + notification reschedule
+    │   │   ├── WearSyncManager.kt             # Data Layer API ile Wear'a JSON sync (/namaz_prayer_data)
+    │   │   └── WearPrayerData.kt              # WearPrayerData, WearPrayerItem, WearNextPrayer + Gson helpers
     │   │
     │   └── ui/
     │       ├── state/
-    │       │   └── HomeUiState.kt  # sealed: Loading, Success(prayerTimes, nextPrayer, location), Error, PermissionRequired
+    │       │   └── HomeUiState.kt  # sealed: Loading, Success, Error, PermissionRequired
     │       ├── theme/
     │       │   ├── Theme.kt       # NamazTheme (dynamic color, prayer-tinted scheme)
     │       │   ├── Color.kt       # M3 expressive light/dark colors + PrayerTints
@@ -161,32 +176,31 @@ app/
     │       │   ├── Shape.kt       # ExpressiveShapes, HeroCardShape, PillShape
     │       │   └── Type.kt        # ExpressiveTypography scale
     │       ├── components/
-    │       │   ├── PrayerHeroCard.kt   # Hero card: countdown + location + prayer name/time
-    │       │   ├── PrayerTimeCard.kt   # Individual prayer time row
+    │       │   ├── PrayerHeroCard.kt   # Hero card: countdown + location + period info + hijri date
+    │       │   ├── PrayerTimesList.kt  # 6 prayer rows: next prayer badge, current prayer highlight
+    │       │   ├── PrayerIcon.kt       # PrayerName → ImageVector + tint mapping
     │       │   └── CountdownTimer.kt   # Standalone countdown composable
     │       └── screens/
     │           ├── home/
-    │           │   ├── HomeScreen.kt      # Dashboard: permission → hero card → prayer list → location
-    │           │   └── HomeViewModel.kt   # Loads prayer times, cancels previous job on new load, handles permissions, syncs to wear, schedules notifications
+    │           │   ├── HomeScreen.kt      # Dashboard: permission → hero card → kerahat banner → prayer list
+    │           │   └── HomeViewModel.kt   # prayerTimesJob cancellation (race fix), prefs reactive reload
     │           ├── cityselection/
-    │           │   ├── CitySelectionScreen.kt    # Search, province/district browser, recent cities, location button
-    │           │   ├── CitySelectionViewModel.kt # Search logic, save/clear preferences
-    │           │   └── TurkishCities.kt          # 81 il + tüm ilçeler + koordinatlar
+    │           │   ├── CitySelectionScreen.kt    # Search (Nominatim), recent cities, use my location
+    │           │   └── CitySelectionViewModel.kt # Debounced search (400ms), save/clear preferences
     │           ├── settings/
-    │           │   ├── SettingsScreen.kt    # Notification toggle, minutes-before radio, calculation method, mezhep (school)
+    │           │   ├── SettingsScreen.kt    # Notifications, language (recreate), method, mezhep
     │           │   └── SettingsViewModel.kt # UserPreferences via DataStore
     │           └── qibla/
-    │               └── QiblaScreen.kt      # Placeholder "Yakında" (Coming Soon)
+    │               └── QiblaScreen.kt      # Animated Canvas compass placeholder
     │
     └── res/
-        ├── values/strings.xml, themes.xml, colors.xml
-        ├── drawable/ic_my_location.xml, ic_launcher_foreground.xml, ic_launcher_background.xml
-        ├── mipmap-anydpi-v26/ic_launcher.xml, ic_launcher_round.xml
+        ├── values/strings.xml, values-en/strings.xml, themes.xml, colors.xml
+        ├── drawable/ic_my_location.xml, ic_launcher_*.xml
+        ├── mipmap-*/ic_launcher.webp, ic_launcher_round.webp
         └── xml/backup_rules.xml, data_extraction_rules.xml
 ```
-**43 Kotlin dosyası**
 
-### wear/ (Wear OS Modül) — `co.gorkem.namaz.wear`
+### wear/ (Wear OS Modül) — `co.gorkem.namaz.wear` — 19 Kotlin dosyası
 
 ```
 wear/
@@ -201,23 +215,25 @@ wear/
     │   ├── WearApp.kt              # Root composable (WearTheme + WearHomeScreen)
     │   ├── WearApplication.kt      # @HiltAndroidApp
     │   ├── MainActivity.kt         # @AndroidEntryPoint ComponentActivity
+    │   ├── PrayerNameHelper.kt     # Context-based prayer name mapper (⚠️ duplicate with ui/PrayerNameHelper.kt)
     │   │
     │   ├── di/
     │   │   ├── WearNetworkModule.kt    # @Module: OkHttp, Retrofit, AladhanApiService
-    │   │   └── WearDataEntryPoint.kt   # @EntryPoint: DataLayerService, PrayerRepository
+    │   │   └── WearDataEntryPoint.kt   # @EntryPoint: DataLayerService, PrayerRepository (for Tile/Complication)
     │   │
     │   ├── data/
-    │   │   ├── WearDataLayerService.kt    # Wearable DataClient listener (phone → watch)
+    │   │   ├── WearDataLayerService.kt    # DataClient listener (/namaz_prayer_data)
     │   │   ├── WearPrayerRepository.kt    # Standalone Aladhan API call (phone yoksa)
     │   │   ├── WearPrayerModel.kt         # WearPrayerData, WearPrayerItem, WearNextPrayer
     │   │   └── remote/
-    │   │       ├── api/AladhanApiService.kt      # Retrofit interface
+    │   │       ├── api/AladhanApiService.kt      # Retrofit interface (method, school params)
     │   │       └── dto/PrayerTimeResponse.kt     # DTOs (simplified)
     │   │
     │   ├── ui/
-    │   │   ├── WearViewModel.kt       # DataLayer listener + standalone API fallback
+    │   │   ├── WearViewModel.kt       # DataLayer listener + standalone API fallback (hardcoded Istanbul)
+    │   │   ├── PrayerNameHelper.kt    # @Composable prayer name mapper (⚠️ duplicate with root PrayerNameHelper.kt)
     │   │   ├── screens/
-    │   │   │   └── WearHomeScreen.kt  # ScalingLazyColumn: countdown hero, city, prayer rows, source
+    │   │   │   └── WearHomeScreen.kt  # ScalingLazyColumn: countdown hero, city, prayer rows, source chip
     │   │   └── theme/
     │   │       ├── Theme.kt           # WearTheme (OLED-black color scheme)
     │   │       ├── Color.kt           # High-contrast wear palette (cyan/blue/amber on black)
@@ -230,37 +246,75 @@ wear/
     │       └── PrayerComplicationService.kt  # ShortTextComplication: next prayer on watch face
     │
     └── res/
-        ├── values/strings.xml
-        ├── drawable/ic_launcher_foreground.xml, ic_launcher_background.xml
-        ├── mipmap-anydpi-v26/ic_launcher.xml, ic_launcher_round.xml
+        ├── values/strings.xml, values-en/strings.xml
+        ├── drawable/ic_launcher_*.xml
+        ├── mipmap-*/ic_launcher.webp, ic_launcher_round.webp
         └── xml/backup_rules.xml, data_extraction_rules.xml
 ```
-**17 Kotlin dosyası**
 
 ---
 
 ## Kullanıcı Akışı
 
 1. **İlk açılış** → Konum izni istenir
-   - İzin verilirse: FusedLocationProviderClient ile lat/lon alınır → Geocoder ile il/ilçe çözülür → Aladhan API'den vakitler çekilir
-   - İzin verilmezse: CitySelectionScreen gösterilir, varsayılan İstanbul
-2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit) + 6 vakit listesi + konum chip'i
-3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), hesaplama yöntemi, mezhep (school)
-4. **Şehir seçimi**: Arama + 81 il tarayıcısı + son seçilenler
-5. **Kıble**: "Yakında" placeholder
-6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum bilgisi gönderir
-7. **Wear standalone**: Telefon yoksa saat kendi konumundan API'ye sorar
+   - İzin verilirse: FusedLocationProviderClient → Geocoder → Aladhan API
+   - İzin verilmezse: CitySelectionScreen (Nominatim arama), varsayılan İstanbul
+2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi
+3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), hesaplama yöntemi, mezhep (school), dil
+4. **Şehir seçimi**: Nominatim arama + son seçilenler (max 5, JSON olarak DataStore'da)
+5. **Kıble**: Canvas ile animasyonlu pusula placeholder
+6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer bilgisi gönderir
+7. **Wear standalone**: Telefon yoksa saat kendi konumundan API'ye sorar (hardcoded İstanbul koordinatları)
+
+---
 
 ## Geliştirme Notları
 
-- **Konvansiyonlar**: Dilde Türkçe değişken isimleri kullanılmıştır (imsak, gunes, ogle, ikindi, aksam, yatsi)
-- **Tema**: Material 3 dynamic color + namaz vakitlerine özel gradient/renk paleti (PrayerColors)
-- **Çevrimdışı**: Room DB ile 1 aylık vakit verisi cache'lenir
-- **Bildirimler**: WorkManager OneTimeWorkRequest ile her vakit için ayrı worker schedule edilir
-- **Wear**: Hem Data Layer (telefon bağlıyken) hem standalone API (telefon yokken) çalışır
-- **Complication**: 600 saniyede bir güncellenir, SHORT_TEXT tipinde
-- **Tile**: TileService ile next prayer bilgisi gösterilir
-- **Navigate**: `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)
-- **Code style**: Yorum yok (AGENTS.md convention)
-- **Race condition fix**: HomeViewModel'de prayerTimesJob takip edilir, yeni yükleme önceki job'ı iptal eder. Konum değişince eski API çağrısı yeni veriyi ezemez.
-- **School param**: Aladhan API'ye `school` parametresi eklendi (1=Hanafi, 0=Shafi). Eksik parametre ~10 dk sapmaya neden oluyordu.
+### Konvansiyonlar
+- Dilde Türkçe değişken isimleri kullanılmıştır (imsak, gunes, ogle, ikindi, aksam, yatsi).
+- Code style: Yorum yok (AGENTS.md convention).
+
+### Tema
+- Material 3 dynamic color + namaz vakitlerine özel gradient/renk paleti (PrayerColors.kt).
+- Expressive shapes, typography scale.
+
+### Çevrimdışı (Room)
+- `PrayerTimeEntity` cache'lenir. Cache key: `cityName + month + year + method`.
+- `fallbackToDestructiveMigration(true)` kullanılır (schema export disabled).
+- `cleanupOldData(30)` 30 günden eski veriyi siler.
+
+### Bildirimler
+- WorkManager `OneTimeWorkRequest` ile her vakit için ayrı worker.
+- `PrayerRefreshWorker`: 6 saatte bir periyodik refresh (network constraint).
+
+### i18n
+- `LocaleManager`: SharedPreferences tabanlı, `attachBaseContext` ile locale uygular.
+- Dil değişikliği `activity.recreate()` ile yapılır (CompositionLocalProvider yaklaşımı çöktü).
+- `values/strings.xml` (TR) ve `values-en/strings.xml` (EN) tam mirror.
+- `PrayerName` enum'u `@StringRes` tutar, `stringResource()` ile çözülür.
+
+### DataStore
+- `UserPreferencesRepository`: standard Preferences DataStore keys kullanır.
+- `UserPreferencesSerializer`: NO-OP stub. Aktif olarak kullanılmaz.
+- `recentCities`: Gson ile JSON string olarak saklanır (max 5, deduplicated).
+
+### HomeViewModel Race Condition
+- `prayerTimesJob` takip edilir, yeni yükleme önceki job'ı iptal eder.
+- Yeni load başladığında `_prayerTimes`, `_error`, `_nextPrayer`, `_dashboardData` sıfırlanır.
+- `init` block `preferencesRepository.preferences` dinler; city/method/school değişince reload eder.
+- `useMyLocation()`: sadece `clearManualCity()` çağırır, init block reload'u tetikler.
+
+### Wear
+- Hem Data Layer (telefon bağlıyken) hem standalone API (telefon yokken) çalışır.
+- **Complication**: `PrayerComplicationService`, ShortText tipinde.
+- **Tile**: `PrayerTileService`, next prayer + remaining minutes.
+- **⚠️ Duplicate**: `PrayerNameHelper.kt` hem root package'ta (`Context`-based) hem `ui/`'da (`@Composable`). Birini kaldırmak gerekir.
+- **⚠️ Hardcoded fallback**: `WearViewModel.loadFromStandalone()` İstanbul koordinatlarına (41.0082, 28.9784) düşer. GPS konum alınmalı.
+
+### API Parametreleri
+- `method`: 13=Diyanet (default), 3=MWL, 4=Umm Al-Qura, 2=ISNA
+- `school`: 1=Hanafi (default, Turkey), 0=Shafi
+- Eksik `school` parametresi ~10 dk sapmaya neden olur.
+
+### Navigate
+- `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)
