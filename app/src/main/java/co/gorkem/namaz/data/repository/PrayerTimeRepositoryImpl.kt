@@ -21,9 +21,10 @@ class PrayerTimeRepositoryImpl @Inject constructor(
     override fun getPrayerTimes(
         location: LocationInfo,
         month: Int,
-        year: Int
+        year: Int,
+        method: Int
     ): Flow<NetworkResult<List<PrayerTime>>> = flow {
-        val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year)
+        val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method)
 
         if (cached.isEmpty()) {
             emit(NetworkResult.Loading)
@@ -35,6 +36,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
             val response = apiService.getPrayerTimes(
                 latitude = location.latitude,
                 longitude = location.longitude,
+                method = method,
                 month = month,
                 year = year
             )
@@ -57,7 +59,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 }
 
                 prayerTimeDao.insertAll(prayerTimes.map {
-                    it.toEntity(location.cityName, month, year)
+                    it.toEntity(location.cityName, month, year, method)
                 })
 
                 emit(NetworkResult.Success(prayerTimes))
@@ -73,11 +75,12 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun refreshPrayerTimes(location: LocationInfo, month: Int, year: Int): Result<List<PrayerTime>> {
+    suspend fun refreshPrayerTimes(location: LocationInfo, month: Int, year: Int, method: Int): Result<List<PrayerTime>> {
         return try {
             val response = apiService.getPrayerTimes(
                 latitude = location.latitude,
                 longitude = location.longitude,
+                method = method,
                 month = month,
                 year = year
             )
@@ -99,7 +102,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                     )
                 }
                 prayerTimeDao.insertAll(prayerTimes.map {
-                    it.toEntity(location.cityName, month, year)
+                    it.toEntity(location.cityName, month, year, method)
                 })
                 Result.success(prayerTimes)
             } else {
@@ -119,7 +122,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         return time.replace(Regex("\\s*\\(.*\\)\\s*"), "").trim()
     }
 
-    private fun PrayerTime.toEntity(cityName: String, month: Int, year: Int) = PrayerTimeEntity(
+    private fun PrayerTime.toEntity(cityName: String, month: Int, year: Int, method: Int) = PrayerTimeEntity(
         date = date,
         cityName = cityName,
         gregorianDate = gregorianDate,
@@ -134,7 +137,8 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         yatsi = yatsi,
         timezone = timezone,
         cacheMonth = month,
-        cacheYear = year
+        cacheYear = year,
+        cacheMethod = method
     )
 
     private fun PrayerTimeEntity.toDomainModel() = PrayerTime(

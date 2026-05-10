@@ -46,7 +46,8 @@ class PrayerRefreshWorker @AssistedInject constructor(
             val result = prayerTimeRepository.refreshPrayerTimes(
                 location = location,
                 month = today.monthValue,
-                year = today.year
+                year = today.year,
+                method = prefs.calculationMethod
             )
 
             if (result.isSuccess) {

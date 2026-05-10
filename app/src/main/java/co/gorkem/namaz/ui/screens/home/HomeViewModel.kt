@@ -70,11 +70,14 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             var lastCityKey: String? = null
+            var lastMethod: Int = -1
             preferencesRepository.preferences.collect { prefs ->
                 currentPreferences = prefs
                 val cityKey = "${prefs.manualLatitude},${prefs.manualLongitude},${prefs.manualCityName}"
-                if (cityKey != lastCityKey) {
+                val methodChanged = prefs.calculationMethod != lastMethod
+                if (cityKey != lastCityKey || methodChanged) {
                     lastCityKey = cityKey
+                    lastMethod = prefs.calculationMethod
                     if (prefs.manualCityName.isNotEmpty()) {
                         _needsLocationPermission.value = false
                         loadPrayerTimes(LocationInfo(
@@ -143,7 +146,8 @@ class HomeViewModel @Inject constructor(
             getPrayerTimesUseCase(
                 location = location,
                 month = today.monthValue,
-                year = today.year
+                year = today.year,
+                method = currentPreferences.calculationMethod
             ).collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> _isLoading.value = true

@@ -13,8 +13,9 @@ class GetPrayerTimesUseCase @Inject constructor(
     operator fun invoke(
         location: LocationInfo,
         month: Int,
-        year: Int
+        year: Int,
+        method: Int = 13
     ): Flow<NetworkResult<List<PrayerTime>>> {
-        return repository.getPrayerTimes(location, month, year)
+        return repository.getPrayerTimes(location, month, year, method)
     }
 }

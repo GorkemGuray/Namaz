@@ -9,6 +9,7 @@ interface PrayerTimeRepository {
     fun getPrayerTimes(
         location: LocationInfo,
         month: Int,
-        year: Int
+        year: Int,
+        method: Int = 13
     ): Flow<NetworkResult<List<PrayerTime>>>
 }

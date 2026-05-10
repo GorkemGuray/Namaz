@@ -22,7 +22,7 @@ object RoomModule {
             context,
             NamazDatabase::class.java,
             "namaz_database"
-        ).build()
+        ).fallbackToDestructiveMigration(true).build()
     }
 
     @Provides

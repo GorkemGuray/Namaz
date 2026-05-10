@@ -21,5 +21,6 @@ data class PrayerTimeEntity(
     val timezone: String,
     val cacheMonth: Int,
     val cacheYear: Int,
+    val cacheMethod: Int,
     val cachedAt: Long = System.currentTimeMillis()
 )
