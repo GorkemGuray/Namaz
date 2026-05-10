@@ -97,26 +97,26 @@ private fun PrayerListRow(
     modifier: Modifier = Modifier
 ) {
     val scale by animateFloatAsState(
-        targetValue = if (isNext) 1f else 0.98f,
+        targetValue = if (isNext) 1.02f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "row_scale"
     )
 
     val containerColor = when {
-        isNext -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-        isCurrent -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+        isNext -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
+        isCurrent -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
         else -> Color.Transparent
     }
 
     val nameColor = when {
         isNext -> MaterialTheme.colorScheme.onPrimaryContainer
-        isCurrent -> MaterialTheme.colorScheme.onSecondaryContainer
+        isCurrent -> MaterialTheme.colorScheme.onTertiaryContainer
         else -> MaterialTheme.colorScheme.onSurface
     }
 
     val timeColor = when {
         isNext -> MaterialTheme.colorScheme.primary
-        isCurrent -> MaterialTheme.colorScheme.secondary
+        isCurrent -> MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
@@ -133,10 +133,10 @@ private fun PrayerListRow(
                 .size(32.dp)
                 .clip(CircleShape)
                 .background(
-                    if (isNext || isCurrent) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    when {
+                        isNext -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        isCurrent -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
+                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                     }
                 ),
             contentAlignment = Alignment.Center
@@ -144,10 +144,10 @@ private fun PrayerListRow(
             PrayerIcon(
                 name = name,
                 modifier = Modifier.size(18.dp),
-                tint = if (isNext || isCurrent) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    prayerIconTint(name).copy(alpha = 0.8f)
+                tint = when {
+                    isNext -> MaterialTheme.colorScheme.primary
+                    isCurrent -> MaterialTheme.colorScheme.tertiary
+                    else -> prayerIconTint(name).copy(alpha = 0.8f)
                 }
             )
         }
