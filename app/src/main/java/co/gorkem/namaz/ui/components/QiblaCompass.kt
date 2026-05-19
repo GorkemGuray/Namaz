@@ -1,6 +1,12 @@
 package co.gorkem.namaz.ui.components
 
+import androidx.compose.animation.core.InfiniteRepeatableSpec
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
@@ -43,13 +49,54 @@ fun QiblaCompass(
 
     val isLevel = kotlin.math.abs(pitch) <= 8.0 && kotlin.math.abs(roll) <= 8.0
 
-    // Kaaba icon: placed at Qibla bearing on the rotating face
-    // When qiblaBearing == deviceAzimuth, Kaaba is at top → aligned
+    val animatedAzimuth by animateFloatAsState(
+        targetValue = deviceAzimuth.toFloat(),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "azimuth"
+    )
+
     val kaabaAngle = qiblaBearing - deviceAzimuth
     val animatedKaaba by animateFloatAsState(
         targetValue = kaabaAngle.toFloat(),
-        animationSpec = tween(80),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "kaaba"
+    )
+
+    val animatedPitch by animateFloatAsState(
+        targetValue = pitch.toFloat(),
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "pitch"
+    )
+    val animatedRoll by animateFloatAsState(
+        targetValue = roll.toFloat(),
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "roll"
+    )
+
+    val glowTransition = rememberInfiniteTransition(label = "glow")
+    val glowAlpha by glowTransition.animateFloat(
+        initialValue = 0.0f,
+        targetValue = 0.5f,
+        animationSpec = InfiniteRepeatableSpec(
+            animation = androidx.compose.animation.core.tween(1200),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glowAlpha"
+    )
+    val glowRadius by glowTransition.animateFloat(
+        initialValue = 18f,
+        targetValue = 26f,
+        animationSpec = InfiniteRepeatableSpec(
+            animation = androidx.compose.animation.core.tween(1200),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glowRadius"
     )
 
     Canvas(modifier = modifier.size(280.dp)) {
@@ -57,32 +104,26 @@ fun QiblaCompass(
         val outerRadius = size.minDimension / 2 - 16.dp.toPx()
         val innerRadius = outerRadius * 0.72f
 
-        // Fixed outer ring
         drawCircle(
-            color = outlineVariant.copy(alpha = 0.25f),
+            color = outlineVariant.copy(alpha = 0.3f),
             radius = outerRadius,
+            style = Stroke(width = 2.dp.toPx())
+        )
+
+        drawCircle(
+            color = outlineVariant.copy(alpha = 0.15f),
+            radius = innerRadius,
             style = Stroke(width = 1.5.dp.toPx())
         )
 
-        drawCircle(
-            color = outlineVariant.copy(alpha = 0.12f),
-            radius = innerRadius,
-            style = Stroke(width = 1.dp.toPx())
-        )
-
-        // Fixed top indicator (12 o'clock) - helps user aim
         drawTopIndicator(center, outerRadius, primary)
 
-        // Crosshair at center
         drawCrosshair(center, outlineVariant)
 
-        // Level indicator: moving bubble dot
-        // roll > 0 (tilted right) → dot moves left
-        // pitch > 0 (tilted forward) → dot moves down
         val maxDisp = 12.dp.toPx()
-        val scale = (maxDisp / 45.0).toFloat() // 45° tilt = max displacement
-        val bubbleX = center.x - (roll * scale).toFloat()
-        val bubbleY = center.y + (pitch * scale).toFloat()
+        val tiltScale = (maxDisp / 45.0).toFloat()
+        val bubbleX = center.x - (animatedRoll * tiltScale)
+        val bubbleY = center.y + (animatedPitch * tiltScale)
         drawLevelBubble(
             center = Offset(bubbleX, bubbleY),
             targetCenter = center,
@@ -91,9 +132,7 @@ fun QiblaCompass(
             outline = outlineVariant
         )
 
-        // Rotating compass face: ticks + degree labels + cardinal labels
-        // When device faces North (0°), "K" is at top, 0° at top
-        rotate(degrees = -deviceAzimuth.toFloat(), pivot = center) {
+        rotate(degrees = -animatedAzimuth, pivot = center) {
             drawDegreeTicks(center, outerRadius, onSurfaceVariant)
             drawDegreeLabels(center, outerRadius, onSurfaceVariant, textMeasurer)
             drawCardinalLabels(center, innerRadius, onSurfaceVariant, textMeasurer)
@@ -102,6 +141,15 @@ fun QiblaCompass(
         val kaabaRad = Math.toRadians(animatedKaaba.toDouble())
         val kaabaX = center.x + outerRadius * sin(kaabaRad).toFloat()
         val kaabaY = center.y - outerRadius * cos(kaabaRad).toFloat()
+
+        if (isAligned) {
+            drawCircle(
+                color = primary.copy(alpha = glowAlpha),
+                radius = glowRadius.dp.toPx(),
+                center = Offset(kaabaX, kaabaY),
+                style = Stroke(width = 2.dp.toPx())
+            )
+        }
 
         drawKaabaIcon(Offset(kaabaX, kaabaY), primary, isAligned)
     }
@@ -112,13 +160,13 @@ private fun DrawScope.drawTopIndicator(
     radius: Float,
     color: Color
 ) {
-    val indicatorLen = 14.dp.toPx()
-    val startY = center.y - radius - 2.dp.toPx()
+    val indicatorLen = 16.dp.toPx()
+    val startY = center.y - radius - 3.dp.toPx()
     drawLine(
-        color = color.copy(alpha = 0.6f),
+        color = color.copy(alpha = 0.7f),
         start = Offset(center.x, startY),
         end = Offset(center.x, startY + indicatorLen),
-        strokeWidth = 2.5.dp.toPx(),
+        strokeWidth = 3.dp.toPx(),
         cap = StrokeCap.Round
     )
 }
@@ -127,19 +175,19 @@ private fun DrawScope.drawCrosshair(
     center: Offset,
     color: Color
 ) {
-    val len = 10.dp.toPx()
-    val alpha = if (color.alpha < 1f) 0.25f else 0.5f
+    val len = 14.dp.toPx()
+    val alpha = if (color.alpha < 1f) 0.3f else 0.6f
     drawLine(
         color = color.copy(alpha = alpha),
         start = Offset(center.x - len, center.y),
         end = Offset(center.x + len, center.y),
-        strokeWidth = 1.dp.toPx()
+        strokeWidth = 1.5.dp.toPx()
     )
     drawLine(
         color = color.copy(alpha = alpha),
         start = Offset(center.x, center.y - len),
         end = Offset(center.x, center.y + len),
-        strokeWidth = 1.dp.toPx()
+        strokeWidth = 1.5.dp.toPx()
     )
 }
 
@@ -150,18 +198,16 @@ private fun DrawScope.drawLevelBubble(
     primary: Color,
     outline: Color
 ) {
-    val dotRadius = 3.5.dp.toPx()
-    val targetRadius = 8.dp.toPx()
+    val dotRadius = 5.dp.toPx()
+    val targetRadius = 10.dp.toPx()
 
-    // Target zone circle at crosshair center
     drawCircle(
-        color = if (isLevel) primary.copy(alpha = 0.3f) else outline.copy(alpha = 0.2f),
+        color = if (isLevel) primary.copy(alpha = 0.35f) else outline.copy(alpha = 0.2f),
         radius = targetRadius,
         center = targetCenter,
-        style = Stroke(width = 1.dp.toPx())
+        style = Stroke(width = 1.5.dp.toPx())
     )
 
-    // Moving bubble dot
     val dotColor = if (isLevel) primary else outline
     drawCircle(
         color = dotColor.copy(alpha = 0.9f),
@@ -177,10 +223,10 @@ private fun DrawScope.drawDegreeTicks(
 ) {
     for (i in 0 until 72) {
         val angle = i * 5f
-        val isMajor = i % 6 == 0  // every 30°
-        val tickLength = if (isMajor) 10.dp.toPx() else 5.dp.toPx()
-        val tickWidth = if (isMajor) 1.5f.dp.toPx() else 1f.dp.toPx()
-        val alpha = if (isMajor) 0.4f else 0.2f
+        val isMajor = i % 6 == 0
+        val tickLength = if (isMajor) 12.dp.toPx() else 6.dp.toPx()
+        val tickWidth = if (isMajor) 2.dp.toPx() else 1.dp.toPx()
+        val alpha = if (isMajor) 0.5f else 0.3f
 
         rotate(angle, center) {
             drawLine(
@@ -201,11 +247,11 @@ private fun DrawScope.drawDegreeLabels(
     textMeasurer: TextMeasurer
 ) {
     val style = TextStyle(
-        fontSize = 10.sp,
+        fontSize = 11.sp,
         color = color.copy(alpha = 0.5f),
         fontWeight = FontWeight.Normal
     )
-    val labelRadius = radius - 20.dp.toPx()
+    val labelRadius = radius - 22.dp.toPx()
 
     for (deg in listOf(0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330)) {
         val rad = Math.toRadians(deg.toDouble())
@@ -229,8 +275,8 @@ private fun DrawScope.drawCardinalLabels(
     textMeasurer: TextMeasurer
 ) {
     val style = TextStyle(
-        fontSize = 14.sp,
-        color = color.copy(alpha = 0.7f),
+        fontSize = 16.sp,
+        color = color.copy(alpha = 0.8f),
         fontWeight = FontWeight.SemiBold
     )
     val labels = listOf("K" to 0, "D" to 90, "G" to 180, "B" to 270)
@@ -256,21 +302,26 @@ private fun DrawScope.drawKaabaIcon(
 ) {
     val alpha = if (isAligned) 1.0f else 0.85f
     val iconColor = color.copy(alpha = alpha)
-    val iconSize = 12.dp.toPx()
+    val iconSize = 14.dp.toPx()
     val half = iconSize / 2
 
-    // Square body
+    drawRect(
+        color = iconColor.copy(alpha = 0.1f),
+        topLeft = Offset(center.x - half - 2.dp.toPx(), center.y - half - 2.dp.toPx()),
+        size = Size(iconSize + 4.dp.toPx(), iconSize + 4.dp.toPx()),
+        style = Stroke(width = 1.dp.toPx())
+    )
+
     drawRect(
         color = iconColor,
         topLeft = Offset(center.x - half, center.y - half),
         size = Size(iconSize, iconSize)
     )
 
-    // Triangle roof
     val roof = Path().apply {
-        moveTo(center.x - half - 2.dp.toPx(), center.y - half)
-        lineTo(center.x, center.y - half * 2.2f - 2.dp.toPx())
-        lineTo(center.x + half + 2.dp.toPx(), center.y - half)
+        moveTo(center.x - half - 3.dp.toPx(), center.y - half)
+        lineTo(center.x, center.y - half * 2.4f - 3.dp.toPx())
+        lineTo(center.x + half + 3.dp.toPx(), center.y - half)
         close()
     }
     drawPath(path = roof, color = iconColor)

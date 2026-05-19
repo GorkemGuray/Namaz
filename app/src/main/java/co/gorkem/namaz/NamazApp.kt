@@ -122,7 +122,10 @@ fun NamazApp() {
                     modifier = Modifier.padding(paddingValues),
                     onLocationClick = { showCitySheet = true }
                 )
-                1 -> QiblaScreen(modifier = Modifier.padding(paddingValues))
+                1 -> QiblaScreen(
+                    modifier = Modifier.padding(paddingValues),
+                    onSetLocationClick = { showCitySheet = true }
+                )
                 2 -> SettingsScreen(modifier = Modifier.padding(paddingValues))
             }
         }

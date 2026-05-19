@@ -69,6 +69,7 @@
     <string name="qibla_title">Kıble</string>
     <string name="qibla_loading">Konum alınıyor…</string>
     <string name="qibla_no_magnetometer">Manyetometre bulunamadı — statik Kıble yönü gösteriliyor</string>
+    <string name="qibla_location_required_title">Konum Gerekli</string>
     <string name="qibla_location_required">Kıble yönünü hesaplamak için konum izni gereklidir.\nAyarlar\'dan konum izni verin.</string>
     <string name="qibla_aligned">Kıble yönünde</string>
     <string name="qibla_deviation">° sapma</string>
@@ -83,6 +84,10 @@
     <string name="qibla_calibration_needed">Pusula kalibrasyonu gerekli — cihazı havada sekiz çizerek hareket ettirin</string>
     <string name="qibla_magnetic_distortion">Manyetik parazit algılandı — metal cisimlerden uzaklaşın</string>
     <string name="qibla_sensor_accuracy">Sensör doğruluğu: %1$s</string>
+    <string name="qibla_set_location">Konum Seç</string>
+    <string name="qibla_retry">Tekrar Dene</string>
+    <string name="qibla_retrying">Yeniden deneniyor…</string>
+    <string name="qibla_error_fix">Konum izinlerini ve internet bağlantısını kontrol edip tekrar deneyin.</string>
 
     <!-- Period Labels -->
     <string name="period_vakti">Namazı</string>

@@ -69,6 +69,7 @@
     <string name="qibla_title">Qibla</string>
     <string name="qibla_loading">Getting location…</string>
     <string name="qibla_no_magnetometer">Magnetometer not found — showing static Qibla direction</string>
+    <string name="qibla_location_required_title">Location Required</string>
     <string name="qibla_location_required">Location permission is required to calculate Qibla direction.\nEnable location permission from Settings.</string>
     <string name="qibla_aligned">Facing Qibla</string>
     <string name="qibla_deviation">° off</string>
@@ -83,6 +84,10 @@
     <string name="qibla_calibration_needed">Compass calibration needed — move device in a figure-eight pattern</string>
     <string name="qibla_magnetic_distortion">Magnetic interference detected — move away from metal objects</string>
     <string name="qibla_sensor_accuracy">Sensor accuracy: %1$s</string>
+    <string name="qibla_set_location">Set Location</string>
+    <string name="qibla_retry">Retry</string>
+    <string name="qibla_retrying">Retrying…</string>
+    <string name="qibla_error_fix">Check location permissions and internet connection, then try again.</string>
 
     <!-- Period Labels -->
     <string name="period_vakti">Prayer</string>

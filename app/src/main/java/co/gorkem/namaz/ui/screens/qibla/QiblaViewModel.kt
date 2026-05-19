@@ -75,7 +75,7 @@ class QiblaViewModel @Inject constructor(
         sensorManager.getOrientationEvents()
             .catch { e ->
                 _uiState.value = QiblaUiState.Error(
-                    message = context.getString(R.string.qibla_error_prefix) + " ${e.localizedMessage ?: context.getString(R.string.home_unknown_error)}"
+                    message = e.localizedMessage ?: context.getString(R.string.home_unknown_error)
                 )
             }
             .onEach { orientation ->
@@ -109,6 +109,10 @@ class QiblaViewModel @Inject constructor(
         var delta = abs(deviceAzimuth - qiblaBearing)
         if (delta > 180.0) delta = 360.0 - delta
         return delta
+    }
+
+    fun retry() {
+        loadQibla()
     }
 
     override fun onCleared() {
