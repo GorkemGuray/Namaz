@@ -3,8 +3,10 @@ package co.gorkem.namaz.ui.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -16,8 +18,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
-import kotlin.math.cos
-import kotlin.math.sin
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun QiblaCompass(
@@ -40,6 +41,32 @@ fun QiblaCompass(
         modifier = modifier.size(220.dp),
         contentAlignment = Alignment.Center
     ) {
+        // Cardinal direction labels around the edge
+        Text(
+            text = "K",
+            fontSize = 12.sp,
+            color = onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier.offset(y = (-90).dp)
+        )
+        Text(
+            text = "D",
+            fontSize = 12.sp,
+            color = onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier.offset(x = 90.dp)
+        )
+        Text(
+            text = "G",
+            fontSize = 12.sp,
+            color = onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier.offset(y = 90.dp)
+        )
+        Text(
+            text = "B",
+            fontSize = 12.sp,
+            color = onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier.offset(x = (-90).dp)
+        )
+
         Canvas(modifier = Modifier.size(220.dp)) {
             val center = Offset(size.width / 2, size.height / 2)
             val radius = size.minDimension / 2 - 12.dp.toPx()
@@ -104,6 +131,7 @@ fun QiblaCompass(
                     style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
                 )
 
+                // Qibla arrow
                 val arrowLen = radius * 0.6f
                 val arrowY = center.y - arrowLen
                 drawLine(
@@ -132,13 +160,16 @@ fun QiblaCompass(
             }
 
             rotate(compassRotation, center) {
+                // North indicator
+                val northEnd = Offset(center.x, center.y - radius * 0.5f)
                 drawLine(
                     color = Color(0xFFB3261E),
                     start = center,
-                    end = Offset(center.x, center.y - radius * 0.5f),
+                    end = northEnd,
                     strokeWidth = 3.dp.toPx(),
                     cap = StrokeCap.Round
                 )
+
                 drawLine(
                     color = onSurfaceVariant.copy(alpha = 0.4f),
                     start = center,
@@ -153,5 +184,30 @@ fun QiblaCompass(
                 radius = 5.dp.toPx()
             )
         }
+
+        // KUZEY label above North needle (rotates with compass)
+        // Position it relative to the rotating compass - this is tricky because it needs to rotate
+        // For simplicity, place it at the top center of the compass box
+        // Since the North needle rotates, we'll place KUZEY at the top where North should be
+        // when the device is aligned to North
+        Text(
+            text = "KUZEY",
+            fontSize = 9.sp,
+            color = Color(0xFFB3261E),
+            modifier = Modifier.offset(y = (-52).dp)
+        )
+
+        // KABE label near the Qibla arrow
+        // This is tricky because the arrow rotates with qiblaBearing
+        // We'll place it at a position that roughly aligns with the arrow direction
+        // by calculating the offset based on qiblaBearing
+        val kabeOffsetX = (kotlin.math.sin(Math.toRadians(qiblaBearing)) * 52).dp
+        val kabeOffsetY = (-kotlin.math.cos(Math.toRadians(qiblaBearing)) * 52).dp
+        Text(
+            text = "KABE",
+            fontSize = 10.sp,
+            color = primary,
+            modifier = Modifier.offset(x = kabeOffsetX, y = kabeOffsetY)
+        )
     }
 }

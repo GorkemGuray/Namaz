@@ -73,6 +73,13 @@
     <string name="qibla_aligned">Facing Qibla</string>
     <string name="qibla_deviation">° off</string>
     <string name="qibla_error_prefix">Compass error:</string>
+    <string name="compass_north">N</string>
+    <string name="compass_east">E</string>
+    <string name="compass_south">S</string>
+    <string name="compass_west">W</string>
+    <string name="compass_north_full">NORTH</string>
+    <string name="qibla_arrow_label">KAABA</string>
+    <string name="qibla_static_instruction">Turn device this way</string>
 
     <!-- Period Labels -->
     <string name="period_vakti">Prayer</string>

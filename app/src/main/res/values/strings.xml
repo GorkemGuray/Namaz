@@ -73,6 +73,13 @@
     <string name="qibla_aligned">Kıble yönünde</string>
     <string name="qibla_deviation">° sapma</string>
     <string name="qibla_error_prefix">Pusula hatası:</string>
+    <string name="compass_north">K</string>
+    <string name="compass_east">D</string>
+    <string name="compass_south">G</string>
+    <string name="compass_west">B</string>
+    <string name="compass_north_full">KUZEY</string>
+    <string name="qibla_arrow_label">KABE</string>
+    <string name="qibla_static_instruction">Cihazı bu yöne çevirin</string>
 
     <!-- Period Labels -->
     <string name="period_vakti">Namazı</string>
