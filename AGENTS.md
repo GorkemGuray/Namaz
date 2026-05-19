@@ -184,7 +184,7 @@ app/
     │       │   ├── PrayerTimesList.kt      # 6 prayer rows: next prayer badge, current prayer highlight
     │       │   ├── PrayerIcon.kt           # PrayerName → ImageVector + tint mapping
     │       │   ├── CountdownTimer.kt       # Standalone countdown composable
-    │       │   ├── QiblaCompass.kt         # Canvas compass: ring, tick marks, rotating needle, Qibla arc, haptic
+    │       │   ├── QiblaCompass.kt         # Canvas compass: ring, tick marks, rotating Kaaba icon on circumference, cardinal labels at edge
     │       │   └── QiblaDegreeDisplay.kt   # Bearing + cardinal direction + alignment delta display
     │       └── screens/
     │           ├── home/
@@ -335,9 +335,9 @@ wear/
 - **QiblaUseCase**: Bearing formülü ile lat/lon → Kaabe yönü (21.4225°N, 39.8262°E). İstanbul→~151.6°, NYC→~58.5°, Sydney→~277.5°.
 - **QiblaSensorManager**: SensorManager wrapper. TYPE_ACCELEROMETER + TYPE_MAGNETIC_FIELD. Exponential smoothing (α=0.2). `hasMagnetometer()` kontrolü. Sensör doğruluğu (`onAccuracyChanged`) + manyetik alan şiddeti takibi. ±20–70 μT aralığı dışı → bozulma uyarısı.
 - **QiblaViewModel**: `collectAsStateWithLifecycle()` ile Flow dinleme. `onCleared()` ile otomatik sensor temizliği. Sensör doğruluk/kalibrasyon/manyetik verileri UI state'e aktarır.
-- **QiblaCompass**: Minimal tasarım. Tek hareketli Kıble ibresi `qiblaBearing - deviceAzimuth` açısıyla döner. İbre yukarıyı gösterince kullanıcı Kıble'ye dönüktür. İbre ucunda küçük beyaz Kabe simgesi (kare + üçgen çatı). KUZEY etiketi cihaz yönüne göre döner. K/D/G/B kardinal etiketler pusula halkasında sabit.
-- **QiblaDegreeDisplay**: Bearing + kardinal yön + sapma + sensör doğruluk seviyesi (Yüksek/Orta/Düşük/Güvenilmez) + manyetik alan μT değeri.
-- **QiblaScreen**: 5 UI state: Loading/CompassActive/StaticDirection/Error/LocationRequired. ±5° hizalanma titreşimi. Kalibrasyon uyarı banner'ı (`needsCalibration`), manyetik bozulma uyarı banner'ı (`isMagneticDistorted`).
+- **QiblaCompass**: Referans pusula tasarımı. İç yüz (derece çizgileri, K/D/G/B etiketleri) cihaz yönüne göre döner, dış yüz sabit kalır. Kaaba simgesi `qiblaBearing - deviceAzimuth` açısında halka çevresinde döner. Sabit üst gösterge (12 o'clock) yardımcı olur. Kullanıcı telefonu çevirerek Kaaba simgesini üst göstergeye hizalar. Hizalandığında Kıble yönündesiniz. Merkezde crosshair + seviye göstergesi: hareketli baloncuk nokta telefon eğimine göre kayar (roll sola/sağa, pitch yukarı/aşağı). Baloncuk crosshair merkezine geldiğinde telefon düzdür ve rengi değişir. Canvas-only implementasyon.
+- **QiblaDegreeDisplay**: Bearing + kardinal yön + sapma. Sensör doğruluk seviyesi ve manyetik alan μT değeri kaldırıldı (minimalist).
+- **QiblaScreen**: Tam ekran, TopAppBar yok. 5 UI state: Loading/CompassActive/StaticDirection/Error/LocationRequired. ±5° hizalanma titreşimi. Kalibrasyon/manyetik bozulma uyarıları banner yerine inline mikro-metin olarak gösterilir.
 - **Hybrid yaklaşım**: Manyetometre varsa tam pusula, yoksa statik yön + derece gösterimi.
 - **Test**: `QiblaUseCaseTest` - 6 birim testi passing (Istanbul, NYC, Sydney, Kaabe, kardinal yönler).
 

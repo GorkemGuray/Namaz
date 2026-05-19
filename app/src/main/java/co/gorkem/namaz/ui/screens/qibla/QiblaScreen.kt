@@ -5,29 +5,20 @@ import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,12 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import co.gorkem.namaz.R
@@ -51,7 +40,6 @@ import co.gorkem.namaz.ui.state.QiblaUiState
 import kotlin.math.cos
 import kotlin.math.sin
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QiblaScreen(
     modifier: Modifier = Modifier,
@@ -60,160 +48,149 @@ fun QiblaScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        when (val state = uiState) {
+            is QiblaUiState.Loading -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator()
                     Text(
-                        text = stringResource(R.string.qibla_title),
-                        style = MaterialTheme.typography.titleLarge
+                        text = stringResource(R.string.qibla_loading),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
-                )
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            when (val state = uiState) {
-                is QiblaUiState.Loading -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CircularProgressIndicator()
-                        Text(
-                            text = stringResource(R.string.qibla_loading),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                }
+            }
+
+            is QiblaUiState.CompassActive -> {
+                val isAligned = state.alignmentDelta <= 5.0
+                val vibrator = remember { getVibrator(context) }
+                var wasAligned by remember { mutableStateOf(false) }
+
+                LaunchedEffect(isAligned) {
+                    if (isAligned && !wasAligned) {
+                        vibrator?.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
                     }
+                    wasAligned = isAligned
                 }
 
-                is QiblaUiState.CompassActive -> {
-                    val isAligned = state.alignmentDelta <= 5.0
-                    val vibrator = remember { getVibrator(context) }
-                    var wasAligned by remember { mutableStateOf(false) }
-
-                    LaunchedEffect(isAligned) {
-                        if (isAligned && !wasAligned) {
-                            vibrator?.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-                        }
-                        wasAligned = isAligned
-                    }
-
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        if (state.needsCalibration) {
-                            CalibrationBanner()
-                        }
-                        if (state.isMagneticDistorted) {
-                            DistortionBanner()
-                        }
-
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                         QiblaCompass(
                             deviceAzimuth = state.deviceAzimuth,
                             qiblaBearing = state.qiblaDirection.bearing,
                             alignmentDelta = state.alignmentDelta,
-                            isAligned = isAligned
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        QiblaDegreeDisplay(
-                            bearing = state.qiblaDirection.bearing,
-                            cardinalDirection = state.qiblaDirection.cardinalDirection,
-                            alignmentDelta = state.alignmentDelta,
                             isAligned = isAligned,
-                            sensorAccuracy = state.sensorAccuracy,
-                            magneticFieldStrength = state.magneticFieldStrength,
-                            isMagneticDistorted = state.isMagneticDistorted,
-                            needsCalibration = state.needsCalibration
-                        )
-                    }
-                }
-
-                is QiblaUiState.StaticDirection -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.qibla_static_instruction),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
+                            pitch = state.pitch,
+                            roll = state.roll
                         )
 
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    QiblaDegreeDisplay(
+                        bearing = state.qiblaDirection.bearing,
+                        cardinalDirection = state.qiblaDirection.cardinalDirection,
+                        alignmentDelta = state.alignmentDelta,
+                        isAligned = isAligned
+                    )
+
+                    if (state.needsCalibration || state.isMagneticDistorted) {
                         Spacer(modifier = Modifier.height(16.dp))
-
-                        QiblaStaticArrow(
-                            bearing = state.qiblaDirection.bearing
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        QiblaDegreeDisplay(
-                            bearing = state.qiblaDirection.bearing,
-                            cardinalDirection = state.qiblaDirection.cardinalDirection,
-                            alignmentDelta = 0.0,
-                            isAligned = false
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
+                        val microText = when {
+                            state.needsCalibration -> stringResource(R.string.qibla_calibration_needed)
+                            state.isMagneticDistorted -> stringResource(R.string.qibla_magnetic_distortion)
+                            else -> ""
+                        }
                         Text(
-                            text = stringResource(R.string.qibla_no_magnetometer),
+                            text = microText,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
                             textAlign = TextAlign.Center
                         )
                     }
                 }
+            }
 
-                is QiblaUiState.Error -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.padding(8.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text = state.message,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+            is QiblaUiState.StaticDirection -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.qibla_static_instruction),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    QiblaStaticArrow(
+                        bearing = state.qiblaDirection.bearing
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    QiblaDegreeDisplay(
+                        bearing = state.qiblaDirection.bearing,
+                        cardinalDirection = state.qiblaDirection.cardinalDirection,
+                        alignmentDelta = 0.0,
+                        isAligned = false
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(R.string.qibla_no_magnetometer),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        textAlign = TextAlign.Center
+                    )
                 }
+            }
 
-                is QiblaUiState.LocationRequired -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.qibla_location_required),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+            is QiblaUiState.Error -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = state.message,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            is QiblaUiState.LocationRequired -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.qibla_location_required),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
@@ -247,62 +224,6 @@ private fun QiblaStaticArrow(
             center = androidx.compose.ui.geometry.Offset(endX, endY)
         )
     }
-}
-
-@Composable
-private fun CalibrationBanner() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.errorContainer)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.onErrorContainer
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = stringResource(R.string.qibla_calibration_needed),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onErrorContainer,
-            fontSize = 12.sp
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-    }
-    Spacer(modifier = Modifier.height(8.dp))
-}
-
-@Composable
-private fun DistortionBanner() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.onTertiaryContainer
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = stringResource(R.string.qibla_magnetic_distortion),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onTertiaryContainer,
-            fontSize = 12.sp
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-    }
-    Spacer(modifier = Modifier.height(8.dp))
 }
 
 @Suppress("DEPRECATION")
