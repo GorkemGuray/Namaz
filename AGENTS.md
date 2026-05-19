@@ -121,13 +121,15 @@ app/
     │   │   ├── model/
     │   │   │   ├── PrayerTime.kt          # data class: imsak, gunes, ogle, ikindi, aksam, yatsi
     │   │   │   ├── PrayerName.kt          # enum: IMSAK, GUNES, OGLE, IKINDI, AKSAM, YATSI (@StringRes)
-    │   │   │   └── LocationInfo.kt        # data class: lat, lon, city, district, timezone. DEFAULT=Istanbul
+    │   │   │   ├── LocationInfo.kt        # data class: lat, lon, city, district, timezone. DEFAULT=Istanbul
+    │   │   │   └── QiblaDirection.kt      # data class: bearing (Double), cardinalDirection (TR: K/KD/D/GD/G/GB/B/KB)
     │   │   ├── repository/
     │   │   │   └── PrayerTimeRepository.kt # interface: getPrayerTimes() → Flow<NetworkResult<List<PrayerTime>>>
     │   │   └── usecase/
     │   │       ├── GetNextPrayerUseCase.kt    # next prayer + remaining minutes
     │   │       ├── GetPrayerTimesUseCase.kt   # repository delegasyonu
-    │   │       └── GetPrayerDashboardUseCase.kt # PeriodType + kerahat windows + current period logic
+    │   │       ├── GetPrayerDashboardUseCase.kt # PeriodType + kerahat windows + current period logic
+    │   │       └── QiblaUseCase.kt            # bearing calculation: lat/lon → Kaaba (21.4225, 39.8262)
     │   │
     │   ├── data/
     │   │   ├── remote/
@@ -165,10 +167,12 @@ app/
     │   │   ├── PrayerRefreshWorker.kt         # @HiltWorker, every 6h periodic refresh + notification reschedule
     │   │   ├── WearSyncManager.kt             # Data Layer API ile Wear'a JSON sync (/namaz_prayer_data)
     │   │   ├── WearPrayerData.kt              # WearPrayerData, WearPrayerItem, WearNextPrayer, WearKerahatInfo + Gson helpers
+    │   │   └── QiblaSensorManager.kt          # SensorManager wrapper, magnetometer detection, Flow<QiblaOrientation>
     │   │
     │   └── ui/
-    │       ├── state/
-    │       │   └── HomeUiState.kt  # sealed: Loading, Success, Error, PermissionRequired
+    │   ├── state/
+    │   │   ├── HomeUiState.kt  # sealed: Loading, Success, Error, PermissionRequired
+    │   │   └── QiblaUiState.kt # sealed: Loading, CompassActive, StaticDirection, Error, LocationRequired
     │       ├── theme/
     │       │   ├── Theme.kt       # NamazTheme (dynamic color, prayer-tinted scheme)
     │       │   ├── Color.kt       # M3 expressive light/dark colors + PrayerTints
@@ -176,10 +180,12 @@ app/
     │       │   ├── Shape.kt       # ExpressiveShapes, HeroCardShape, PillShape
     │       │   └── Type.kt        # ExpressiveTypography scale
     │       ├── components/
-    │       │   ├── PrayerHeroCard.kt   # Hero card: countdown + location + period info + hijri date
-    │       │   ├── PrayerTimesList.kt  # 6 prayer rows: next prayer badge, current prayer highlight
-    │       │   ├── PrayerIcon.kt       # PrayerName → ImageVector + tint mapping
-    │       │   └── CountdownTimer.kt   # Standalone countdown composable
+    │       │   ├── PrayerHeroCard.kt       # Hero card: countdown + location + period info + hijri date
+    │       │   ├── PrayerTimesList.kt      # 6 prayer rows: next prayer badge, current prayer highlight
+    │       │   ├── PrayerIcon.kt           # PrayerName → ImageVector + tint mapping
+    │       │   ├── CountdownTimer.kt       # Standalone countdown composable
+    │       │   ├── QiblaCompass.kt         # Canvas compass: ring, tick marks, rotating needle, Qibla arc, haptic
+    │       │   └── QiblaDegreeDisplay.kt   # Bearing + cardinal direction + alignment delta display
     │       └── screens/
     │           ├── home/
     │           │   ├── HomeScreen.kt      # Dashboard: permission → hero card → kerahat banner → prayer list
@@ -191,7 +197,8 @@ app/
     │           │   ├── SettingsScreen.kt    # Notifications, language (recreate), method, mezhep
     │           │   └── SettingsViewModel.kt # UserPreferences via DataStore
     │           └── qibla/
-    │               └── QiblaScreen.kt      # Animated Canvas compass placeholder
+    │               ├── QiblaScreen.kt      # Functional compass: sensor-driven + static fallback, all UI states
+    │               └── QiblaViewModel.kt   # Lifecycle-aware, Flow-based sensor + UseCase orchestration
     │
     └── res/
         ├── values/strings.xml, values-en/strings.xml, themes.xml, colors.xml
@@ -262,7 +269,7 @@ wear/
 2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi
 3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), hesaplama yöntemi, mezhep (school), dil
 4. **Şehir seçimi**: Nominatim arama + son seçilenler (max 5, JSON olarak DataStore'da)
-5. **Kıble**: Canvas ile animasyonlu pusula placeholder
+5. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi
 6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
 7. **Wear standalone**: Telefon yoksa saat kendi konumundan API'ye sorar (hardcoded İstanbul koordinatları)
 
@@ -323,6 +330,14 @@ wear/
 - `method`: 13=Diyanet (default), 3=MWL, 4=Umm Al-Qura, 2=ISNA
 - `school`: 1=Hanafi (default, Turkey), 0=Shafi
 - Eksik `school` parametresi ~10 dk sapmaya neden olur.
+
+### Kıble Pusulası
+- **QiblaUseCase**: Bearing formülü ile lat/lon → Kaabe yönü (21.4225°N, 39.8262°E). İstanbul→~151.6°, NYC→~58.5°, Sydney→~277.5°.
+- **QiblaSensorManager**: SensorManager wrapper. TYPE_ACCELEROMETER + TYPE_MAGNETIC_FIELD. Exponential smoothing (α=0.2). `hasMagnetometer()` kontrolü.
+- **QiblaViewModel**: `collectAsStateWithLifecycle()` ile Flow dinleme. `onCleared()` ile otomatik sensor temizliği.
+- **QiblaScreen**: 5 UI state: Loading/CompassActive/StaticDirection/Error/LocationRequired. ±5° hizalanma titreşimi (VibrationEffect).
+- **Hybrid yaklaşım**: Manyetometre varsa tam pusula, yoksa statik yön + derece gösterimi.
+- **Test**: `QiblaUseCaseTest` - 6 birim testi passing (Istanbul, NYC, Sydney, Kaabe, kardinal yönler).
 
 ### Navigate
 - `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)
