@@ -322,7 +322,7 @@ wear/
 ### Kerahat Vakitleri
 - 3 periyot: Güneş→Güneş+45dk (namaz kılınmaz), Öğle-45dk→Öğle (namaz kılınmaz), Akşam-45dk→Akşam (sadece farz-ı ikindi kılınabilir)
 - `GetPrayerDashboardUseCase` aktif ve yaklaşan kerahat'ı hesaplar
-- Banner: aktif (errorContainer) veya yaklaşan ≤60dk (tertiaryContainer)
+- Banner: sadece "Kerahat Vakti" yazar (vakit ismi gösterilmez). Aktif (errorContainer) veya yaklaşan ≤60dk (tertiaryContainer)
 - Fallback path'te de kerahat banner gösterilir
 - Wear OS'a kerahat bilgisi sync edilir (`WearKerahatInfo`)
 
