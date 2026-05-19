@@ -141,12 +141,12 @@ app/
     │   │   │       ├── PrayerTimeResponse.kt  # CalendarResponse, DayData, Timings, DateInfo, Meta
     │   │   │       └── NominatimResponse.kt   # NominatimPlace, NominatimAddress
     │   │   ├── repository/
-    │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache, method-aware cache key
+    │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache, method+school-aware cache key
     │   │   └── local/
     │   │       ├── room/
-    │   │       │   ├── NamazDatabase.kt        # Room v2, PrayerTimeEntity, fallbackToDestructiveMigration(true)
-    │   │       │   ├── PrayerTimeDao.kt        # Queries by city+month+year+method, deleteOlderThan
-    │   │       │   └── PrayerTimeEntity.kt     # date (PK), cityName, 6 prayer times, hijri fields, cache metadata
+    │   │       │   ├── NamazDatabase.kt        # Room v3, PrayerTimeEntity, fallbackToDestructiveMigration(true)
+    │   │       │   ├── PrayerTimeDao.kt        # Queries by city+month+year+method+school, deleteOlderThan
+    │   │       │   └── PrayerTimeEntity.kt     # date (PK), cityName, 6 prayer times, hijri fields, cacheSchool
     │   │       └── datastore/
     │   │           ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, language, recentCities
     │   │           ├── UserPreferencesSerializer.kt # NO-OP stub (not actively used; standard Preferences keys used)
@@ -286,8 +286,8 @@ wear/
 - Expressive shapes, typography scale.
 
 ### Çevrimdışı (Room)
-- `PrayerTimeEntity` cache'lenir. Cache key: `cityName + month + year + method`.
-- `fallbackToDestructiveMigration(true)` kullanılır (schema export disabled).
+- `PrayerTimeEntity` cache'lenir. Cache key: `cityName + month + year + method + school`.
+- `NamazDatabase` version = 3. `fallbackToDestructiveMigration(true)` kullanılır (schema export disabled).
 - `cleanupOldData(30)` 30 günden eski veriyi siler.
 
 ### Bildirimler

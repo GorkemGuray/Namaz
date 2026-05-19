@@ -25,7 +25,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         method: Int,
         school: Int
     ): Flow<NetworkResult<List<PrayerTime>>> = flow {
-        val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method)
+        val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school)
 
         if (cached.isEmpty()) {
             emit(NetworkResult.Loading)
@@ -61,7 +61,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 }
 
                 prayerTimeDao.insertAll(prayerTimes.map {
-                    it.toEntity(location.cityName, month, year, method)
+                    it.toEntity(location.cityName, month, year, method, school)
                 })
 
                 emit(NetworkResult.Success(prayerTimes))
@@ -105,7 +105,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                     )
                 }
                 prayerTimeDao.insertAll(prayerTimes.map {
-                    it.toEntity(location.cityName, month, year, method)
+                    it.toEntity(location.cityName, month, year, method, school)
                 })
                 Result.success(prayerTimes)
             } else {
@@ -125,7 +125,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         return time.replace(Regex("\\s*\\(.*\\)\\s*"), "").trim()
     }
 
-    private fun PrayerTime.toEntity(cityName: String, month: Int, year: Int, method: Int) = PrayerTimeEntity(
+    private fun PrayerTime.toEntity(cityName: String, month: Int, year: Int, method: Int, school: Int) = PrayerTimeEntity(
         date = date,
         cityName = cityName,
         gregorianDate = gregorianDate,
@@ -141,7 +141,8 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         timezone = timezone,
         cacheMonth = month,
         cacheYear = year,
-        cacheMethod = method
+        cacheMethod = method,
+        cacheSchool = school
     )
 
     private fun PrayerTimeEntity.toDomainModel() = PrayerTime(
