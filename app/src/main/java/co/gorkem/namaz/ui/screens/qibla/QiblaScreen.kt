@@ -1,11 +1,10 @@
 package co.gorkem.namaz.ui.screens.qibla
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import android.annotation.SuppressLint
+import android.content.Context
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,170 +12,216 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import co.gorkem.namaz.R
+import co.gorkem.namaz.ui.components.QiblaCompass
+import co.gorkem.namaz.ui.components.QiblaDegreeDisplay
+import co.gorkem.namaz.ui.state.QiblaUiState
+import kotlin.math.cos
+import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QiblaScreen(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Text(
-                text = stringResource(R.string.qibla_title),
-                style = MaterialTheme.typography.titleLarge
-            )
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
-            )
-        )
+fun QiblaScreen(
+    modifier: Modifier = Modifier,
+    viewModel: QiblaViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
-        Column(
-            modifier = Modifier
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.qibla_title),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
+                )
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = modifier
                 .fillMaxSize()
+                .padding(padding)
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            contentAlignment = Alignment.Center
         ) {
-            QiblaCompassPlaceholder()
+            when (val state = uiState) {
+                is QiblaUiState.Loading -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text(
+                            text = stringResource(R.string.qibla_loading),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
-            Spacer(modifier = Modifier.height(32.dp))
+                is QiblaUiState.CompassActive -> {
+                    val isAligned = state.alignmentDelta <= 5.0
+                    val vibrator = remember { getVibrator(context) }
+                    var wasAligned by remember { mutableStateOf(false) }
 
-            Text(
-                text = stringResource(R.string.qibla_coming_soon),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.qibla_desc),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
+                    LaunchedEffect(isAligned) {
+                        if (isAligned && !wasAligned) {
+                            vibrator?.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+                        }
+                        wasAligned = isAligned
+                    }
+
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        QiblaCompass(
+                            deviceAzimuth = state.deviceAzimuth,
+                            qiblaBearing = state.qiblaDirection.bearing,
+                            alignmentDelta = state.alignmentDelta,
+                            isAligned = isAligned
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        QiblaDegreeDisplay(
+                            bearing = state.qiblaDirection.bearing,
+                            cardinalDirection = state.qiblaDirection.cardinalDirection,
+                            alignmentDelta = state.alignmentDelta,
+                            isAligned = isAligned
+                        )
+                    }
+                }
+
+                is QiblaUiState.StaticDirection -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        QiblaStaticArrow(
+                            bearing = state.qiblaDirection.bearing
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        QiblaDegreeDisplay(
+                            bearing = state.qiblaDirection.bearing,
+                            cardinalDirection = state.qiblaDirection.cardinalDirection,
+                            alignmentDelta = 0.0,
+                            isAligned = false
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = stringResource(R.string.qibla_no_magnetometer),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                is QiblaUiState.Error -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "⚠",
+                            style = MaterialTheme.typography.displayMedium
+                        )
+                        Text(
+                            text = state.message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                is QiblaUiState.LocationRequired -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.qibla_location_required),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun QiblaCompassPlaceholder() {
+private fun QiblaStaticArrow(
+    bearing: Double,
+    modifier: Modifier = Modifier
+) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val infiniteTransition = rememberInfiniteTransition(label = "compass_pulse")
-    val pulse by infiniteTransition.animateFloat(
-        initialValue = 0.92f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
-    )
+    androidx.compose.foundation.Canvas(modifier = modifier.padding(16.dp)) {
+        val center = androidx.compose.ui.geometry.Offset(size.width / 2, size.height / 2)
+        val length = size.minDimension / 2 - 16.dp.toPx()
+        val angleRad = Math.toRadians(bearing)
+        val endX = center.x + length * sin(angleRad).toFloat()
+        val endY = center.y - length * cos(angleRad).toFloat()
 
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = -8f,
-        targetValue = 8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "sway"
-    )
+        drawLine(
+            color = primaryColor,
+            start = center,
+            end = androidx.compose.ui.geometry.Offset(endX, endY),
+            strokeWidth = 4.dp.toPx(),
+            cap = androidx.compose.ui.graphics.StrokeCap.Round
+        )
 
-    Box(
-        modifier = Modifier.size(180.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val center = Offset(size.width / 2, size.height / 2)
-            val radius = size.minDimension / 2 - 8.dp.toPx()
+        drawCircle(
+            color = primaryColor,
+            radius = 8.dp.toPx(),
+            center = androidx.compose.ui.geometry.Offset(endX, endY)
+        )
+    }
+}
 
-            // Outer ring
-            drawCircle(
-                color = Color(0x1F6750A4),
-                radius = radius,
-                style = Stroke(width = 2.dp.toPx())
-            )
-
-            // Inner ring
-            drawCircle(
-                color = Color(0x0D6750A4),
-                radius = radius * 0.75f,
-                style = Stroke(width = 1.dp.toPx())
-            )
-
-            // Tick marks
-            for (i in 0 until 12) {
-                val angle = i * 30f
-                rotate(angle, center) {
-                    drawLine(
-                        color = Color(0x336750A4),
-                        start = Offset(center.x, center.y - radius + 4.dp.toPx()),
-                        end = Offset(center.x, center.y - radius + 14.dp.toPx()),
-                        strokeWidth = 1.5.dp.toPx(),
-                        cap = StrokeCap.Round
-                    )
-                }
-            }
-
-            // Compass needle
-            rotate(rotation + 45f, center) {
-                // North half
-                drawLine(
-                    color = Color(0xFFB3261E),
-                    start = center,
-                    end = Offset(center.x, center.y - radius * 0.55f),
-                    strokeWidth = 4.dp.toPx(),
-                    cap = StrokeCap.Round
-                )
-                // South half
-                drawLine(
-                    color = Color(0xFF79747E),
-                    start = center,
-                    end = Offset(center.x, center.y + radius * 0.55f),
-                    strokeWidth = 4.dp.toPx(),
-                    cap = StrokeCap.Round
-                )
-            }
-
-            // Center dot
-            drawCircle(
-                color = primaryColor,
-                radius = 6.dp.toPx()
-            )
-        }
-
-        // Kaaba indicator at top
-        Column(
-            modifier = Modifier.align(Alignment.TopCenter),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Explore,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-            )
-        }
+@Suppress("DEPRECATION")
+private fun getVibrator(context: Context): Vibrator? {
+    return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
+        vibratorManager?.defaultVibrator
+    } else {
+        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
     }
 }

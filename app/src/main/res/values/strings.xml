@@ -67,8 +67,12 @@
 
     <!-- Qibla -->
     <string name="qibla_title">Kıble</string>
-    <string name="qibla_coming_soon">Yakında</string>
-    <string name="qibla_desc">Kıble yönü bulma özelliği çok yakında kullanıma sunulacak.</string>
+    <string name="qibla_loading">Konum alınıyor…</string>
+    <string name="qibla_no_magnetometer">Manyetometre bulunamadı — statik Kıble yönü gösteriliyor</string>
+    <string name="qibla_location_required">Kıble yönünü hesaplamak için konum izni gereklidir.\nAyarlar\'dan konum izni verin.</string>
+    <string name="qibla_aligned">Kıble yönünde</string>
+    <string name="qibla_deviation">° sapma</string>
+    <string name="qibla_error_prefix">Pusula hatası:</string>
 
     <!-- Period Labels -->
     <string name="period_vakti">Namazı</string>

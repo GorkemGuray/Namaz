@@ -67,8 +67,12 @@
 
     <!-- Qibla -->
     <string name="qibla_title">Qibla</string>
-    <string name="qibla_coming_soon">Coming Soon</string>
-    <string name="qibla_desc">Qibla direction feature will be available soon.</string>
+    <string name="qibla_loading">Getting location…</string>
+    <string name="qibla_no_magnetometer">Magnetometer not found — showing static Qibla direction</string>
+    <string name="qibla_location_required">Location permission is required to calculate Qibla direction.\nEnable location permission from Settings.</string>
+    <string name="qibla_aligned">Facing Qibla</string>
+    <string name="qibla_deviation">° off</string>
+    <string name="qibla_error_prefix">Compass error:</string>
 
     <!-- Period Labels -->
     <string name="period_vakti">Prayer</string>
