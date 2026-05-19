@@ -93,7 +93,11 @@ class QiblaViewModel @Inject constructor(
                             deviceAzimuth = orientation.azimuth,
                             pitch = orientation.pitch,
                             roll = orientation.roll,
-                            alignmentDelta = delta
+                            alignmentDelta = delta,
+                            sensorAccuracy = orientation.sensorAccuracy,
+                            magneticFieldStrength = orientation.magneticFieldStrength,
+                            isMagneticDistorted = orientation.isMagneticDistorted,
+                            needsCalibration = orientation.needsCalibration
                         )
                     }
                 }

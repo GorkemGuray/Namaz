@@ -80,6 +80,9 @@
     <string name="compass_north_full">NORTH</string>
     <string name="qibla_arrow_label">KAABA</string>
     <string name="qibla_static_instruction">Turn device this way</string>
+    <string name="qibla_calibration_needed">Compass calibration needed — move device in a figure-eight pattern</string>
+    <string name="qibla_magnetic_distortion">Magnetic interference detected — move away from metal objects</string>
+    <string name="qibla_sensor_accuracy">Sensor accuracy: %1$s</string>
 
     <!-- Period Labels -->
     <string name="period_vakti">Prayer</string>

@@ -9,10 +9,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.PI
+import kotlin.math.sqrt
 
 @Singleton
 class QiblaSensorManager @Inject constructor(
@@ -42,6 +42,12 @@ class QiblaSensorManager @Inject constructor(
             private var hasGravity = false
             private var hasGeomagnetic = false
 
+            @Volatile
+            private var accelAccuracy = SensorManager.SENSOR_STATUS_NO_CONTACT
+
+            @Volatile
+            private var magnetAccuracy = SensorManager.SENSOR_STATUS_NO_CONTACT
+
             override fun onSensorChanged(event: SensorEvent) {
                 when (event.sensor.type) {
                     Sensor.TYPE_ACCELEROMETER -> {
@@ -68,18 +74,42 @@ class QiblaSensorManager @Inject constructor(
                         var azimuthDeg = Math.toDegrees(smoothAzimuth[0].toDouble())
                         if (azimuthDeg < 0) azimuthDeg += 360.0
 
+                        val magnetStrength = sqrt(
+                            geomagnetic[0] * geomagnetic[0] +
+                            geomagnetic[1] * geomagnetic[1] +
+                            geomagnetic[2] * geomagnetic[2]
+                        )
+
+                        val overallAccuracy = minOf(accelAccuracy, magnetAccuracy)
+                        val needsCalibration = when (overallAccuracy) {
+                            SensorManager.SENSOR_STATUS_UNRELIABLE,
+                            SensorManager.SENSOR_STATUS_ACCURACY_LOW -> true
+                            else -> false
+                        }
+
+                        val isDistorted = magnetStrength < 20f || magnetStrength > 70f
+
                         trySend(
                             QiblaOrientation.Available(
                                 azimuth = azimuthDeg,
                                 pitch = Math.toDegrees(smoothPitch[0].toDouble()),
-                                roll = Math.toDegrees(smoothRoll[0].toDouble())
+                                roll = Math.toDegrees(smoothRoll[0].toDouble()),
+                                sensorAccuracy = overallAccuracy,
+                                magneticFieldStrength = magnetStrength,
+                                isMagneticDistorted = isDistorted,
+                                needsCalibration = needsCalibration
                             )
                         )
                     }
                 }
             }
 
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+                when (sensor?.type) {
+                    Sensor.TYPE_ACCELEROMETER -> accelAccuracy = accuracy
+                    Sensor.TYPE_MAGNETIC_FIELD -> magnetAccuracy = accuracy
+                }
+            }
         }
 
         sensorManager.registerListener(
@@ -102,7 +132,11 @@ class QiblaSensorManager @Inject constructor(
         data class Available(
             val azimuth: Double,
             val pitch: Double,
-            val roll: Double
+            val roll: Double,
+            val sensorAccuracy: Int,
+            val magneticFieldStrength: Float,
+            val isMagneticDistorted: Boolean,
+            val needsCalibration: Boolean
         ) : QiblaOrientation()
 
         data object MagnetometerUnavailable : QiblaOrientation()

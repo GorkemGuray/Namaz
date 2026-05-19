@@ -9,7 +9,11 @@ sealed class QiblaUiState {
         val deviceAzimuth: Double,
         val pitch: Double,
         val roll: Double,
-        val alignmentDelta: Double
+        val alignmentDelta: Double,
+        val sensorAccuracy: Int,
+        val magneticFieldStrength: Float,
+        val isMagneticDistorted: Boolean,
+        val needsCalibration: Boolean
     ) : QiblaUiState()
     data class StaticDirection(
         val qiblaDirection: QiblaDirection

@@ -333,9 +333,11 @@ wear/
 
 ### Kıble Pusulası
 - **QiblaUseCase**: Bearing formülü ile lat/lon → Kaabe yönü (21.4225°N, 39.8262°E). İstanbul→~151.6°, NYC→~58.5°, Sydney→~277.5°.
-- **QiblaSensorManager**: SensorManager wrapper. TYPE_ACCELEROMETER + TYPE_MAGNETIC_FIELD. Exponential smoothing (α=0.2). `hasMagnetometer()` kontrolü.
-- **QiblaViewModel**: `collectAsStateWithLifecycle()` ile Flow dinleme. `onCleared()` ile otomatik sensor temizliği.
-- **QiblaScreen**: 5 UI state: Loading/CompassActive/StaticDirection/Error/LocationRequired. ±5° hizalanma titreşimi (VibrationEffect).
+- **QiblaSensorManager**: SensorManager wrapper. TYPE_ACCELEROMETER + TYPE_MAGNETIC_FIELD. Exponential smoothing (α=0.2). `hasMagnetometer()` kontrolü. Sensör doğruluğu (`onAccuracyChanged`) + manyetik alan şiddeti takibi. ±20–70 μT aralığı dışı → bozulma uyarısı.
+- **QiblaViewModel**: `collectAsStateWithLifecycle()` ile Flow dinleme. `onCleared()` ile otomatik sensor temizliği. Sensör doğruluk/kalibrasyon/manyetik verileri UI state'e aktarır.
+- **QiblaCompass**: Hareketli ibre tasarımı. Kıble iğnesi `qiblaBearing - deviceAzimuth` açısıyla döner — kullanıcı Kıble'ye dönünce ibre tepeyi gösterir. Kabe üçgen işaretçisi + KABE etiketi pusula halkasında. KUZEY etiketi cihaz yönüne göre döner. K/D/G/B kardinal etiketler.
+- **QiblaDegreeDisplay**: Bearing + kardinal yön + sapma + sensör doğruluk seviyesi (Yüksek/Orta/Düşük/Güvenilmez) + manyetik alan μT değeri.
+- **QiblaScreen**: 5 UI state: Loading/CompassActive/StaticDirection/Error/LocationRequired. ±5° hizalanma titreşimi. Kalibrasyon uyarı banner'ı (`needsCalibration`), manyetik bozulma uyarı banner'ı (`isMagneticDistorted`).
 - **Hybrid yaklaşım**: Manyetometre varsa tam pusula, yoksa statik yön + derece gösterimi.
 - **Test**: `QiblaUseCaseTest` - 6 birim testi passing (Istanbul, NYC, Sydney, Kaabe, kardinal yönler).
 
