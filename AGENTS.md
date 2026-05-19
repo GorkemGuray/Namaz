@@ -320,7 +320,7 @@ wear/
 - **⚠️ Hardcoded fallback**: `WearViewModel.loadFromStandalone()` İstanbul koordinatlarına (41.0082, 28.9784) düşer. GPS konum alınmalı.
 
 ### Kerahat Vakitleri
-- 3 periyot: Güneş→Güneş+45dk, Öğle-45dk→Öğle, İkindi→Akşam-45dk
+- 3 periyot: Güneş→Güneş+45dk (namaz kılınmaz), Öğle-45dk→Öğle (namaz kılınmaz), Akşam-45dk→Akşam (sadece farz-ı ikindi kılınabilir)
 - `GetPrayerDashboardUseCase` aktif ve yaklaşan kerahat'ı hesaplar
 - Banner: aktif (errorContainer) veya yaklaşan ≤60dk (tertiaryContainer)
 - Fallback path'te de kerahat banner gösterilir

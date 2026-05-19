@@ -7,7 +7,7 @@ import co.gorkem.namaz.wear.R
 @Composable
 fun prayerNameFromEnum(name: String): String {
     return when (name) {
-        "IMSak" -> stringResource(R.string.prayer_imsak)
+        "IMSAK" -> stringResource(R.string.prayer_imsak)
         "GUNES" -> stringResource(R.string.prayer_gunes)
         "OGLE" -> stringResource(R.string.prayer_ogle)
         "IKINDI" -> stringResource(R.string.prayer_ikindi)

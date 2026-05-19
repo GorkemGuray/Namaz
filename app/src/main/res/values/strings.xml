@@ -18,7 +18,7 @@
     <string name="home_seconds_left">saniye kaldı</string>
 
     <!-- Kerahat -->
-    <string name="kerahat_active">aktif</string>
+    <string name="kerahat_vakti">Kerahat Vakti</string>
     <string name="kerahat_ends_in">dk sonra biter</string>
     <string name="kerahat_approaching">yaklaşıyor</string>
     <string name="kerahat_starts_in">dk sonra başlar</string>

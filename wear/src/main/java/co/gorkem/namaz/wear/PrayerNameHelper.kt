@@ -5,7 +5,7 @@ import co.gorkem.namaz.wear.R
 
 fun prayerNameFromEnum(context: Context, name: String): String {
     return when (name) {
-        "IMSak" -> context.getString(R.string.prayer_imsak)
+        "IMSAK" -> context.getString(R.string.prayer_imsak)
         "GUNES" -> context.getString(R.string.prayer_gunes)
         "OGLE" -> context.getString(R.string.prayer_ogle)
         "IKINDI" -> context.getString(R.string.prayer_ikindi)

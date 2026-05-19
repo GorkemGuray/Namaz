@@ -18,7 +18,7 @@
     <string name="home_seconds_left">seconds left</string>
 
     <!-- Kerahat -->
-    <string name="kerahat_active">active</string>
+    <string name="kerahat_vakti">Kerahat Time</string>
     <string name="kerahat_ends_in">min until end</string>
     <string name="kerahat_approaching">approaching</string>
     <string name="kerahat_starts_in">min until start</string>

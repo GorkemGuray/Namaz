@@ -161,7 +161,7 @@ private fun WearKerahatBanner(
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                text = "${prayerNameFromEnum(kerahat.prayerName)} $label",
+                text = label,
                 style = MaterialTheme.typography.labelMedium,
                 color = contentColor,
                 textAlign = TextAlign.Center
