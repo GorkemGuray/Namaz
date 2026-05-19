@@ -164,7 +164,7 @@ app/
     │   │   ├── PrayerNotificationScheduler.kt # 6 vakit bildirimi zamanlaması (WorkManager OneTimeWorkRequest)
     │   │   ├── PrayerRefreshWorker.kt         # @HiltWorker, every 6h periodic refresh + notification reschedule
     │   │   ├── WearSyncManager.kt             # Data Layer API ile Wear'a JSON sync (/namaz_prayer_data)
-    │   │   └── WearPrayerData.kt              # WearPrayerData, WearPrayerItem, WearNextPrayer + Gson helpers
+    │   │   ├── WearPrayerData.kt              # WearPrayerData, WearPrayerItem, WearNextPrayer, WearKerahatInfo + Gson helpers
     │   │
     │   └── ui/
     │       ├── state/
@@ -224,7 +224,7 @@ wear/
     │   ├── data/
     │   │   ├── WearDataLayerService.kt    # DataClient listener (/namaz_prayer_data)
     │   │   ├── WearPrayerRepository.kt    # Standalone Aladhan API call (phone yoksa)
-    │   │   ├── WearPrayerModel.kt         # WearPrayerData, WearPrayerItem, WearNextPrayer
+    │   │   ├── WearPrayerModel.kt         # WearPrayerData, WearPrayerItem, WearNextPrayer, WearKerahatInfo
     │   │   └── remote/
     │   │       ├── api/AladhanApiService.kt      # Retrofit interface (method, school params)
     │   │       └── dto/PrayerTimeResponse.kt     # DTOs (simplified)
@@ -233,7 +233,7 @@ wear/
     │   │   ├── WearViewModel.kt       # DataLayer listener + standalone API fallback (hardcoded Istanbul)
     │   │   ├── PrayerNameHelper.kt    # @Composable prayer name mapper (⚠️ duplicate with root PrayerNameHelper.kt)
     │   │   ├── screens/
-    │   │   │   └── WearHomeScreen.kt  # ScalingLazyColumn: countdown hero, city, prayer rows, source chip
+    │   │   │   ── WearHomeScreen.kt  # ScalingLazyColumn: countdown hero, city, kerahat banner, prayer rows, source chip
     │   │   └── theme/
     │   │       ├── Theme.kt           # WearTheme (OLED-black color scheme)
     │   │       ├── Color.kt           # High-contrast wear palette (cyan/blue/amber on black)
@@ -263,7 +263,7 @@ wear/
 3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), hesaplama yöntemi, mezhep (school), dil
 4. **Şehir seçimi**: Nominatim arama + son seçilenler (max 5, JSON olarak DataStore'da)
 5. **Kıble**: Canvas ile animasyonlu pusula placeholder
-6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer bilgisi gönderir
+6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
 7. **Wear standalone**: Telefon yoksa saat kendi konumundan API'ye sorar (hardcoded İstanbul koordinatları)
 
 ---
@@ -308,8 +308,16 @@ wear/
 - Hem Data Layer (telefon bağlıyken) hem standalone API (telefon yokken) çalışır.
 - **Complication**: `PrayerComplicationService`, ShortText tipinde.
 - **Tile**: `PrayerTileService`, next prayer + remaining minutes.
+- **Kerahat**: Telefon'dan Wear'a kerahat bilgisi sync edilir. `WearKerahatBanner` aktif/yaklaşıyor durumlarını gösterir.
 - **⚠️ Duplicate**: `PrayerNameHelper.kt` hem root package'ta (`Context`-based) hem `ui/`'da (`@Composable`). Birini kaldırmak gerekir.
 - **⚠️ Hardcoded fallback**: `WearViewModel.loadFromStandalone()` İstanbul koordinatlarına (41.0082, 28.9784) düşer. GPS konum alınmalı.
+
+### Kerahat Vakitleri
+- 3 periyot: Güneş→Güneş+45dk, Öğle-45dk→Öğle, İkindi→Akşam-45dk
+- `GetPrayerDashboardUseCase` aktif ve yaklaşan kerahat'ı hesaplar
+- Banner: aktif (errorContainer) veya yaklaşan ≤60dk (tertiaryContainer)
+- Fallback path'te de kerahat banner gösterilir
+- Wear OS'a kerahat bilgisi sync edilir (`WearKerahatInfo`)
 
 ### API Parametreleri
 - `method`: 13=Diyanet (default), 3=MWL, 4=Umm Al-Qura, 2=ISNA

@@ -193,9 +193,10 @@ fun HomeScreen(
                             )
                         }
                     }
-                } else if (todayTimes != null) {
-                    val np = nextPrayer
-                    if (np != null) {
+            } else if (todayTimes != null) {
+                val np = nextPrayer
+                if (np != null) {
+                    val dash = dashboard
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
@@ -203,6 +204,12 @@ fun HomeScreen(
                     ) {
                         item {
                             CountdownTimer(nextPrayer = np)
+                        }
+
+                        item {
+                            if (dash != null) {
+                                KerahatBanner(dashboard = dash)
+                            }
                         }
 
                         item {
@@ -222,8 +229,8 @@ fun HomeScreen(
                             )
                         }
                     }
-                    }
-                    }
+                }
+            }
                 }
             }
         }
@@ -235,22 +242,22 @@ private fun KerahatBanner(dashboard: PrayerDashboardData) {
     val nextKerahat = dashboard.nextKerahatInfo
 
     AnimatedVisibility(
-        visible = kerahat != null || (nextKerahat != null && nextKerahat.remainingToStartMinutes <= 30),
+        visible = kerahat != null || (nextKerahat != null && nextKerahat.remainingToStartMinutes <= 60),
         enter = slideInVertically { it / 2 } + fadeIn(),
         exit = slideOutVertically { it / 2 } + fadeOut()
     ) {
         when {
             kerahat != null -> {
                 KerahatChip(
-                    text = stringResource(kerahat.prayerName.nameRes) + stringResource(R.string.period_kerahati) + stringResource(R.string.kerahat_active),
-                    subtext = kerahat.remainingToEndMinutes.toString() + stringResource(R.string.kerahat_ends_in),
+                    text = "${stringResource(kerahat.prayerName.nameRes)} ${stringResource(R.string.period_kerahati)} ${stringResource(R.string.kerahat_active)}",
+                    subtext = "${kerahat.remainingToEndMinutes} ${stringResource(R.string.kerahat_ends_in)}",
                     isActive = true
                 )
             }
             nextKerahat != null && nextKerahat.remainingToStartMinutes <= 30 -> {
                 KerahatChip(
-                    text = stringResource(nextKerahat.prayerName.nameRes) + stringResource(R.string.period_kerahati) + stringResource(R.string.kerahat_approaching),
-                    subtext = nextKerahat.remainingToStartMinutes.toString() + stringResource(R.string.kerahat_starts_in),
+                    text = "${stringResource(nextKerahat.prayerName.nameRes)} ${stringResource(R.string.period_kerahati)} ${stringResource(R.string.kerahat_approaching)}",
+                    subtext = "${nextKerahat.remainingToStartMinutes} ${stringResource(R.string.kerahat_starts_in)}",
                     isActive = false
                 )
             }

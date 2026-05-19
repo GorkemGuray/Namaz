@@ -45,6 +45,7 @@ import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
 import androidx.compose.ui.res.stringResource
 import co.gorkem.namaz.wear.R
+import co.gorkem.namaz.wear.data.WearKerahatInfo
 import co.gorkem.namaz.wear.data.WearNextPrayer
 import co.gorkem.namaz.wear.data.WearPrayerItem
 import co.gorkem.namaz.wear.ui.WearViewModel
@@ -58,6 +59,7 @@ fun WearHomeScreen(
     val prayerItems by viewModel.prayerItems.collectAsState()
     val cityName by viewModel.cityName.collectAsState()
     val nextPrayer by viewModel.nextPrayerInfo.collectAsState()
+    val kerahat by viewModel.kerahatInfo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isPhoneSource by viewModel.isPhoneSource.collectAsState()
     val listState = rememberScalingLazyListState()
@@ -95,6 +97,13 @@ fun WearHomeScreen(
                     }
                 }
 
+                // Kerahat banner
+                if (kerahat != null) {
+                    item {
+                        WearKerahatBanner(kerahat = kerahat!!)
+                    }
+                }
+
                 // Source indicator
                 item {
                     SourceIndicator(isPhoneSource = isPhoneSource)
@@ -112,6 +121,57 @@ fun WearHomeScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun WearKerahatBanner(
+    kerahat: WearKerahatInfo,
+    modifier: Modifier = Modifier
+) {
+    val containerColor = if (kerahat.isCurrentlyKerahat) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.tertiaryContainer
+    }
+    val contentColor = if (kerahat.isCurrentlyKerahat) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    }
+    val label = if (kerahat.isCurrentlyKerahat) {
+        stringResource(R.string.wear_kerahat_active)
+    } else {
+        stringResource(R.string.wear_kerahat_approaching)
+    }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = "${prayerNameFromEnum(kerahat.prayerName)} $label",
+                style = MaterialTheme.typography.labelMedium,
+                color = contentColor,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "${kerahat.remainingMinutes} ${stringResource(R.string.wear_kerahat_remaining)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

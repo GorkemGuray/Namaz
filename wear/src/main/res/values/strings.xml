@@ -13,4 +13,7 @@
     <string name="wear_prayer_time">Namaz Vakti</string>
     <string name="wear_prayer_times">Namaz Vakitleri</string>
     <string name="wear_minutes_left"> dk kaldı</string>
+    <string name="wear_kerahat_active">kerahat aktif</string>
+    <string name="wear_kerahat_approaching">kerahat yaklaşıyor</string>
+    <string name="wear_kerahat_remaining">dk sonra</string>
 </resources>

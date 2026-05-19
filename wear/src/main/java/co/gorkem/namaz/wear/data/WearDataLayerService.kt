@@ -45,7 +45,7 @@ class WearDataLayerService @Inject constructor(
                     val json = dataMap.getString("prayer_json") ?: continue
 
                     try {
-                        val data = WearNextPrayer.fromJson(json)
+                        val data = WearPrayerData.fromJson(json)
                         _prayerData.value = data
                         _isPhoneConnected.value = true
                     } catch (e: Exception) {

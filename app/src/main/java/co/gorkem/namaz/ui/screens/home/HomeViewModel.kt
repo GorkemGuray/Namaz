@@ -14,6 +14,7 @@ import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.service.GeocoderHelper
 import co.gorkem.namaz.service.LocationTracker
 import co.gorkem.namaz.service.PrayerNotificationScheduler
+import co.gorkem.namaz.service.WearKerahatInfo
 import co.gorkem.namaz.service.WearNextPrayer
 import co.gorkem.namaz.service.WearPrayerData
 import co.gorkem.namaz.service.WearPrayerItem
@@ -219,6 +220,15 @@ class HomeViewModel @Inject constructor(
         val todayData = prayerTimes.find { it.date == today.format(DATE_FORMAT) } ?: return
 
         viewModelScope.launch {
+            val kerahatInfo = dashboardData.value?.kerahatInfo
+            val wearKerahat = kerahatInfo?.let { k ->
+                WearKerahatInfo(
+                    isCurrentlyKerahat = k.isCurrentlyKerahat,
+                    prayerName = k.prayerName.name,
+                    remainingMinutes = if (k.isCurrentlyKerahat) k.remainingToEndMinutes else k.remainingToStartMinutes
+                )
+            }
+
             val wearData = WearPrayerData(
                 cityName = location.cityName,
                 prayers = todayData.getAllPrayers().map { (name, time) ->
@@ -233,7 +243,8 @@ class HomeViewModel @Inject constructor(
                         time = it.prayerTime,
                         remainingMinutes = it.remainingMinutes
                     )
-                }
+                },
+                kerahat = wearKerahat
             )
             wearSyncManager.syncPrayerData(wearData)
         }

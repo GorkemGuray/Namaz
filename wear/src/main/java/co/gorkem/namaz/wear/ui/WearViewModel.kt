@@ -4,6 +4,7 @@ import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.wear.data.WearDataLayerService
+import co.gorkem.namaz.wear.data.WearKerahatInfo
 import co.gorkem.namaz.wear.data.WearNextPrayer
 import co.gorkem.namaz.wear.data.WearPrayerItem
 import co.gorkem.namaz.wear.data.WearPrayerRepository
@@ -29,6 +30,9 @@ class WearViewModel @Inject constructor(
     private val _nextPrayerInfo = MutableStateFlow<WearNextPrayer?>(null)
     val nextPrayerInfo = _nextPrayerInfo.asStateFlow()
 
+    private val _kerahatInfo = MutableStateFlow<WearKerahatInfo?>(null)
+    val kerahatInfo: StateFlow<WearKerahatInfo?> = _kerahatInfo.asStateFlow()
+
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -43,6 +47,7 @@ class WearViewModel @Inject constructor(
                     _prayerItems.value = data.prayers
                     _cityName.value = data.cityName
                     _nextPrayerInfo.value = data.nextPrayer
+                    _kerahatInfo.value = data.kerahat
                     _isPhoneSource.value = true
                     _isLoading.value = false
                 }

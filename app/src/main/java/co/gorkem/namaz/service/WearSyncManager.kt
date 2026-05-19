@@ -21,7 +21,7 @@ class WearSyncManager @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val putDataRequest = PutDataMapRequest.create(SYNC_PATH).apply {
-                    dataMap.putString(KEY_PRAYER_JSON, WearNextPrayer.toJson(data))
+                    dataMap.putString(KEY_PRAYER_JSON, WearPrayerData.toJson(data))
                     dataMap.putLong(KEY_TIMESTAMP, System.currentTimeMillis())
                 }.setUrgent()
                     .asPutDataRequest()

@@ -151,6 +151,7 @@ class GetPrayerDashboardUseCase @Inject constructor(
     ): List<KerahatPeriod> {
         val gunes = prayers[PrayerName.GUNES]!!
         val ogle = prayers[PrayerName.OGLE]!!
+        val ikindi = prayers[PrayerName.IKINDI]!!
         val aksam = prayers[PrayerName.AKSAM]!!
 
         return listOf(
@@ -161,13 +162,13 @@ class GetPrayerDashboardUseCase @Inject constructor(
             ),
             KerahatPeriod(
                 prayerName = PrayerName.OGLE,
-                start = ogle.minusMinutes(10),
+                start = ogle.minusMinutes(45),
                 end = ogle
             ),
             KerahatPeriod(
-                prayerName = PrayerName.AKSAM,
-                start = aksam.minusMinutes(45),
-                end = aksam
+                prayerName = PrayerName.IKINDI,
+                start = ikindi,
+                end = aksam.minusMinutes(45)
             )
         )
     }

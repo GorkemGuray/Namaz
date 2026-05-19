@@ -6,8 +6,15 @@ data class WearPrayerData(
     val cityName: String,
     val prayers: List<WearPrayerItem>,
     val nextPrayer: WearNextPrayer?,
+    val kerahat: WearKerahatInfo?,
     val timestamp: Long = System.currentTimeMillis()
-)
+) {
+    companion object {
+        private val gson = Gson()
+        fun toJson(data: WearPrayerData): String = gson.toJson(data)
+        fun fromJson(json: String): WearPrayerData = gson.fromJson(json, WearPrayerData::class.java)
+    }
+}
 
 data class WearPrayerItem(
     val name: String,
@@ -18,12 +25,10 @@ data class WearNextPrayer(
     val name: String,
     val time: String,
     val remainingMinutes: Long
-) {
-    companion object {
-        private val gson = Gson()
+)
 
-        fun toJson(data: WearPrayerData): String = gson.toJson(data)
-
-        fun fromJson(json: String): WearPrayerData = gson.fromJson(json, WearPrayerData::class.java)
-    }
-}
+data class WearKerahatInfo(
+    val isCurrentlyKerahat: Boolean,
+    val prayerName: String,
+    val remainingMinutes: Long
+)
