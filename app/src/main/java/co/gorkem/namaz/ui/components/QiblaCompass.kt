@@ -13,7 +13,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -21,7 +20,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.cos
@@ -46,7 +44,6 @@ fun QiblaCompass(
     val outlineVariant = MaterialTheme.colorScheme.outlineVariant
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val primary = MaterialTheme.colorScheme.primary
-    val density = LocalDensity.current
 
     Box(
         modifier = modifier.size(250.dp),
@@ -58,7 +55,6 @@ fun QiblaCompass(
 
             drawOuterRing(center, radius, outlineVariant)
             drawCardinalTickMarks(center, radius, onSurfaceVariant, outlineVariant)
-            drawKaabaMarker(center, radius, qiblaBearing.toFloat(), primary, isAligned)
 
             rotate(animatedNeedle, center) {
                 drawQiblaNeedle(center, radius, primary, isAligned)
@@ -84,16 +80,6 @@ fun QiblaCompass(
             fontSize = 9.sp,
             color = Color(0xFFB3261E),
             modifier = Modifier.offset(x = northX, y = northY)
-        )
-
-        val kabeAngleRad = Math.toRadians(qiblaBearing)
-        val kabeX = (sin(kabeAngleRad) * 88).dp
-        val kabeY = (-cos(kabeAngleRad) * 88).dp
-        Text(
-            text = "KABE",
-            fontSize = 10.sp,
-            color = primary,
-            modifier = Modifier.offset(x = kabeX, y = kabeY)
         )
     }
 }
@@ -168,39 +154,6 @@ private fun DrawScope.drawCardinalTickMarks(
     }
 }
 
-private fun DrawScope.drawKaabaMarker(
-    center: Offset,
-    radius: Float,
-    qiblaBearing: Float,
-    color: Color,
-    isAligned: Boolean
-) {
-    rotate(qiblaBearing, center) {
-        val markerTop = center.y - radius - 6.dp.toPx()
-        val markerBase = center.y - radius + 8.dp.toPx()
-        val markerHalf = 7.dp.toPx()
-
-        val markerPath = Path().apply {
-            moveTo(center.x, markerTop)
-            lineTo(center.x - markerHalf, markerBase)
-            lineTo(center.x + markerHalf, markerBase)
-            close()
-        }
-
-        drawPath(
-            path = markerPath,
-            color = if (isAligned) color else color.copy(alpha = 0.6f)
-        )
-
-        val boxSize = 6.dp.toPx()
-        drawRect(
-            color = if (isAligned) color else color.copy(alpha = 0.6f),
-            topLeft = Offset(center.x - boxSize / 2, markerBase),
-            size = Size(boxSize, boxSize)
-        )
-    }
-}
-
 private fun DrawScope.drawQiblaNeedle(
     center: Offset,
     radius: Float,
@@ -219,14 +172,31 @@ private fun DrawScope.drawQiblaNeedle(
         close()
     }
 
+    val needleColor = if (isAligned) color else color.copy(alpha = 0.7f)
+
     drawPath(
         path = needlePath,
-        color = if (isAligned) color else color.copy(alpha = 0.7f)
+        color = needleColor
     )
 
+    val tipRadius = 5.dp.toPx()
     drawCircle(
-        color = if (isAligned) color else color.copy(alpha = 0.7f),
-        radius = 5.dp.toPx(),
+        color = needleColor,
+        radius = tipRadius,
         center = needleTip
     )
+
+    val kaabaSize = 4.dp.toPx()
+    drawRect(
+        color = Color.White,
+        topLeft = Offset(needleTip.x - kaabaSize, needleTip.y - kaabaSize),
+        size = Size(kaabaSize * 2, kaabaSize * 2)
+    )
+    val kaabaRoof = Path().apply {
+        moveTo(needleTip.x - kaabaSize - 1.dp.toPx(), needleTip.y - kaabaSize)
+        lineTo(needleTip.x, needleTip.y - kaabaSize * 2 - 1.dp.toPx())
+        lineTo(needleTip.x + kaabaSize + 1.dp.toPx(), needleTip.y - kaabaSize)
+        close()
+    }
+    drawPath(path = kaabaRoof, color = Color.White)
 }
