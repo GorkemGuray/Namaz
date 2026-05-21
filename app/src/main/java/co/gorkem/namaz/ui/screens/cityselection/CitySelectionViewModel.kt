@@ -77,6 +77,7 @@ class CitySelectionViewModel @Inject constructor(
             } catch (_: Exception) {
                 _searchResults.value = emptyList()
             }
+            _isSearching.value = false
         }
     }
 
@@ -101,7 +102,7 @@ class CitySelectionViewModel @Inject constructor(
             name = city.name,
             latitude = city.latitude,
             longitude = city.longitude,
-            districtId = city.districtId
+            districtId = city.districtId ?: ""
         )
     }
 

@@ -17,7 +17,7 @@ data class RecentCity(
     val name: String,
     val latitude: Double,
     val longitude: Double,
-    val districtId: String = "",
+    val districtId: String? = null,
     val timestamp: Long = System.currentTimeMillis()
 )
 
@@ -60,7 +60,8 @@ class UserPreferencesRepository @Inject constructor(
         val recentCitiesJson = prefs[RECENT_CITIES] ?: "[]"
         val recentCities: List<RecentCity> = try {
             val type = object : TypeToken<List<RecentCity>>() {}.type
-            gson.fromJson(recentCitiesJson, type) ?: emptyList()
+            val cities = gson.fromJson<List<RecentCity>>(recentCitiesJson, type) ?: emptyList()
+            cities.map { it.copy(districtId = it.districtId ?: "") }
         } catch (_: Exception) {
             emptyList()
         }
