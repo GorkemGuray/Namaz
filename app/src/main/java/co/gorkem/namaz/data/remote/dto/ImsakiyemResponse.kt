@@ -2,58 +2,49 @@ package co.gorkem.namaz.data.remote.dto
 
 import com.google.gson.annotations.SerializedName
 
-data class BaseResponse<T>(
-    val success: Boolean,
-    val code: Int,
-    val message: String,
-    val data: T,
-    val meta: MetaDto?
+data class DistrictSearchResponse @JvmOverloads constructor(
+    var success: Boolean = false,
+    var code: Int = 0,
+    var message: String = "",
+    @SerializedName("data") var districts: List<DistrictDto> = emptyList()
 )
 
-data class MetaDto(
-    @SerializedName("totalCount") val totalCount: Int? = null
+data class PrayerTimesResponse @JvmOverloads constructor(
+    var success: Boolean = false,
+    var code: Int = 0,
+    var message: String = "",
+    @SerializedName("data") var days: List<DayPrayerDto> = emptyList()
 )
 
-data class StateDto(
-    @SerializedName("_id") val id: String,
-    val name: String,
-    @SerializedName("name_en") val nameEn: String,
-    @SerializedName("country_id") val countryId: String
+data class DistrictDto @JvmOverloads constructor(
+    @SerializedName("_id") var id: String = "",
+    @SerializedName("name") var name: String = "",
+    @SerializedName("name_en") var nameEn: String = "",
+    @SerializedName("state_id") var stateId: String = "",
+    @SerializedName("country_id") var countryId: String = ""
 )
 
-data class DistrictDto(
-    @SerializedName("_id") val id: String,
-    val name: String,
-    @SerializedName("name_en") val nameEn: String,
-    @SerializedName("state_id") val stateId: String,
-    @SerializedName("country_id") val countryId: String
+data class DayPrayerDto @JvmOverloads constructor(
+    @SerializedName("_id") var id: String = "",
+    @SerializedName("date") var date: String = "",
+    @SerializedName("times") var times: PrayerTimesDto = PrayerTimesDto(),
+    @SerializedName("hijri_date") var hijriDate: HijriDateDto? = null
 )
 
-data class DayPrayerDto(
-    @SerializedName("_id") val id: String,
-    val date: String,
-    val times: PrayerTimesDto,
-    @SerializedName("hijri_date") val hijriDate: HijriDateDto?
+data class PrayerTimesDto @JvmOverloads constructor(
+    @SerializedName("imsak") var imsak: String = "",
+    @SerializedName("gunes") var gunes: String = "",
+    @SerializedName("ogle") var ogle: String = "",
+    @SerializedName("ikindi") var ikindi: String = "",
+    @SerializedName("aksam") var aksam: String = "",
+    @SerializedName("yatsi") var yatsi: String = ""
 )
 
-data class PrayerTimesDto(
-    val imsak: String,
-    val gunes: String,
-    val ogle: String,
-    val ikindi: String,
-    val aksam: String,
-    val yatsi: String
+data class HijriDateDto @JvmOverloads constructor(
+    @SerializedName("day") var day: Int = 0,
+    @SerializedName("month") var month: Int = 0,
+    @SerializedName("month_name") var monthName: String = "",
+    @SerializedName("month_name_en") var monthNameEn: String = "",
+    @SerializedName("year") var year: Int = 0,
+    @SerializedName("full_date") var fullDate: String = ""
 )
-
-data class HijriDateDto(
-    val day: Int,
-    val month: Int,
-    @SerializedName("month_name") val monthName: String,
-    @SerializedName("month_name_en") val monthNameEn: String,
-    val year: Int,
-    @SerializedName("full_date") val fullDate: String
-)
-
-typealias DistrictsResponse = BaseResponse<List<DistrictDto>>
-typealias SearchDistrictsResponse = BaseResponse<List<DistrictDto>>
-typealias PrayerTimesResponse = BaseResponse<List<DayPrayerDto>>

@@ -134,11 +134,7 @@ fun CitySelectionScreen(
             )
 
             when {
-                isSearching && searchResults.isEmpty() -> {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    SearchingState(modifier = Modifier.fillMaxWidth())
-                }
-                isSearching && searchResults.isNotEmpty() -> {
+                searchResults.isNotEmpty() -> {
                     Spacer(modifier = Modifier.height(16.dp))
                     SearchResultsList(
                         results = searchResults,
@@ -151,6 +147,10 @@ fun CitySelectionScreen(
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+                isSearching -> {
+                    Spacer(modifier = Modifier.height(32.dp))
+                    SearchingState(modifier = Modifier.fillMaxWidth())
                 }
                 searchQuery.isNotEmpty() && !isSearching && searchResults.isEmpty() -> {
                     Spacer(modifier = Modifier.height(32.dp))

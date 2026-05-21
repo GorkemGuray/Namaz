@@ -152,7 +152,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
 
         if (!response.success) return emptyList()
 
-        return response.data.map { day ->
+        return response.days.map { day ->
             PrayerTime(
                 date = LocalDate.parse(day.date.substring(0, 10)).format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
                 gregorianDate = "",
@@ -180,8 +180,8 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         for (query in candidates) {
             try {
                 val response = apiService.searchDistricts(query)
-                if (!response.success || response.data.isEmpty()) continue
-                for (district in response.data) {
+                if (!response.success || response.districts.isEmpty()) continue
+                for (district in response.districts) {
                     val normalizedName = district.name
                         .replace(Regex("[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]"), "")
                         .lowercase()
@@ -190,7 +190,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                         .lowercase()
                     if (normalizedName == normalizedQuery) return district.id
                 }
-                return response.data.firstOrNull()?.id
+                return response.districts.firstOrNull()?.id
             } catch (_: Exception) {
                 continue
             }

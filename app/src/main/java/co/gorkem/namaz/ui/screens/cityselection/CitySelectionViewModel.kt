@@ -60,7 +60,7 @@ class CitySelectionViewModel @Inject constructor(
             try {
                 val response = apiService.searchDistricts(query = query.trim())
                 if (response.success) {
-                    _searchResults.value = response.data.map { district ->
+                    _searchResults.value = response.districts.map { district ->
                         LocationSearchResult(
                             displayName = "${district.name}, Türkiye",
                             cityName = district.name,
