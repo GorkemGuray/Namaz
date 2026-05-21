@@ -17,6 +17,7 @@ data class RecentCity(
     val name: String,
     val latitude: Double,
     val longitude: Double,
+    val districtId: String = "",
     val timestamp: Long = System.currentTimeMillis()
 )
 
@@ -115,7 +116,7 @@ class UserPreferencesRepository @Inject constructor(
             prefs[MANUAL_LATITUDE] = latitude.toString()
             prefs[MANUAL_LONGITUDE] = longitude.toString()
         }
-        addRecentCity(RecentCity(name, latitude, longitude))
+        addRecentCity(RecentCity(name, latitude, longitude, districtId))
     }
 
     suspend fun clearManualCity() {

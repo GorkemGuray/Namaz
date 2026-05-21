@@ -34,7 +34,6 @@ class PrayerTimeRepositoryImpl @Inject constructor(
     private suspend fun shouldUseLocalCalculation(): Boolean {
         val prefs = preferencesRepository.preferences.first()
         if (prefs.useLocalCalculation) return true
-        if (prefs.manualDistrictId.isEmpty() && prefs.manualCityName.isEmpty()) return true
         return !isNetworkAvailable()
     }
 
@@ -74,7 +73,15 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 })
                 emit(NetworkResult.Success(prayerTimes))
             } else if (cached.isEmpty()) {
-                emit(NetworkResult.Error("Vakitler alınamadı"))
+                val fallbackTimes = calculateLocally(location, month, year, method, school)
+                if (fallbackTimes.isNotEmpty()) {
+                    prayerTimeDao.insertAll(fallbackTimes.map {
+                        it.toEntity(location.cityName, month, year, method, school)
+                    })
+                    emit(NetworkResult.Success(fallbackTimes))
+                } else {
+                    emit(NetworkResult.Error("Vakitler alınamadı"))
+                }
             }
         } catch (e: Exception) {
             if (cached.isEmpty()) {
@@ -105,10 +112,13 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         }
         val dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
+        val lat = if (location.latitude == 0.0 && location.longitude == 0.0) 41.0082 else location.latitude
+        val lon = if (location.latitude == 0.0 && location.longitude == 0.0) 28.9784 else location.longitude
+
         val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
         return (1..daysInMonth).map { day ->
             val date = LocalDate.of(year, month, day)
-            val times = calculator.calculate(date, location.latitude, location.longitude, timezone)
+            val times = calculator.calculate(date, lat, lon, timezone)
 
             PrayerTime(
                 date = date.format(dateFormatter),
@@ -161,20 +171,31 @@ class PrayerTimeRepositoryImpl @Inject constructor(
     }
 
     suspend fun findDistrictId(cityName: String, districtName: String): String? {
-        if (cityName.isEmpty() && districtName.isEmpty()) return null
-        return try {
-            val query = districtName.ifEmpty { cityName }
-            val response = apiService.searchDistricts(query)
-            if (!response.success || response.data.isEmpty()) return null
-            for (district in response.data) {
-                val match = district.name.replace(Regex("[\\sİI]"), "")
-                    .lowercase() == query.replace(Regex("[\\sİI]"), "").lowercase()
-                if (match) return district.id
+        val candidates = listOfNotNull(
+            districtName.takeIf { it.isNotBlank() },
+            cityName.takeIf { it.isNotBlank() }
+        )
+        if (candidates.isEmpty()) return null
+
+        for (query in candidates) {
+            try {
+                val response = apiService.searchDistricts(query)
+                if (!response.success || response.data.isEmpty()) continue
+                for (district in response.data) {
+                    val normalizedName = district.name
+                        .replace(Regex("[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]"), "")
+                        .lowercase()
+                    val normalizedQuery = query
+                        .replace(Regex("[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]"), "")
+                        .lowercase()
+                    if (normalizedName == normalizedQuery) return district.id
+                }
+                return response.data.firstOrNull()?.id
+            } catch (_: Exception) {
+                continue
             }
-            response.data.firstOrNull()?.id
-        } catch (_: Exception) {
-            null
         }
+        return null
     }
 
     suspend fun refreshPrayerTimes(location: LocationInfo, month: Int, year: Int, method: Int, school: Int): Result<List<PrayerTime>> {

@@ -16,8 +16,8 @@ data class LocationInfo(
             longitude = 28.9784,
             timezone = "Europe/Istanbul",
             cityName = "İstanbul",
-            districtName = "Fatih",
-            districtId = "9548"
+            districtName = "İstanbul",
+            districtId = "9541"
         )
     }
 }
