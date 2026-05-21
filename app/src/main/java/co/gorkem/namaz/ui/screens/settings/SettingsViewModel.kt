@@ -64,4 +64,10 @@ class SettingsViewModel @Inject constructor(
             preferencesRepository.setSchool(school)
         }
     }
+
+    fun setUseLocalCalculation(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setUseLocalCalculation(enabled)
+        }
+    }
 }

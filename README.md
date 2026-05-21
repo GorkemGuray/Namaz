@@ -4,7 +4,9 @@ Android ve Wear OS için konum bazlı namaz vakitleri uygulaması.
 
 ## Özellikler
 
-- Konum bazlı namaz vakitleri (Aladhan API, Diyanet yöntemi)
+- Konum bazlı namaz vakitleri (Aladhan API + lokal astronomik hesaplama)
+- **Lokal hesaplama**: İnternetsiz, cihazda matematiksel formüllerle Diyanet uyumlu vakitler
+- **Hibrit mod**: Kullanıcı seçimine göre API veya lokal hesaplama; internetsiz otomatik lokal'e geçiş
 - Kerahat vakitleri gösterimi (aktif/yaklaşıyor)
 - Şehir arama (Nominatim/OpenStreetMap)
 - Bildirimler (her vakit için ayrı Worker)

@@ -59,13 +59,14 @@ Desugar:     2.1.5
 
 ## API'lar
 
-### Aladhan Calendar API (Namaz Vakitleri)
+### Aladhan Calendar API (Namaz Vakitleri) — İsteğe bağlı
 ```
 GET https://api.aladhan.com/v1/calendar?latitude={lat}&longitude={lon}&method=13&school=1&month={month}&year={year}
 ```
 - `method=13`: Diyanet İşleri Başkanlığı hesaplama yöntemi.
-- `school=1`: Hanafi mezhebi (Türkiye'de varsayılan). `school=0`: Şafii.
-- Eksik `school` parametresi API'nin Şafii hesaplamasına düşmesine ve Fajr/İmsak gibi vakitlerde ~10 dk sapmaya neden olur.
+- `school=1`: Hanafi mezhebi. `school=0`: Şafii.
+- **⚠️ API Saatleri Hatalı**: Aladhan API `method=13` (experimental) Diyanet resmi saatleriyle uyuşmuyor. Özellikle İkindi'de 71dk, İmsak'ta 13dk sapma tespit edildi.
+- **Çözüm**: Lokal astronomik hesaplama (`domain/calculator/`) eklendi. Kullanıcı Ayarlar → Veri Kaynağı → Lokal Hesaplama ile API'yi tamamen devre dışı bırakabilir. İnternet yoksa otomatik lokal hesaplamaya geçilir.
 
 ### Nominatim / OpenStreetMap (Şehir Arama)
 ```
@@ -101,7 +102,7 @@ GET https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdeta
 
 ## Proje Yapısı
 
-### app/ (Mobil Modül) — `co.gorkem.namaz` — 48 Kotlin dosyası
+### app/ (Mobil Modül) — `co.gorkem.namaz` — 51 Kotlin dosyası
 
 ```
 app/
@@ -118,6 +119,10 @@ app/
     │   ├── LocaleManager.kt               # i18n: SharedPreferences-based locale, activity recreate
     │   │
     │   ├── domain/
+    │   │   ├── calculator/
+    │   │   │   ├── SolarCalculations.kt      # Julian Day, solar declination, EoT, hour angle, UTC→local
+    │   │   │   ├── PrayerTimeCalculator.kt   # @Singleton, Diyanet parametreleriyle 6 vakit hesaplama
+    │   │   │   └── CalculationMethod.kt      # Fajr=-18°, Isha=-17°, Asr=1x shadow, offset'ler
     │   │   ├── model/
     │   │   │   ├── PrayerTime.kt          # data class: imsak, gunes, ogle, ikindi, aksam, yatsi
     │   │   │   ├── PrayerName.kt          # enum: IMSAK, GUNES, OGLE, IKINDI, AKSAM, YATSI (@StringRes)
@@ -267,7 +272,7 @@ wear/
    - İzin verilirse: FusedLocationProviderClient → Geocoder → Aladhan API
    - İzin verilmezse: CitySelectionScreen (Nominatim arama), varsayılan İstanbul
 2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi
-3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), hesaplama yöntemi, mezhep (school), dil
+3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı (API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), dil
 4. **Şehir seçimi**: Nominatim arama + son seçilenler (max 5, JSON olarak DataStore'da)
 5. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi
 6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
@@ -292,7 +297,7 @@ wear/
 
 ### Bildirimler
 - WorkManager `OneTimeWorkRequest` ile her vakit için ayrı worker.
-- `PrayerRefreshWorker`: 6 saatte bir periyodik refresh (network constraint).
+- `PrayerRefreshWorker`: 6 saatte bir periyodik refresh (ağ kısıtı yok, lokal hesaplama çalışır).
 
 ### i18n
 - `LocaleManager`: SharedPreferences tabanlı, `attachBaseContext` ile locale uygular.
@@ -304,6 +309,7 @@ wear/
 - `UserPreferencesRepository`: standard Preferences DataStore keys kullanır.
 - `UserPreferencesSerializer`: NO-OP stub. Aktif olarak kullanılmaz.
 - `recentCities`: Gson ile JSON string olarak saklanır (max 5, deduplicated).
+- `useLocalCalculation`: Boolean. Açıksa API kullanılmaz, lokal hesaplama yapılır.
 
 ### HomeViewModel Race Condition
 - `prayerTimesJob` takip edilir, yeni yükleme önceki job'ı iptal eder.
@@ -330,6 +336,13 @@ wear/
 - `method`: 13=Diyanet (default), 3=MWL, 4=Umm Al-Qura, 2=ISNA
 - `school`: 1=Hanafi (default, Turkey), 0=Shafi
 - Eksik `school` parametresi ~10 dk sapmaya neden olur.
+
+### Lokal Hesaplama
+- `domain/calculator/` paketi: Güneş konumu hesaplamaları + Diyanet'e uygun parametrelerle namaz vakitleri.
+- **Parametreler**: Fajr=-18°, Isha=-17°, Asr=1x shadow (Standard, Hanefi değil), offset'ler.
+- **Hibrit mod**: `UserPreferencesRepository.useLocalCalculation` ile kontrol. Açık → hep lokal. Kapalı → internet varsa API, yoksa otomatik lokal.
+- **Test**: `PrayerTimeCalculatorTest` — İstanbul Mayıs, Ocak, Aralık, Haziran, Ankara için Diyanet resmi saatleriyle karşılaştırma (tolerans ±10dk).
+- `PrayerTimeRepositoryImpl`: `shouldUseLocalCalculation()` ile ağ durumuna göre veri kaynağı seçimi. API yoksa/hatalıysa otomatik lokal'e fallback.
 
 ### Kıble Pusulası
 - **QiblaUseCase**: Bearing formülü ile lat/lon → Kaabe yönü (21.4225°N, 39.8262°E). İstanbul→~151.6°, NYC→~58.5°, Sydney→~277.5°.

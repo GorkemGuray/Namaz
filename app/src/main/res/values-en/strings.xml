@@ -56,6 +56,9 @@
     <string name="settings_language_turkish">Türkçe</string>
     <string name="settings_language_english">English</string>
     <string name="settings_school">School</string>
+    <string name="settings_data_source">Data Source</string>
+    <string name="settings_local_calculation">Local Calculation</string>
+    <string name="settings_local_calculation_desc">Calculate prayer times locally without internet. When on, API is not used. When off, automatically falls back to local calculation if no internet.</string>
     <string name="school_hanafi">Hanafi</string>
     <string name="school_shafi">Shafi</string>
 

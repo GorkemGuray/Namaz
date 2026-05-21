@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.LocationCity
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.WifiOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -228,6 +229,41 @@ fun SettingsScreen(
                         }
                     }
                 }
+            }
+
+            // Veri Kaynağı Section
+            SettingsSection(title = stringResource(R.string.settings_data_source)) {
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            text = stringResource(R.string.settings_local_calculation),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            text = stringResource(R.string.settings_local_calculation_desc),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Rounded.WifiOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = preferences.useLocalCalculation,
+                            onCheckedChange = { viewModel.setUseLocalCalculation(it) }
+                        )
+                    },
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    modifier = Modifier.clip(MaterialTheme.shapes.large)
+                )
             }
 
             // Hesaplama Yöntemi Section

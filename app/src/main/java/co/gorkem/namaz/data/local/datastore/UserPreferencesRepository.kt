@@ -25,6 +25,7 @@ data class UserPreferences(
     val notificationMinutesBefore: Int = 15,
     val calculationMethod: Int = 13,
     val school: Int = 1,
+    val useLocalCalculation: Boolean = false,
     val language: String = "tr",
     val manualCityName: String = "",
     val manualLatitude: Double = 0.0,
@@ -44,6 +45,7 @@ class UserPreferencesRepository @Inject constructor(
         val NOTIFICATION_MINUTES_BEFORE = intPreferencesKey("notification_minutes_before")
         val CALCULATION_METHOD = intPreferencesKey("calculation_method")
         val SCHOOL = intPreferencesKey("school")
+        val USE_LOCAL_CALCULATION = booleanPreferencesKey("use_local_calculation")
         val LANGUAGE = stringPreferencesKey("language")
         val MANUAL_CITY_NAME = stringPreferencesKey("manual_city_name")
         val MANUAL_LATITUDE = stringPreferencesKey("manual_latitude")
@@ -65,6 +67,7 @@ class UserPreferencesRepository @Inject constructor(
             notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
             calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
             school = prefs[SCHOOL] ?: 1,
+            useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
             language = prefs[LANGUAGE] ?: "tr",
             manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
             manualLatitude = (prefs[MANUAL_LATITUDE] ?: "0.0").toDouble(),
@@ -87,6 +90,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setSchool(school: Int) {
         dataStore.edit { prefs -> prefs[SCHOOL] = school }
+    }
+
+    suspend fun setUseLocalCalculation(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[USE_LOCAL_CALCULATION] = enabled }
     }
 
     suspend fun setLanguage(language: String) {
