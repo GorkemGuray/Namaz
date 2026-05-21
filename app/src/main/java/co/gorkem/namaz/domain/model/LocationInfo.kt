@@ -7,7 +7,8 @@ data class LocationInfo(
     val longitude: Double,
     val timezone: String,
     val cityName: String = "",
-    val districtName: String = ""
+    val districtName: String = "",
+    val districtId: String = ""
 ) : Serializable {
     companion object {
         val DEFAULT = LocationInfo(
@@ -15,7 +16,8 @@ data class LocationInfo(
             longitude = 28.9784,
             timezone = "Europe/Istanbul",
             cityName = "İstanbul",
-            districtName = "Fatih"
+            districtName = "Fatih",
+            districtId = "9548"
         )
     }
 }

@@ -59,20 +59,23 @@ Desugar:     2.1.5
 
 ## API'lar
 
-### Aladhan Calendar API (Namaz Vakitleri) — İsteğe bağlı
+### İmsakiyem API (Namaz Vakitleri) — Diyanet Resmi Verisi
 ```
-GET https://api.aladhan.com/v1/calendar?latitude={lat}&longitude={lon}&method=13&school=1&month={month}&year={year}
+GET https://ezanvakti.imsakiyem.com/api/prayer-times/{districtId}/monthly
+GET https://ezanvakti.imsakiyem.com/api/locations/search/districts?q={query}&countryId=2
 ```
-- `method=13`: Diyanet İşleri Başkanlığı hesaplama yöntemi.
-- `school=1`: Hanafi mezhebi. `school=0`: Şafii.
-- **⚠️ API Saatleri Hatalı**: Aladhan API `method=13` (experimental) Diyanet resmi saatleriyle uyuşmuyor. Özellikle İkindi'de 71dk, İmsak'ta 13dk sapma tespit edildi.
-- **Çözüm**: Lokal astronomik hesaplama (`domain/calculator/`) eklendi. Kullanıcı Ayarlar → Veri Kaynağı → Lokal Hesaplama ile API'yi tamamen devre dışı bırakabilir. İnternet yoksa otomatik lokal hesaplamaya geçilir.
+- Diyanet İşleri Başkanlığı'nın resmi namaz vakitleri verisini kullanır.
+- District ID bazlıdır. Türkiye için Diyanet'in ilçe ID'leri kullanılır (örn. Silivri=9548, Fatih=9549).
+- Aylık endpoint ilgili ayın tüm günlerini döndürür.
+- Hicri tarih bilgisi (`hijri_date`) response içinde gelir.
+- Rate limit: 100 istek / 5 dakika.
+- **İlçe arama**: `/api/locations/search/districts?q={ilçe adı}` ile ilçe ID'si bulunur.
 
-### Nominatim / OpenStreetMap (Şehir Arama)
+### Nominatim / OpenStreetMap (Şehir Arama) — Yedek
 ```
 GET https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdetails=1&limit=20&accept-language=tr
 ```
-- CitySelectionScreen'te şehir arama için kullanılır.
+- CitySelectionScreen'te yedek olarak tutulur (Türkiye dışı aramalar için).
 - `@Named("nominatim")` ile ayrı OkHttpClient + Retrofit instance (User-Agent header gerekli).
 
 ---
@@ -140,10 +143,10 @@ app/
     │   │   ├── remote/
     │   │   │   ├── NetworkResult.kt        # sealed: Success, Error, Loading
     │   │   │   ├── api/
-    │   │   │   │   ├── AladhanApiService.kt   # Retrofit: GET calendar (method, school params)
+    │   │   │   │   ├── ImsakiyemApiService.kt # Retrofit: GET monthly, search districts, states
     │   │   │   │   └── NominatimApiService.kt # Retrofit: GET search (OpenStreetMap geocoding)
     │   │   │   └── dto/
-    │   │   │       ├── PrayerTimeResponse.kt  # CalendarResponse, DayData, Timings, DateInfo, Meta
+    │   │   │       ├── ImsakiyemResponse.kt  # BaseResponse, DayPrayerDto, DistrictDto, HijriDateDto
     │   │   │       └── NominatimResponse.kt   # NominatimPlace, NominatimAddress
     │   │   ├── repository/
     │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache, method+school-aware cache key
@@ -269,11 +272,11 @@ wear/
 ## Kullanıcı Akışı
 
 1. **İlk açılış** → Konum izni istenir
-   - İzin verilirse: FusedLocationProviderClient → Geocoder → Aladhan API
-   - İzin verilmezse: CitySelectionScreen (Nominatim arama), varsayılan İstanbul
+   - İzin verilirse: FusedLocationProviderClient → Geocoder → İmsakiyem API (district ID lookup)
+   - İzin verilmezse: CitySelectionScreen (imsakiyem arama), varsayılan İstanbul/Silivri
 2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi
 3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı (API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), dil
-4. **Şehir seçimi**: Nominatim arama + son seçilenler (max 5, JSON olarak DataStore'da)
+4. **Şehir seçimi**: İmsakiyem API ile ilçe arama + son seçilenler (max 5, JSON olarak DataStore'da)
 5. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi
 6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
 7. **Wear standalone**: Telefon yoksa saat kendi konumundan API'ye sorar (hardcoded İstanbul koordinatları)
@@ -323,7 +326,7 @@ wear/
 - **Tile**: `PrayerTileService`, next prayer + remaining minutes.
 - **Kerahat**: Telefon'dan Wear'a kerahat bilgisi sync edilir. `WearKerahatBanner` aktif/yaklaşıyor durumlarını gösterir.
 - **⚠️ Duplicate**: `PrayerNameHelper.kt` hem root package'ta (`Context`-based) hem `ui/`'da (`@Composable`). Birini kaldırmak gerekir.
-- **⚠️ Hardcoded fallback**: `WearViewModel.loadFromStandalone()` İstanbul koordinatlarına (41.0082, 28.9784) düşer. GPS konum alınmalı.
+- **⚠️ Hardcoded fallback**: `WearViewModel.loadFromStandalone()` İstanbul/Silivri districtId=9548 kullanır. GPS konum alınmalı.
 
 ### Kerahat Vakitleri
 - 3 periyot: Güneş→Güneş+45dk (namaz kılınmaz), Öğle-45dk→Öğle (namaz kılınmaz), Akşam-45dk→Akşam (sadece farz-ı ikindi kılınabilir)
@@ -333,9 +336,8 @@ wear/
 - Wear OS'a kerahat bilgisi sync edilir (`WearKerahatInfo`)
 
 ### API Parametreleri
-- `method`: 13=Diyanet (default), 3=MWL, 4=Umm Al-Qura, 2=ISNA
-- `school`: 1=Hanafi (default, Turkey), 0=Shafi
-- Eksik `school` parametresi ~10 dk sapmaya neden olur.
+- İmsakiyem API Diyanet'in resmi verisini kullanır. `method` ve `school` parametreleri gerekmez.
+- Vakitler doğrudan Diyanet verisidir, lokal hesaplamadan farklı olarak ofset vb. ayarlara ihtiyaç duymaz.
 
 ### Lokal Hesaplama
 - `domain/calculator/` paketi: Güneş konumu hesaplamaları + Diyanet'e uygun parametrelerle namaz vakitleri.

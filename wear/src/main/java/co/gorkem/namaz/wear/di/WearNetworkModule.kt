@@ -1,6 +1,6 @@
 package co.gorkem.namaz.wear.di
 
-import co.gorkem.namaz.wear.data.remote.api.AladhanApiService
+import co.gorkem.namaz.wear.data.remote.api.ImsakiyemApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,7 +16,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object WearNetworkModule {
 
-    private const val BASE_URL = "https://api.aladhan.com/"
+    private const val BASE_URL = "https://ezanvakti.imsakiyem.com/"
 
     @Provides
     @Singleton
@@ -42,7 +42,7 @@ object WearNetworkModule {
 
     @Provides
     @Singleton
-    fun provideAladhanApiService(retrofit: Retrofit): AladhanApiService {
-        return retrofit.create(AladhanApiService::class.java)
+    fun provideImsakiyemApiService(retrofit: Retrofit): ImsakiyemApiService {
+        return retrofit.create(ImsakiyemApiService::class.java)
     }
 }

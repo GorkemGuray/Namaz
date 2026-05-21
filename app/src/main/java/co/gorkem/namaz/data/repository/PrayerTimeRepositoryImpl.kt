@@ -7,8 +7,7 @@ import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.data.local.room.PrayerTimeDao
 import co.gorkem.namaz.data.local.room.PrayerTimeEntity
 import co.gorkem.namaz.data.remote.NetworkResult
-import co.gorkem.namaz.data.remote.api.AladhanApiService
-import co.gorkem.namaz.domain.calculator.CalculatedPrayerTimes
+import co.gorkem.namaz.data.remote.api.ImsakiyemApiService
 import co.gorkem.namaz.domain.calculator.PrayerTimeCalculator
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
@@ -25,7 +24,7 @@ import javax.inject.Singleton
 
 @Singleton
 class PrayerTimeRepositoryImpl @Inject constructor(
-    private val apiService: AladhanApiService,
+    private val apiService: ImsakiyemApiService,
     private val prayerTimeDao: PrayerTimeDao,
     private val calculator: PrayerTimeCalculator,
     private val preferencesRepository: UserPreferencesRepository,
@@ -35,6 +34,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
     private suspend fun shouldUseLocalCalculation(): Boolean {
         val prefs = preferencesRepository.preferences.first()
         if (prefs.useLocalCalculation) return true
+        if (prefs.manualDistrictId.isEmpty() && prefs.manualCityName.isEmpty()) return true
         return !isNetworkAvailable()
     }
 
@@ -65,7 +65,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
             val prayerTimes = if (useLocal) {
                 calculateLocally(location, month, year, method, school)
             } else {
-                fetchFromApi(location, month, year, method, school)
+                fetchFromImsakiyemApi(location, month, year, method, school)
             }
 
             if (prayerTimes.isNotEmpty()) {
@@ -127,38 +127,53 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun fetchFromApi(
+    private suspend fun fetchFromImsakiyemApi(
         location: LocationInfo,
         month: Int,
         year: Int,
         method: Int,
         school: Int
     ): List<PrayerTime> {
-        val response = apiService.getPrayerTimes(
-            latitude = location.latitude,
-            longitude = location.longitude,
-            method = method,
-            school = school,
-            month = month,
-            year = year
-        )
-        if (response.code != 200) return emptyList()
+        val districtId = location.districtId
+        if (districtId.isEmpty()) return emptyList()
 
-        return response.data.map { dayData ->
+        val startDate = String.format("%04d-%02d-01", year, month)
+        val response = apiService.getMonthlyPrayerTimes(districtId, startDate)
+
+        if (!response.success) return emptyList()
+
+        return response.data.map { day ->
             PrayerTime(
-                date = dayData.date.gregorian.date,
-                gregorianDate = dayData.date.readable,
-                hijriDay = dayData.date.hijri.day,
-                hijriMonthNumber = dayData.date.hijri.month.number,
-                hijriYear = dayData.date.hijri.year,
-                imsak = cleanTime(dayData.timings.imsak),
-                gunes = cleanTime(dayData.timings.sunrise),
-                ogle = cleanTime(dayData.timings.dhuhr),
-                ikindi = cleanTime(dayData.timings.asr),
-                aksam = cleanTime(dayData.timings.maghrib),
-                yatsi = cleanTime(dayData.timings.isha),
-                timezone = dayData.meta.timezone
+                date = LocalDate.parse(day.date.substring(0, 10)).format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+                gregorianDate = "",
+                hijriDay = day.hijriDate?.day?.toString() ?: "",
+                hijriMonthNumber = day.hijriDate?.month ?: 0,
+                hijriYear = day.hijriDate?.year?.toString() ?: "",
+                imsak = day.times.imsak,
+                gunes = day.times.gunes,
+                ogle = day.times.ogle,
+                ikindi = day.times.ikindi,
+                aksam = day.times.aksam,
+                yatsi = day.times.yatsi,
+                timezone = location.timezone
             )
+        }
+    }
+
+    suspend fun findDistrictId(cityName: String, districtName: String): String? {
+        if (cityName.isEmpty() && districtName.isEmpty()) return null
+        return try {
+            val query = districtName.ifEmpty { cityName }
+            val response = apiService.searchDistricts(query)
+            if (!response.success || response.data.isEmpty()) return null
+            for (district in response.data) {
+                val match = district.name.replace(Regex("[\\sİI]"), "")
+                    .lowercase() == query.replace(Regex("[\\sİI]"), "").lowercase()
+                if (match) return district.id
+            }
+            response.data.firstOrNull()?.id
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -168,7 +183,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
             val prayerTimes = if (useLocal) {
                 calculateLocally(location, month, year, method, school)
             } else {
-                fetchFromApi(location, month, year, method, school)
+                fetchFromImsakiyemApi(location, month, year, method, school)
             }
 
             if (prayerTimes.isNotEmpty()) {
@@ -203,10 +218,6 @@ class PrayerTimeRepositoryImpl @Inject constructor(
     suspend fun cleanupOldData(olderThanDays: Int = 30) {
         val cutoff = System.currentTimeMillis() - olderThanDays * 24 * 60 * 60 * 1000L
         prayerTimeDao.deleteOlderThan(cutoff)
-    }
-
-    private fun cleanTime(time: String): String {
-        return time.replace(Regex("\\s*\\(.*\\)\\s*"), "").trim()
     }
 
     private fun minutesToTimeString(totalMinutes: Int): String {

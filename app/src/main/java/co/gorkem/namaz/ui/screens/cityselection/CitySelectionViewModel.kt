@@ -4,8 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.data.local.datastore.RecentCity
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
-import co.gorkem.namaz.data.remote.api.NominatimApiService
-import co.gorkem.namaz.data.remote.dto.NominatimPlace
+import co.gorkem.namaz.data.remote.api.ImsakiyemApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -19,15 +18,16 @@ import javax.inject.Inject
 data class LocationSearchResult(
     val displayName: String,
     val cityName: String,
-    val regionName: String,
+    val districtName: String,
     val countryName: String,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val districtId: String = ""
 )
 
 @HiltViewModel
 class CitySelectionViewModel @Inject constructor(
-    private val nominatimApi: NominatimApiService,
+    private val apiService: ImsakiyemApiService,
     private val preferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
@@ -58,8 +58,22 @@ class CitySelectionViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             delay(400)
             try {
-                val places = nominatimApi.search(query = query.trim())
-                _searchResults.value = places.map { it.toSearchResult() }
+                val response = apiService.searchDistricts(query = query.trim())
+                if (response.success) {
+                    _searchResults.value = response.data.map { district ->
+                        LocationSearchResult(
+                            displayName = "${district.name}, Türkiye",
+                            cityName = district.name,
+                            districtName = district.name,
+                            countryName = "Türkiye",
+                            latitude = 0.0,
+                            longitude = 0.0,
+                            districtId = district.id
+                        )
+                    }
+                } else {
+                    _searchResults.value = emptyList()
+                }
             } catch (_: Exception) {
                 _searchResults.value = emptyList()
             }
@@ -77,7 +91,8 @@ class CitySelectionViewModel @Inject constructor(
         preferencesRepository.setManualCity(
             name = result.displayName,
             latitude = result.latitude,
-            longitude = result.longitude
+            longitude = result.longitude,
+            districtId = result.districtId
         )
     }
 
@@ -97,20 +112,5 @@ class CitySelectionViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesRepository.clearRecentCities()
         }
-    }
-
-    private fun NominatimPlace.toSearchResult(): LocationSearchResult {
-        val city = address?.cityName ?: ""
-        val region = address?.state ?: ""
-        val country = address?.country ?: ""
-        val parts = listOfNotNull(city, region, country).filter { it.isNotBlank() }
-        return LocationSearchResult(
-            displayName = parts.joinToString(", "),
-            cityName = city.ifBlank { displayName.split(",").firstOrNull()?.trim() ?: "" },
-            regionName = region,
-            countryName = country,
-            latitude = lat.toDouble(),
-            longitude = lon.toDouble()
-        )
     }
 }

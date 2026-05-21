@@ -1,6 +1,6 @@
 package co.gorkem.namaz.di
 
-import co.gorkem.namaz.data.remote.api.AladhanApiService
+import co.gorkem.namaz.data.remote.api.ImsakiyemApiService
 import co.gorkem.namaz.data.remote.api.NominatimApiService
 import dagger.Module
 import dagger.Provides
@@ -18,7 +18,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val ALADHAN_BASE_URL = "https://api.aladhan.com/"
+    private const val IMSAKIYEM_BASE_URL = "https://ezanvakti.imsakiyem.com/"
     private const val NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/"
 
     @Provides
@@ -40,7 +40,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(ALADHAN_BASE_URL)
+            .baseUrl(IMSAKIYEM_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -48,8 +48,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAladhanApiService(retrofit: Retrofit): AladhanApiService {
-        return retrofit.create(AladhanApiService::class.java)
+    fun provideImsakiyemApiService(retrofit: Retrofit): ImsakiyemApiService {
+        return retrofit.create(ImsakiyemApiService::class.java)
     }
 
     @Provides

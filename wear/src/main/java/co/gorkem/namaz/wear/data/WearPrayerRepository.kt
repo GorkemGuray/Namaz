@@ -1,53 +1,49 @@
 package co.gorkem.namaz.wear.data
 
-import co.gorkem.namaz.wear.data.remote.api.AladhanApiService
-import co.gorkem.namaz.wear.data.remote.dto.CalendarResponse
+import co.gorkem.namaz.wear.data.remote.api.ImsakiyemApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class WearPrayerRepository @Inject constructor(
-    private val apiService: AladhanApiService
+    private val apiService: ImsakiyemApiService
 ) {
+
     fun getPrayerTimesFromApi(
-        latitude: Double,
-        longitude: Double,
-        method: Int = 13,
-        school: Int = 1
+        districtId: String = DEFAULT_DISTRICT_ID
     ): Flow<Result<List<WearPrayerItem>>> = flow {
         try {
-            val today = LocalDate.now()
-            val response = apiService.getPrayerTimes(
-                latitude = latitude,
-                longitude = longitude,
-                method = method,
-                school = school,
-                month = today.monthValue,
-                year = today.year
-            )
-            if (response.code == 200 && response.data.isNotEmpty()) {
-                val todayData = response.data.first()
-                val prayers = listOf(
-                    WearPrayerItem("IMSAK", cleanTime(todayData.timings.imsak)),
-                    WearPrayerItem("GUNES", cleanTime(todayData.timings.sunrise)),
-                    WearPrayerItem("OGLE", cleanTime(todayData.timings.dhuhr)),
-                    WearPrayerItem("IKINDI", cleanTime(todayData.timings.asr)),
-                    WearPrayerItem("AKSAM", cleanTime(todayData.timings.maghrib)),
-                    WearPrayerItem("YATSI", cleanTime(todayData.timings.isha))
-                )
-                emit(Result.success(prayers))
-            } else {
+            val response = apiService.getMonthlyPrayerTimes(districtId)
+            if (!response.success || response.data.isEmpty()) {
                 emit(Result.failure(Exception("API error: ${response.code}")))
+                return@flow
             }
+            val dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+            val todayKey = LocalDate.now().format(dateFormatter)
+            val todayData = response.data.find {
+                val apiDate = LocalDate.parse(it.date.substring(0, 10), DateTimeFormatter.ISO_LOCAL_DATE)
+                apiDate.format(dateFormatter) == todayKey
+            } ?: response.data.first()
+
+            val prayers = listOf(
+                WearPrayerItem("IMSAK", todayData.times.imsak),
+                WearPrayerItem("GUNES", todayData.times.gunes),
+                WearPrayerItem("OGLE", todayData.times.ogle),
+                WearPrayerItem("IKINDI", todayData.times.ikindi),
+                WearPrayerItem("AKSAM", todayData.times.aksam),
+                WearPrayerItem("YATSI", todayData.times.yatsi)
+            )
+            emit(Result.success(prayers))
         } catch (e: Exception) {
             emit(Result.failure(e))
         }
     }
 
-    private fun cleanTime(time: String): String {
-        return time.replace(Regex("\\s*\\(.*\\)\\s*"), "").trim()
+    companion object {
+        const val DEFAULT_DISTRICT_ID = "9548"
     }
 }

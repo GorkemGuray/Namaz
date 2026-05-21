@@ -1,6 +1,5 @@
 package co.gorkem.namaz.wear.ui
 
-import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.wear.data.WearDataLayerService
@@ -60,10 +59,7 @@ class WearViewModel @Inject constructor(
         viewModelScope.launch {
             if (_isPhoneSource.value) return@launch
             _isLoading.value = true
-            prayerRepository.getPrayerTimesFromApi(
-                latitude = 41.0082, // Default Istanbul
-                longitude = 28.9784
-            ).collect { result ->
+            prayerRepository.getPrayerTimesFromApi().collect { result ->
                 result.onSuccess { prayers ->
                     _prayerItems.value = prayers
                     _cityName.value = "İstanbul"

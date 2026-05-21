@@ -35,7 +35,8 @@ class PrayerRefreshWorker @AssistedInject constructor(
                     latitude = prefs.manualLatitude,
                     longitude = prefs.manualLongitude,
                     timezone = "Europe/Istanbul",
-                    cityName = prefs.manualCityName
+                    cityName = prefs.manualCityName,
+                    districtId = prefs.manualDistrictId
                 )
             } else {
                 return Result.success()

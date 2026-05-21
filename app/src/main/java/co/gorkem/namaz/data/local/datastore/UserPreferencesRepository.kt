@@ -28,6 +28,7 @@ data class UserPreferences(
     val useLocalCalculation: Boolean = false,
     val language: String = "tr",
     val manualCityName: String = "",
+    val manualDistrictId: String = "",
     val manualLatitude: Double = 0.0,
     val manualLongitude: Double = 0.0,
     val recentCities: List<RecentCity> = emptyList()
@@ -48,6 +49,7 @@ class UserPreferencesRepository @Inject constructor(
         val USE_LOCAL_CALCULATION = booleanPreferencesKey("use_local_calculation")
         val LANGUAGE = stringPreferencesKey("language")
         val MANUAL_CITY_NAME = stringPreferencesKey("manual_city_name")
+        val MANUAL_DISTRICT_ID = stringPreferencesKey("manual_district_id")
         val MANUAL_LATITUDE = stringPreferencesKey("manual_latitude")
         val MANUAL_LONGITUDE = stringPreferencesKey("manual_longitude")
         val RECENT_CITIES = stringPreferencesKey("recent_cities")
@@ -70,6 +72,7 @@ class UserPreferencesRepository @Inject constructor(
             useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
             language = prefs[LANGUAGE] ?: "tr",
             manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
+            manualDistrictId = prefs[MANUAL_DISTRICT_ID] ?: "",
             manualLatitude = (prefs[MANUAL_LATITUDE] ?: "0.0").toDouble(),
             manualLongitude = (prefs[MANUAL_LONGITUDE] ?: "0.0").toDouble(),
             recentCities = recentCities
@@ -103,10 +106,12 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setManualCity(
         name: String,
         latitude: Double,
-        longitude: Double
+        longitude: Double,
+        districtId: String = ""
     ) {
         dataStore.edit { prefs ->
             prefs[MANUAL_CITY_NAME] = name
+            prefs[MANUAL_DISTRICT_ID] = districtId
             prefs[MANUAL_LATITUDE] = latitude.toString()
             prefs[MANUAL_LONGITUDE] = longitude.toString()
         }
@@ -116,6 +121,7 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun clearManualCity() {
         dataStore.edit { prefs ->
             prefs.remove(MANUAL_CITY_NAME)
+            prefs.remove(MANUAL_DISTRICT_ID)
             prefs.remove(MANUAL_LATITUDE)
             prefs.remove(MANUAL_LONGITUDE)
         }

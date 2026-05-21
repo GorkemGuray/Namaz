@@ -436,7 +436,7 @@ private fun LocationResultCard(
                 if (result.countryName.isNotBlank()) {
                     Text(
                         text = listOfNotNull(
-                            result.regionName.takeIf { it.isNotBlank() },
+                            result.districtName.takeIf { it.isNotBlank() },
                             result.countryName
                         ).joinToString(", "),
                         style = MaterialTheme.typography.bodySmall,

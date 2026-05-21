@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.data.repository.PrayerTimeRepositoryImpl
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
@@ -40,7 +41,8 @@ class HomeViewModel @Inject constructor(
     private val geocoderHelper: GeocoderHelper,
     private val notificationScheduler: PrayerNotificationScheduler,
     private val wearSyncManager: WearSyncManager,
-    private val preferencesRepository: UserPreferencesRepository
+    private val preferencesRepository: UserPreferencesRepository,
+    private val prayerTimeRepo: PrayerTimeRepositoryImpl
 ) : ViewModel() {
 
     private val _prayerTimes = MutableStateFlow<List<PrayerTime>>(emptyList())
@@ -76,7 +78,7 @@ class HomeViewModel @Inject constructor(
             var lastSchool: Int = -1
             preferencesRepository.preferences.collect { prefs ->
                 currentPreferences = prefs
-                val cityKey = "${prefs.manualLatitude},${prefs.manualLongitude},${prefs.manualCityName}"
+                val cityKey = "${prefs.manualDistrictId},${prefs.manualLatitude},${prefs.manualLongitude},${prefs.manualCityName}"
                 val methodChanged = prefs.calculationMethod != lastMethod
                 val schoolChanged = prefs.school != lastSchool
                 if (cityKey != lastCityKey || methodChanged || schoolChanged) {
@@ -89,7 +91,8 @@ class HomeViewModel @Inject constructor(
                             latitude = prefs.manualLatitude,
                             longitude = prefs.manualLongitude,
                             timezone = "Europe/Istanbul",
-                            cityName = prefs.manualCityName
+                            cityName = prefs.manualCityName,
+                            districtId = prefs.manualDistrictId
                         ))
                     } else if (locationTracker.hasLocationPermission()) {
                         loadWithCurrentLocation()
@@ -131,7 +134,8 @@ class HomeViewModel @Inject constructor(
                         latitude = location.latitude,
                         longitude = location.longitude
                     )
-                    loadPrayerTimes(info)
+                    val districtId = prayerTimeRepo.findDistrictId(info.cityName, info.districtName)
+                    loadPrayerTimes(info.copy(districtId = districtId ?: ""))
                 } else {
                     loadPrayerTimes(LocationInfo.DEFAULT)
                 }
