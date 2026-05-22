@@ -8,6 +8,7 @@ Android ve Wear OS için konum bazlı namaz vakitleri uygulaması.
   - **Aladhan API (Varsayılan)**: Dünya genelinde konum koordinatları ile çevrimiçi namaz vakitleri
   - **İmsakiyem API (Diyanet Resmi)**: Türkiye genelinde resmi ilçe bazlı namaz vakitleri
   - **Lokal Hesaplama (Çevrimdışı mod)**: İnternet bağlantısı yokken veya tercih edildiğinde cihazda matematiksel formüllerle Diyanet uyumlu hesaplama
+- **Aylık Namaz Takvimi**: Alt bar üzerinden erişilebilen, 5 günlük vakit + güneş sütunlarını tüm ay boyunca listeleyen, ay bazında ileri/geri geçiş ve bulunulan günü belirginleştirme (highlight) özelliğine sahip responsive tablo ekranı.
 - **Harf/Karakter Duyarsız Konum Arama**: Türkçe karakterler (kırklareli, üsküdar vb.) ve büyük/küçük harf hassasiyeti giderilmiş ilçe arama desteği
 - **Sadeleştirilmiş Konum ve Responsive Arayüz**: Çok uzun konum adlarında dahi kaymayan HeroCard tasarımı ve sadeleştirilmiş konum bilgisi
 - Kerahat vakitleri gösterimi (aktif/yaklaşıyor)

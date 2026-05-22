@@ -122,7 +122,7 @@ GET https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdeta
 
 ## Proje Yapısı
 
-### app/ (Mobil Modül) — `co.gorkem.namaz` — 51 Kotlin dosyası
+### app/ (Mobil Modül) — `co.gorkem.namaz` — 53 Kotlin dosyası
 
 ```
 app/
@@ -133,7 +133,7 @@ app/
     │   Permissions: ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, POST_NOTIFICATIONS
     │   @HiltAndroidApp NamazApplication, @AndroidEntryPoint MainActivity
     ├── java/co/gorkem/namaz/
-    │   ├── NamazApp.kt                    # Root composable, 3-tab bottom nav (Vakitler/Kıble/Ayarlar)
+    │   ├── NamazApp.kt                    # Root composable, 4-tab bottom nav (Vakitler/Takvim/Kıble/Ayarlar)
     │   ├── NamazApplication.kt            # @HiltAndroidApp, notification channel + worker schedule
     │   ├── MainActivity.kt                # @AndroidEntryPoint, edge-to-edge, LocaleManager.attachBaseContext
     │   ├── LocaleManager.kt               # i18n: SharedPreferences-based locale, activity recreate
@@ -215,6 +215,9 @@ app/
     │           ├── home/
     │           │   ├── HomeScreen.kt      # Dashboard: permission → hero card → kerahat banner → prayer list
     │           │   └── HomeViewModel.kt   # prayerTimesJob cancellation (race fix), prefs reactive reload
+    │           ├── calendar/
+    │           │   ├── CalendarScreen.kt  # Monthly calendar table view (M3, current day highlighted)
+    │           │   └── CalendarViewModel.kt # Observes current preferences & fetches monthly prayer times
     │           ├── cityselection/
     │           │   ├── CitySelectionScreen.kt    # Search (Nominatim), recent cities, use my location
     │           │   └── CitySelectionViewModel.kt # Debounced search (400ms), save/clear preferences
@@ -292,14 +295,15 @@ wear/
    - İzin verilirse: FusedLocationProviderClient → Geocoder → Konum Koordinatları → Aladhan API (Varsayılan) / Imsakiyem API (Diyanet) / Lokal Hesaplama
    - İzin verilmezse: CitySelectionScreen, varsayılan İstanbul/Silivri
 2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi (uzun konum isimleri sadeleştirilmiş ve taşma sorunları giderilmiştir)
-3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı seçimi (Aladhan API / İmsakiyem API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), dil
-4. **Şehir seçimi**: Seçilen veri kaynağına göre arama yapılır:
+3. **Aylık Takvim**: Sol/sağ oklar ile ay bazlı ileri/geri geçiş yapılabilen, 5 günlük vakit + güneş sütunlarını barındıran, bulunulan günü vurgulayan responsive tablo ekranı
+4. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı seçimi (Aladhan API / İmsakiyem API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), dil
+5. **Şehir seçimi**: Seçilen veri kaynağına göre arama yapılır:
    - Aladhan API / Lokal Hesaplama için: Nominatim API ile dünya genelinde koordinat arama
    - İmsakiyem API için: İmsakiyem API ile ilçe arama (büyük/küçük harf ve Türkçe karakter desteğiyle)
    - Son seçilenler (max 5, JSON olarak DataStore'da)
-5. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi
-6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
-7. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
+6. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi
+7. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
+8. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
 
 ---
 
