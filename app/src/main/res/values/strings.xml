@@ -3,8 +3,11 @@
 
     <!-- Bottom Navigation -->
     <string name="nav_times">Vakitler</string>
+    <string name="nav_calendar">Takvim</string>
     <string name="nav_qibla">Kıble</string>
     <string name="nav_settings">Ayarlar</string>
+    <string name="calendar_title">Aylık Takvim</string>
+    <string name="calendar_date_header">Gün</string>
 
     <!-- Home Screen -->
     <string name="home_title">Namaz Vakitleri</string>

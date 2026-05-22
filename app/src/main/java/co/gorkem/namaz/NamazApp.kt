@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
@@ -38,6 +40,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import co.gorkem.namaz.R
+import co.gorkem.namaz.ui.screens.calendar.CalendarScreen
 import co.gorkem.namaz.ui.screens.cityselection.CitySelectionScreen
 import co.gorkem.namaz.ui.screens.home.HomeScreen
 import co.gorkem.namaz.ui.screens.qibla.QiblaScreen
@@ -52,6 +55,11 @@ sealed class BottomNavItem(
         titleRes = R.string.nav_times,
         selectedIcon = Icons.Filled.Schedule,
         unselectedIcon = Icons.Rounded.Schedule
+    )
+    data object Calendar : BottomNavItem(
+        titleRes = R.string.nav_calendar,
+        selectedIcon = Icons.Filled.CalendarMonth,
+        unselectedIcon = Icons.Rounded.CalendarMonth
     )
     data object Qibla : BottomNavItem(
         titleRes = R.string.nav_qibla,
@@ -71,7 +79,7 @@ fun NamazApp() {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showCitySheet by rememberSaveable { mutableStateOf(false) }
 
-    val items = listOf(BottomNavItem.Times, BottomNavItem.Qibla, BottomNavItem.Settings)
+    val items = listOf(BottomNavItem.Times, BottomNavItem.Calendar, BottomNavItem.Qibla, BottomNavItem.Settings)
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -122,11 +130,14 @@ fun NamazApp() {
                     modifier = Modifier.padding(paddingValues),
                     onLocationClick = { showCitySheet = true }
                 )
-                1 -> QiblaScreen(
+                1 -> CalendarScreen(
+                    modifier = Modifier.padding(paddingValues)
+                )
+                2 -> QiblaScreen(
                     modifier = Modifier.padding(paddingValues),
                     onSetLocationClick = { showCitySheet = true }
                 )
-                2 -> SettingsScreen(modifier = Modifier.padding(paddingValues))
+                3 -> SettingsScreen(modifier = Modifier.padding(paddingValues))
             }
         }
     }
