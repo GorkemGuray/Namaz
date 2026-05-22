@@ -34,12 +34,20 @@ class PrayerRefreshWorker @AssistedInject constructor(
                 LocationInfo(
                     latitude = prefs.manualLatitude,
                     longitude = prefs.manualLongitude,
-                    timezone = "Europe/Istanbul",
+                    timezone = prefs.manualTimezone.ifEmpty { "Europe/Istanbul" },
                     cityName = prefs.manualCityName,
                     districtId = prefs.manualDistrictId
                 )
+            } else if (prefs.lastAutoCityName.isNotEmpty()) {
+                LocationInfo(
+                    latitude = prefs.lastAutoLatitude,
+                    longitude = prefs.lastAutoLongitude,
+                    timezone = prefs.lastAutoTimezone.ifEmpty { "Europe/Istanbul" },
+                    cityName = prefs.lastAutoCityName,
+                    districtId = prefs.lastAutoDistrictId
+                )
             } else {
-                return Result.success()
+                LocationInfo.DEFAULT
             }
 
             val today = LocalDate.now()

@@ -90,7 +90,7 @@ class HomeViewModel @Inject constructor(
                         loadPrayerTimes(LocationInfo(
                             latitude = prefs.manualLatitude,
                             longitude = prefs.manualLongitude,
-                            timezone = "Europe/Istanbul",
+                            timezone = prefs.manualTimezone.ifEmpty { "Europe/Istanbul" },
                             cityName = prefs.manualCityName,
                             districtId = prefs.manualDistrictId
                         ))
@@ -177,6 +177,26 @@ class HomeViewModel @Inject constructor(
                             _nextPrayer.value = getNextPrayerUseCase(todayData)
                             refreshDashboard()
                             startDashboardRefresh()
+                        }
+                        if (result.data.isNotEmpty()) {
+                            val resolvedTimezone = result.data.first().timezone
+                            if (currentPreferences.manualCityName.isNotEmpty()) {
+                                if (currentPreferences.manualTimezone != resolvedTimezone) {
+                                    viewModelScope.launch {
+                                        preferencesRepository.updateManualTimezone(resolvedTimezone)
+                                    }
+                                }
+                            } else {
+                                viewModelScope.launch {
+                                    preferencesRepository.setLastAutoLocation(
+                                        name = location.cityName,
+                                        latitude = location.latitude,
+                                        longitude = location.longitude,
+                                        districtId = location.districtId,
+                                        timezone = resolvedTimezone
+                                    )
+                                }
+                            }
                         }
                         scheduleNotifications(result.data, location)
                         syncToWear(result.data, location)
