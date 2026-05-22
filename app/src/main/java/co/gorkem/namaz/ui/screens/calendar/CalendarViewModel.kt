@@ -88,6 +88,7 @@ class CalendarViewModel @Inject constructor(
                 longitude = currentPreferences.manualLongitude,
                 timezone = currentPreferences.manualTimezone.ifEmpty { "Europe/Istanbul" },
                 cityName = currentPreferences.manualCityName,
+                districtName = currentPreferences.manualDistrictName,
                 districtId = currentPreferences.manualDistrictId
             )
         } else if (currentPreferences.lastAutoCityName.isNotEmpty()) {
@@ -96,6 +97,7 @@ class CalendarViewModel @Inject constructor(
                 longitude = currentPreferences.lastAutoLongitude,
                 timezone = currentPreferences.lastAutoTimezone,
                 cityName = currentPreferences.lastAutoCityName,
+                districtName = currentPreferences.lastAutoDistrictName,
                 districtId = currentPreferences.lastAutoDistrictId
             )
         } else {

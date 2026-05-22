@@ -138,6 +138,7 @@ class CitySelectionViewModel @Inject constructor(
 
         preferencesRepository.setManualCity(
             name = cleanName,
+            districtName = result.districtName,
             latitude = result.latitude,
             longitude = result.longitude,
             districtId = result.districtId

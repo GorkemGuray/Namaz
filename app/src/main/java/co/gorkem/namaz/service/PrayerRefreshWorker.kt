@@ -36,6 +36,7 @@ class PrayerRefreshWorker @AssistedInject constructor(
                     longitude = prefs.manualLongitude,
                     timezone = prefs.manualTimezone.ifEmpty { "Europe/Istanbul" },
                     cityName = prefs.manualCityName,
+                    districtName = prefs.manualDistrictName,
                     districtId = prefs.manualDistrictId
                 )
             } else if (prefs.lastAutoCityName.isNotEmpty()) {
@@ -44,6 +45,7 @@ class PrayerRefreshWorker @AssistedInject constructor(
                     longitude = prefs.lastAutoLongitude,
                     timezone = prefs.lastAutoTimezone.ifEmpty { "Europe/Istanbul" },
                     cityName = prefs.lastAutoCityName,
+                    districtName = prefs.lastAutoDistrictName,
                     districtId = prefs.lastAutoDistrictId
                 )
             } else {

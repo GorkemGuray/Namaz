@@ -27,9 +27,10 @@ data class UserPreferences(
     val calculationMethod: Int = 13,
     val school: Int = 0,
     val useLocalCalculation: Boolean = false,
-    val dataSource: Int = 0, // 0: Aladhan API, 1: Imsakiyem API, 2: Local Calculation
+    val dataSource: Int = 0,
     val language: String = "tr",
     val manualCityName: String = "",
+    val manualDistrictName: String = "",
     val manualDistrictId: String = "",
     val manualLatitude: Double = 0.0,
     val manualLongitude: Double = 0.0,
@@ -37,6 +38,7 @@ data class UserPreferences(
     val lastAutoLatitude: Double = 0.0,
     val lastAutoLongitude: Double = 0.0,
     val lastAutoCityName: String = "",
+    val lastAutoDistrictName: String = "",
     val lastAutoDistrictId: String = "",
     val lastAutoTimezone: String = "Europe/Istanbul",
     val manualTimezone: String = "Europe/Istanbul"
@@ -58,6 +60,7 @@ class UserPreferencesRepository @Inject constructor(
         val DATA_SOURCE = intPreferencesKey("data_source")
         val LANGUAGE = stringPreferencesKey("language")
         val MANUAL_CITY_NAME = stringPreferencesKey("manual_city_name")
+        val MANUAL_DISTRICT_NAME = stringPreferencesKey("manual_district_name")
         val MANUAL_DISTRICT_ID = stringPreferencesKey("manual_district_id")
         val MANUAL_LATITUDE = stringPreferencesKey("manual_latitude")
         val MANUAL_LONGITUDE = stringPreferencesKey("manual_longitude")
@@ -65,6 +68,7 @@ class UserPreferencesRepository @Inject constructor(
         val LAST_AUTO_LATITUDE = stringPreferencesKey("last_auto_latitude")
         val LAST_AUTO_LONGITUDE = stringPreferencesKey("last_auto_longitude")
         val LAST_AUTO_CITY_NAME = stringPreferencesKey("last_auto_city_name")
+        val LAST_AUTO_DISTRICT_NAME = stringPreferencesKey("last_auto_district_name")
         val LAST_AUTO_DISTRICT_ID = stringPreferencesKey("last_auto_district_id")
         val LAST_AUTO_TIMEZONE = stringPreferencesKey("last_auto_timezone")
         val MANUAL_TIMEZONE = stringPreferencesKey("manual_timezone")
@@ -89,6 +93,7 @@ class UserPreferencesRepository @Inject constructor(
             dataSource = prefs[DATA_SOURCE] ?: 0,
             language = prefs[LANGUAGE] ?: "tr",
             manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
+            manualDistrictName = prefs[MANUAL_DISTRICT_NAME] ?: "",
             manualDistrictId = prefs[MANUAL_DISTRICT_ID] ?: "",
             manualLatitude = (prefs[MANUAL_LATITUDE] ?: "0.0").toDouble(),
             manualLongitude = (prefs[MANUAL_LONGITUDE] ?: "0.0").toDouble(),
@@ -96,6 +101,7 @@ class UserPreferencesRepository @Inject constructor(
             lastAutoLatitude = (prefs[LAST_AUTO_LATITUDE] ?: "0.0").toDouble(),
             lastAutoLongitude = (prefs[LAST_AUTO_LONGITUDE] ?: "0.0").toDouble(),
             lastAutoCityName = prefs[LAST_AUTO_CITY_NAME] ?: "",
+            lastAutoDistrictName = prefs[LAST_AUTO_DISTRICT_NAME] ?: "",
             lastAutoDistrictId = prefs[LAST_AUTO_DISTRICT_ID] ?: "",
             lastAutoTimezone = prefs[LAST_AUTO_TIMEZONE] ?: "Europe/Istanbul",
             manualTimezone = prefs[MANUAL_TIMEZONE] ?: "Europe/Istanbul"
@@ -142,12 +148,14 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setManualCity(
         name: String,
+        districtName: String = "",
         latitude: Double,
         longitude: Double,
         districtId: String = ""
     ) {
         dataStore.edit { prefs ->
             prefs[MANUAL_CITY_NAME] = name
+            prefs[MANUAL_DISTRICT_NAME] = districtName
             prefs[MANUAL_DISTRICT_ID] = districtId
             prefs[MANUAL_LATITUDE] = latitude.toString()
             prefs[MANUAL_LONGITUDE] = longitude.toString()
@@ -158,6 +166,7 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun clearManualCity() {
         dataStore.edit { prefs ->
             prefs.remove(MANUAL_CITY_NAME)
+            prefs.remove(MANUAL_DISTRICT_NAME)
             prefs.remove(MANUAL_DISTRICT_ID)
             prefs.remove(MANUAL_LATITUDE)
             prefs.remove(MANUAL_LONGITUDE)
@@ -174,7 +183,6 @@ class UserPreferencesRepository @Inject constructor(
                 emptyList()
             }
 
-            // Remove duplicate if exists, add to front, keep max 5
             val updated = listOf(city) + current.filter {
                 it.name != city.name
             }.take(4)
@@ -189,6 +197,7 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setLastAutoLocation(
         name: String,
+        districtName: String = "",
         latitude: Double,
         longitude: Double,
         districtId: String,
@@ -196,6 +205,7 @@ class UserPreferencesRepository @Inject constructor(
     ) {
         dataStore.edit { prefs ->
             prefs[LAST_AUTO_CITY_NAME] = name
+            prefs[LAST_AUTO_DISTRICT_NAME] = districtName
             prefs[LAST_AUTO_LATITUDE] = latitude.toString()
             prefs[LAST_AUTO_LONGITUDE] = longitude.toString()
             prefs[LAST_AUTO_DISTRICT_ID] = districtId

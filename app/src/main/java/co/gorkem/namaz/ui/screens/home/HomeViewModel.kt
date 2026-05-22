@@ -92,6 +92,7 @@ class HomeViewModel @Inject constructor(
                             longitude = prefs.manualLongitude,
                             timezone = prefs.manualTimezone.ifEmpty { "Europe/Istanbul" },
                             cityName = prefs.manualCityName,
+                            districtName = prefs.manualDistrictName,
                             districtId = prefs.manualDistrictId
                         ))
                     } else if (locationTracker.hasLocationPermission()) {
@@ -190,6 +191,7 @@ class HomeViewModel @Inject constructor(
                                 viewModelScope.launch {
                                     preferencesRepository.setLastAutoLocation(
                                         name = location.cityName,
+                                        districtName = location.districtName,
                                         latitude = location.latitude,
                                         longitude = location.longitude,
                                         districtId = location.districtId,
