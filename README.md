@@ -11,6 +11,7 @@ Android ve Wear OS için konum bazlı namaz vakitleri uygulaması.
 - **Aylık Namaz Takvimi**: Alt bar üzerinden erişilebilen, 5 günlük vakit + güneş sütunlarını tüm ay boyunca listeleyen, ay bazında ileri/geri geçiş ve bulunulan günü belirginleştirme (highlight) özelliğine sahip responsive tablo ekranı.
 - **Harf/Karakter Duyarsız Konum Arama**: Türkçe karakterler (kırklareli, üsküdar vb.) ve büyük/küçük harf hassasiyeti giderilmiş ilçe arama desteği
 - **Sadeleştirilmiş Konum ve Responsive Arayüz**: Çok uzun konum adlarında dahi kaymayan HeroCard tasarımı ve sadeleştirilmiş konum bilgisi
+- **Gelişmiş Kıble Pusulası**: Sin/cos tabanlı yumuşatılmış azimut takibi (360° sarmalama sorunsuz), en kısa yol rotasyonu, histerezisli hizalama algılama (±4°/±6.5°), animasyonlu hizalama glowsweep efektleri, sensör doğruluk seviyesi göstergesi
 - Kerahat vakitleri gösterimi (aktif/yaklaşıyor)
 - Bildirimler (her vakit için ayrı WorkManager Worker'ı)
 - Wear OS desteği (aktif senkronizasyon + Aladhan API ile standalone çalışabilme)

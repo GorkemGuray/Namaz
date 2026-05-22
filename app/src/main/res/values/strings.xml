@@ -96,6 +96,10 @@
     <string name="qibla_calibration_needed">Pusula kalibrasyonu gerekli — cihazı havada sekiz çizerek hareket ettirin</string>
     <string name="qibla_magnetic_distortion">Manyetik parazit algılandı — metal cisimlerden uzaklaşın</string>
     <string name="qibla_sensor_accuracy">Sensör doğruluğu: %1$s</string>
+    <string name="qibla_accuracy_high">İyi</string>
+    <string name="qibla_accuracy_medium">Orta</string>
+    <string name="qibla_accuracy_low">Düşük</string>
+    <string name="qibla_accuracy_unreliable">Kötü</string>
     <string name="qibla_set_location">Konum Seç</string>
     <string name="qibla_retry">Tekrar Dene</string>
     <string name="qibla_retrying">Yeniden deneniyor…</string>

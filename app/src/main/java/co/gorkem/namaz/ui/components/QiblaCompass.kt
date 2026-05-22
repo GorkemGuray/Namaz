@@ -33,6 +33,11 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.cos
 import kotlin.math.sin
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+
 @Composable
 fun QiblaCompass(
     deviceAzimuth: Double,
@@ -50,8 +55,16 @@ fun QiblaCompass(
 
     val isLevel = kotlin.math.abs(pitch) <= 8.0 && kotlin.math.abs(roll) <= 8.0
 
+    var accumulatedAzimuth by remember { mutableStateOf(deviceAzimuth) }
+    LaunchedEffect(deviceAzimuth) {
+        var diff = (deviceAzimuth - accumulatedAzimuth) % 360
+        if (diff < 0) diff += 360
+        val shortestDiff = if (diff > 180) diff - 360 else diff
+        accumulatedAzimuth += shortestDiff
+    }
+
     val animatedAzimuth by animateFloatAsState(
-        targetValue = deviceAzimuth.toFloat(),
+        targetValue = accumulatedAzimuth.toFloat(),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessLow
@@ -59,9 +72,17 @@ fun QiblaCompass(
         label = "azimuth"
     )
 
-    val kaabaAngle = qiblaBearing - deviceAzimuth
+    val targetKaaba = qiblaBearing - deviceAzimuth
+    var accumulatedKaaba by remember { mutableStateOf(targetKaaba) }
+    LaunchedEffect(targetKaaba) {
+        var diff = (targetKaaba - accumulatedKaaba) % 360
+        if (diff < 0) diff += 360
+        val shortestDiff = if (diff > 180) diff - 360 else diff
+        accumulatedKaaba += shortestDiff
+    }
+
     val animatedKaaba by animateFloatAsState(
-        targetValue = kaabaAngle.toFloat(),
+        targetValue = accumulatedKaaba.toFloat(),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
@@ -170,19 +191,19 @@ fun QiblaCompass(
         val kaabaX = center.x + outerRadius * sin(kaabaRad).toFloat()
         val kaabaY = center.y - outerRadius * cos(kaabaRad).toFloat()
 
-        if (isAligned) {
-            if (alignedRingAlpha > 0f) {
-                drawCircle(
-                    color = primary.copy(alpha = alignedRingAlpha),
-                    radius = outerRadius,
-                    style = Stroke(width = 5.dp.toPx())
-                )
-            }
+        if (alignedRingAlpha > 0f) {
+            drawCircle(
+                color = primary.copy(alpha = alignedRingAlpha),
+                radius = outerRadius,
+                style = Stroke(width = 5.dp.toPx())
+            )
+        }
 
+        if (alignedAlpha > 0f) {
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        primary.copy(alpha = glowAlpha * 0.8f),
+                        primary.copy(alpha = glowAlpha * 0.8f * alignedAlpha),
                         primary.copy(alpha = 0.0f)
                     ),
                     center = Offset(kaabaX, kaabaY),
@@ -193,7 +214,11 @@ fun QiblaCompass(
             )
         }
 
-        drawKaabaIcon(Offset(kaabaX, kaabaY), primary, isAligned)
+        drawKaabaIcon(
+            center = Offset(kaabaX, kaabaY),
+            color = primary,
+            scale = 1.0f + 0.2f * alignedAlpha
+        )
     }
 }
 
@@ -351,9 +376,8 @@ private fun DrawScope.drawCardinalLabels(
 private fun DrawScope.drawKaabaIcon(
     center: Offset,
     color: Color,
-    isAligned: Boolean
+    scale: Float
 ) {
-    val scale = if (isAligned) 1.2f else 1.0f
     val baseSize = 20.dp.toPx() * scale
     val half = baseSize / 2
 

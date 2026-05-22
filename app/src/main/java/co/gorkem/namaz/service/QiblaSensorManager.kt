@@ -13,6 +13,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.PI
 import kotlin.math.sqrt
+import kotlin.math.sin
+import kotlin.math.cos
+import kotlin.math.atan2
 
 @Singleton
 class QiblaSensorManager @Inject constructor(
@@ -36,7 +39,9 @@ class QiblaSensorManager @Inject constructor(
             private val geomagnetic = FloatArray(3)
             private val rotationMatrix = FloatArray(9)
             private val orientation = FloatArray(3)
-            private val smoothAzimuth = FloatArray(1)
+            private var smoothSin = 0.0
+            private var smoothCos = 0.0
+            private var isFirstRun = true
             private val smoothPitch = FloatArray(1)
             private val smoothRoll = FloatArray(1)
             private var hasGravity = false
@@ -67,11 +72,23 @@ class QiblaSensorManager @Inject constructor(
                 if (hasGravity && hasGeomagnetic) {
                     if (SensorManager.getRotationMatrix(rotationMatrix, null, gravity, geomagnetic)) {
                         SensorManager.getOrientation(rotationMatrix, orientation)
-                        smoothAzimuth[0] = smoothAzimuth[0] * 0.8f + orientation[0] * 0.2f
-                        smoothPitch[0] = smoothPitch[0] * 0.8f + orientation[1] * 0.2f
-                        smoothRoll[0] = smoothRoll[0] * 0.8f + orientation[2] * 0.2f
+                        
+                        val currentSin = sin(orientation[0].toDouble())
+                        val currentCos = cos(orientation[0].toDouble())
+                        
+                        if (isFirstRun) {
+                            smoothSin = currentSin
+                            smoothCos = currentCos
+                            isFirstRun = false
+                        } else {
+                            smoothSin = smoothSin * 0.90 + currentSin * 0.10
+                            smoothCos = smoothCos * 0.90 + currentCos * 0.10
+                        }
 
-                        var azimuthDeg = Math.toDegrees(smoothAzimuth[0].toDouble())
+                        smoothPitch[0] = smoothPitch[0] * 0.90f + orientation[1] * 0.10f
+                        smoothRoll[0] = smoothRoll[0] * 0.90f + orientation[2] * 0.10f
+
+                        var azimuthDeg = Math.toDegrees(atan2(smoothSin, smoothCos))
                         if (azimuthDeg < 0) azimuthDeg += 360.0
 
                         val magnetStrength = sqrt(

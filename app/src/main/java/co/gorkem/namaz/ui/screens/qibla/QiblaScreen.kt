@@ -181,7 +181,21 @@ fun QiblaScreen(
                 }
 
                 is QiblaUiState.CompassActive -> {
-                    val isAligned = state.alignmentDelta <= 5.0
+                    var isAligned by remember { mutableStateOf(false) }
+
+                    val targetAligned = if (isAligned) {
+                        state.alignmentDelta <= 6.5
+                    } else {
+                        state.alignmentDelta <= 4.0
+                    }
+
+                    LaunchedEffect(targetAligned) {
+                        if (targetAligned != isAligned) {
+                            delay(200)
+                            isAligned = targetAligned
+                        }
+                    }
+
                     val vibrator = remember { getVibrator(context) }
                     var wasAligned by remember { mutableStateOf(false) }
                     var showCompass by remember { mutableStateOf(false) }
@@ -235,7 +249,8 @@ fun QiblaScreen(
                                 alignmentDelta = state.alignmentDelta,
                                 isAligned = isAligned,
                                 needsCalibration = state.needsCalibration,
-                                isMagneticDistorted = state.isMagneticDistorted
+                                isMagneticDistorted = state.isMagneticDistorted,
+                                sensorAccuracy = state.sensorAccuracy
                             )
                         }
                     }
