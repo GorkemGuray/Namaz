@@ -135,6 +135,29 @@ class PrayerTimeCalculatorTest {
         }
     }
 
+    @Test
+    fun hanafi_asr_is_later_than_standard_asr() {
+        val standardTimes = calculator.calculate(
+            date = LocalDate.of(2026, 5, 21),
+            latitude = 41.0082,
+            longitude = 28.9784,
+            timezone = istanbulTz,
+            method = CalculationMethod.DIYANET
+        )
+
+        val hanafiTimes = calculator.calculate(
+            date = LocalDate.of(2026, 5, 21),
+            latitude = 41.0082,
+            longitude = 28.9784,
+            timezone = istanbulTz,
+            method = CalculationMethod.DIYANET.copy(asrShadowFactor = 2.0)
+        )
+
+        assertTrue(hanafiTimes.ikindi > standardTimes.ikindi)
+        val difference = hanafiTimes.ikindi - standardTimes.ikindi
+        assertTrue(difference in 30..75)
+    }
+
     private fun assertTimeNear(expected: String, actualMinutes: Int, toleranceMinutes: Int) {
         val parts = expected.split(":")
         val expectedMinutes = parts[0].toInt() * 60 + parts[1].toInt()

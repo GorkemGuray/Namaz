@@ -9,6 +9,7 @@ import co.gorkem.namaz.data.local.room.PrayerTimeEntity
 import co.gorkem.namaz.data.remote.NetworkResult
 import co.gorkem.namaz.data.remote.api.AladhanApiService
 import co.gorkem.namaz.data.remote.api.ImsakiyemApiService
+import co.gorkem.namaz.domain.calculator.CalculationMethod
 import co.gorkem.namaz.domain.calculator.PrayerTimeCalculator
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
@@ -120,10 +121,16 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         val lat = if (location.latitude == 0.0 && location.longitude == 0.0) 41.0082 else location.latitude
         val lon = if (location.latitude == 0.0 && location.longitude == 0.0) 28.9784 else location.longitude
 
+        val customMethod = if (school == 1) {
+            CalculationMethod.DIYANET.copy(asrShadowFactor = 2.0)
+        } else {
+            CalculationMethod.DIYANET
+        }
+
         val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
         return (1..daysInMonth).map { day ->
             val date = LocalDate.of(year, month, day)
-            val times = calculator.calculate(date, lat, lon, timezone)
+            val times = calculator.calculate(date, lat, lon, timezone, customMethod)
 
             PrayerTime(
                 date = date.format(dateFormatter),

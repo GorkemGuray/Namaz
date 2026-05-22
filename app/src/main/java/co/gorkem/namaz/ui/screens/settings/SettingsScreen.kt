@@ -388,7 +388,7 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f)
                                 )
-                                if (school == 1) {
+                                if (school == 0) {
                                     Text(
                                         text = stringResource(R.string.settings_default),
                                         style = MaterialTheme.typography.labelSmall,

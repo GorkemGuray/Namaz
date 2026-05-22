@@ -25,7 +25,7 @@ data class UserPreferences(
     val notificationsEnabled: Boolean = true,
     val notificationMinutesBefore: Int = 15,
     val calculationMethod: Int = 13,
-    val school: Int = 1,
+    val school: Int = 0,
     val useLocalCalculation: Boolean = false,
     val dataSource: Int = 0, // 0: Aladhan API, 1: Imsakiyem API, 2: Local Calculation
     val language: String = "tr",
@@ -84,7 +84,7 @@ class UserPreferencesRepository @Inject constructor(
             notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
             notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
             calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
-            school = prefs[SCHOOL] ?: 1,
+            school = prefs[SCHOOL] ?: 0,
             useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
             dataSource = prefs[DATA_SOURCE] ?: 0,
             language = prefs[LANGUAGE] ?: "tr",
