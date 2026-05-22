@@ -233,37 +233,62 @@ fun SettingsScreen(
 
             // Veri Kaynağı Section
             SettingsSection(title = stringResource(R.string.settings_data_source)) {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = stringResource(R.string.settings_local_calculation),
-                            style = MaterialTheme.typography.bodyLarge
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.selectableGroup()) {
+                        val sources = listOf(
+                            0 to (R.string.settings_source_aladhan to R.string.settings_source_aladhan_desc),
+                            1 to (R.string.settings_source_imsakiyem to R.string.settings_source_imsakiyem_desc),
+                            2 to (R.string.settings_source_local to R.string.settings_source_local_desc)
                         )
-                    },
-                    supportingContent = {
-                        Text(
-                            text = stringResource(R.string.settings_local_calculation_desc),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Rounded.WifiOff,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = preferences.useLocalCalculation,
-                            onCheckedChange = { viewModel.setUseLocalCalculation(it) }
-                        )
-                    },
-                    colors = ListItemDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ),
-                    modifier = Modifier.clip(MaterialTheme.shapes.large)
-                )
+                        sources.forEachIndexed { index, (sourceId, strings) ->
+                            val (titleRes, descRes) = strings
+                            val selected = preferences.dataSource == sourceId
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = selected,
+                                        onClick = {
+                                            viewModel.setDataSource(sourceId)
+                                        },
+                                        role = Role.RadioButton
+                                    )
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selected,
+                                    onClick = null
+                                )
+                                Spacer(modifier = Modifier.padding(start = 16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(titleRes),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = stringResource(descRes),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            if (index < sources.lastIndex) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 52.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             // Hesaplama Yöntemi Section

@@ -1,5 +1,6 @@
 package co.gorkem.namaz.wear.di
 
+import co.gorkem.namaz.wear.data.remote.api.AladhanApiService
 import co.gorkem.namaz.wear.data.remote.api.ImsakiyemApiService
 import dagger.Module
 import dagger.Provides
@@ -44,5 +45,16 @@ object WearNetworkModule {
     @Singleton
     fun provideImsakiyemApiService(retrofit: Retrofit): ImsakiyemApiService {
         return retrofit.create(ImsakiyemApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAladhanApiService(okHttpClient: OkHttpClient): AladhanApiService {
+        return Retrofit.Builder()
+            .baseUrl("https://api.aladhan.com/v1/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(AladhanApiService::class.java)
     }
 }

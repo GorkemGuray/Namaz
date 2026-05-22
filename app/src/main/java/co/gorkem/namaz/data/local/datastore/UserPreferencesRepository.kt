@@ -27,6 +27,7 @@ data class UserPreferences(
     val calculationMethod: Int = 13,
     val school: Int = 1,
     val useLocalCalculation: Boolean = false,
+    val dataSource: Int = 0, // 0: Aladhan API, 1: Imsakiyem API, 2: Local Calculation
     val language: String = "tr",
     val manualCityName: String = "",
     val manualDistrictId: String = "",
@@ -48,6 +49,7 @@ class UserPreferencesRepository @Inject constructor(
         val CALCULATION_METHOD = intPreferencesKey("calculation_method")
         val SCHOOL = intPreferencesKey("school")
         val USE_LOCAL_CALCULATION = booleanPreferencesKey("use_local_calculation")
+        val DATA_SOURCE = intPreferencesKey("data_source")
         val LANGUAGE = stringPreferencesKey("language")
         val MANUAL_CITY_NAME = stringPreferencesKey("manual_city_name")
         val MANUAL_DISTRICT_ID = stringPreferencesKey("manual_district_id")
@@ -72,6 +74,7 @@ class UserPreferencesRepository @Inject constructor(
             calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
             school = prefs[SCHOOL] ?: 1,
             useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
+            dataSource = prefs[DATA_SOURCE] ?: 0,
             language = prefs[LANGUAGE] ?: "tr",
             manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
             manualDistrictId = prefs[MANUAL_DISTRICT_ID] ?: "",
@@ -98,7 +101,21 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     suspend fun setUseLocalCalculation(enabled: Boolean) {
-        dataStore.edit { prefs -> prefs[USE_LOCAL_CALCULATION] = enabled }
+        dataStore.edit { prefs ->
+            prefs[USE_LOCAL_CALCULATION] = enabled
+            if (enabled) {
+                prefs[DATA_SOURCE] = 2
+            } else if ((prefs[DATA_SOURCE] ?: 0) == 2) {
+                prefs[DATA_SOURCE] = 0
+            }
+        }
+    }
+
+    suspend fun setDataSource(source: Int) {
+        dataStore.edit { prefs ->
+            prefs[DATA_SOURCE] = source
+            prefs[USE_LOCAL_CALCULATION] = (source == 2)
+        }
     }
 
     suspend fun setLanguage(language: String) {

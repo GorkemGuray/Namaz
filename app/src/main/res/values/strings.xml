@@ -57,6 +57,12 @@
     <string name="settings_language_english">English</string>
     <string name="settings_school">Mezhep</string>
     <string name="settings_data_source">Veri Kaynağı</string>
+    <string name="settings_source_aladhan">Aladhan API</string>
+    <string name="settings_source_aladhan_desc">Aladhan üzerinden online namaz vakitleri (Varsayılan)</string>
+    <string name="settings_source_imsakiyem">İmsakiyem API</string>
+    <string name="settings_source_imsakiyem_desc">Diyanet İşleri Başkanlığı resmi vakitleri</string>
+    <string name="settings_source_local">Lokal Hesaplama</string>
+    <string name="settings_source_local_desc">Cihaz üzerinde internetsiz hesaplama (Çevrimdışı mod)</string>
     <string name="settings_local_calculation">Lokal Hesaplama</string>
     <string name="settings_local_calculation_desc">İnternet olmadan konum bazlı hesaplama. Açıkken API kullanılmaz. Kapalıyken internetsiz otomatik lokal hesaplamaya geçilir.</string>
     <string name="school_hanafi">Hanefi</string>

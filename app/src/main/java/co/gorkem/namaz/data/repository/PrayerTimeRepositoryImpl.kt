@@ -7,6 +7,7 @@ import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.data.local.room.PrayerTimeDao
 import co.gorkem.namaz.data.local.room.PrayerTimeEntity
 import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.data.remote.api.AladhanApiService
 import co.gorkem.namaz.data.remote.api.ImsakiyemApiService
 import co.gorkem.namaz.domain.calculator.PrayerTimeCalculator
 import co.gorkem.namaz.domain.model.LocationInfo
@@ -25,16 +26,17 @@ import javax.inject.Singleton
 @Singleton
 class PrayerTimeRepositoryImpl @Inject constructor(
     private val apiService: ImsakiyemApiService,
+    private val aladhanApiService: AladhanApiService,
     private val prayerTimeDao: PrayerTimeDao,
     private val calculator: PrayerTimeCalculator,
     private val preferencesRepository: UserPreferencesRepository,
     @ApplicationContext private val context: Context
 ) : PrayerTimeRepository {
 
-    private suspend fun shouldUseLocalCalculation(): Boolean {
+    private suspend fun getActiveDataSource(): Int {
         val prefs = preferencesRepository.preferences.first()
-        if (prefs.useLocalCalculation) return true
-        return !isNetworkAvailable()
+        if (prefs.useLocalCalculation) return 2
+        return prefs.dataSource
     }
 
     private fun isNetworkAvailable(): Boolean {
@@ -51,7 +53,8 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         method: Int,
         school: Int
     ): Flow<NetworkResult<List<PrayerTime>>> = flow {
-        val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school)
+        val activeDataSource = getActiveDataSource()
+        val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)
 
         if (cached.isEmpty()) {
             emit(NetworkResult.Loading)
@@ -60,23 +63,25 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         }
 
         try {
-            val useLocal = shouldUseLocalCalculation()
+            val useLocal = activeDataSource == 2 || !isNetworkAvailable()
             val prayerTimes = if (useLocal) {
                 calculateLocally(location, month, year, method, school)
-            } else {
+            } else if (activeDataSource == 1) {
                 fetchFromImsakiyemApi(location, month, year, method, school)
+            } else {
+                fetchFromAladhanApi(location, month, year, method, school)
             }
 
             if (prayerTimes.isNotEmpty()) {
                 prayerTimeDao.insertAll(prayerTimes.map {
-                    it.toEntity(location.cityName, month, year, method, school)
+                    it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
                 emit(NetworkResult.Success(prayerTimes))
             } else if (cached.isEmpty()) {
                 val fallbackTimes = calculateLocally(location, month, year, method, school)
                 if (fallbackTimes.isNotEmpty()) {
                     prayerTimeDao.insertAll(fallbackTimes.map {
-                        it.toEntity(location.cityName, month, year, method, school)
+                        it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                     })
                     emit(NetworkResult.Success(fallbackTimes))
                 } else {
@@ -88,7 +93,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 val fallbackTimes = calculateLocally(location, month, year, method, school)
                 if (fallbackTimes.isNotEmpty()) {
                     prayerTimeDao.insertAll(fallbackTimes.map {
-                        it.toEntity(location.cityName, month, year, method, school)
+                        it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                     })
                     emit(NetworkResult.Success(fallbackTimes))
                 } else {
@@ -170,6 +175,57 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         }
     }
 
+    private suspend fun fetchFromAladhanApi(
+        location: LocationInfo,
+        month: Int,
+        year: Int,
+        method: Int,
+        school: Int
+    ): List<PrayerTime> {
+        val lat = location.latitude
+        val lon = location.longitude
+        if (lat == 0.0 && lon == 0.0) return emptyList()
+
+        val response = aladhanApiService.getMonthlyPrayerTimes(
+            year = year,
+            month = month,
+            latitude = lat,
+            longitude = lon,
+            method = method,
+            school = school
+        )
+
+        if (response.code != 200 || response.data.isEmpty()) return emptyList()
+
+        return response.data.map { day ->
+            val cleanFajr = cleanTime(day.timings.fajr)
+            val cleanSunrise = cleanTime(day.timings.sunrise)
+            val cleanDhuhr = cleanTime(day.timings.dhuhr)
+            val cleanAsr = cleanTime(day.timings.asr)
+            val cleanMaghrib = cleanTime(day.timings.maghrib)
+            val cleanIsha = cleanTime(day.timings.isha)
+
+            PrayerTime(
+                date = day.date.gregorian.date,
+                gregorianDate = "",
+                hijriDay = day.date.hijri.day,
+                hijriMonthNumber = day.date.hijri.month.number,
+                hijriYear = day.date.hijri.year,
+                imsak = cleanFajr,
+                gunes = cleanSunrise,
+                ogle = cleanDhuhr,
+                ikindi = cleanAsr,
+                aksam = cleanMaghrib,
+                yatsi = cleanIsha,
+                timezone = day.meta.timezone
+            )
+        }
+    }
+
+    private fun cleanTime(timeStr: String): String {
+        return timeStr.substringBefore(" ").trim()
+    }
+
     suspend fun findDistrictId(cityName: String, districtName: String): String? {
         val candidates = listOfNotNull(
             districtName.takeIf { it.isNotBlank() },
@@ -179,15 +235,16 @@ class PrayerTimeRepositoryImpl @Inject constructor(
 
         for (query in candidates) {
             try {
-                val response = apiService.searchDistricts(query)
+                val upperQuery = query.trim().uppercase(java.util.Locale.forLanguageTag("tr"))
+                val response = apiService.searchDistricts(upperQuery)
                 if (!response.success || response.districts.isEmpty()) continue
                 for (district in response.districts) {
                     val normalizedName = district.name
                         .replace(Regex("[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]"), "")
-                        .lowercase()
+                        .lowercase(java.util.Locale.forLanguageTag("tr"))
                     val normalizedQuery = query
                         .replace(Regex("[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]"), "")
-                        .lowercase()
+                        .lowercase(java.util.Locale.forLanguageTag("tr"))
                     if (normalizedName == normalizedQuery) return district.id
                 }
                 return response.districts.firstOrNull()?.id
@@ -200,23 +257,26 @@ class PrayerTimeRepositoryImpl @Inject constructor(
 
     suspend fun refreshPrayerTimes(location: LocationInfo, month: Int, year: Int, method: Int, school: Int): Result<List<PrayerTime>> {
         return try {
-            val useLocal = shouldUseLocalCalculation()
+            val activeDataSource = getActiveDataSource()
+            val useLocal = activeDataSource == 2 || !isNetworkAvailable()
             val prayerTimes = if (useLocal) {
                 calculateLocally(location, month, year, method, school)
-            } else {
+            } else if (activeDataSource == 1) {
                 fetchFromImsakiyemApi(location, month, year, method, school)
+            } else {
+                fetchFromAladhanApi(location, month, year, method, school)
             }
 
             if (prayerTimes.isNotEmpty()) {
                 prayerTimeDao.insertAll(prayerTimes.map {
-                    it.toEntity(location.cityName, month, year, method, school)
+                    it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
                 Result.success(prayerTimes)
             } else {
                 val fallbackTimes = calculateLocally(location, month, year, method, school)
                 if (fallbackTimes.isNotEmpty()) {
                     prayerTimeDao.insertAll(fallbackTimes.map {
-                        it.toEntity(location.cityName, month, year, method, school)
+                        it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                     })
                     Result.success(fallbackTimes)
                 } else {
@@ -224,10 +284,11 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            val activeDataSource = getActiveDataSource()
             val fallbackTimes = calculateLocally(location, month, year, method, school)
             if (fallbackTimes.isNotEmpty()) {
                 prayerTimeDao.insertAll(fallbackTimes.map {
-                    it.toEntity(location.cityName, month, year, method, school)
+                    it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
                 Result.success(fallbackTimes)
             } else {
@@ -247,7 +308,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         return String.format("%02d:%02d", hours, minutes)
     }
 
-    private fun PrayerTime.toEntity(cityName: String, month: Int, year: Int, method: Int, school: Int) = PrayerTimeEntity(
+    private fun PrayerTime.toEntity(cityName: String, month: Int, year: Int, method: Int, school: Int, dataSource: Int) = PrayerTimeEntity(
         date = date,
         cityName = cityName,
         gregorianDate = gregorianDate,
@@ -264,7 +325,8 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         cacheMonth = month,
         cacheYear = year,
         cacheMethod = method,
-        cacheSchool = school
+        cacheSchool = school,
+        cacheDataSource = dataSource
     )
 
     private fun PrayerTimeEntity.toDomainModel() = PrayerTime(

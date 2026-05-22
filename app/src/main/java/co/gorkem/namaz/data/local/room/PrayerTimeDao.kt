@@ -8,8 +8,8 @@ import androidx.room.Query
 @Dao
 interface PrayerTimeDao {
 
-    @Query("SELECT * FROM prayer_times WHERE cityName = :cityName AND cacheMonth = :month AND cacheYear = :year AND cacheMethod = :method AND cacheSchool = :school ORDER BY date ASC")
-    suspend fun getPrayerTimesForMonth(cityName: String, month: Int, year: Int, method: Int, school: Int): List<PrayerTimeEntity>
+    @Query("SELECT * FROM prayer_times WHERE cityName = :cityName AND cacheMonth = :month AND cacheYear = :year AND cacheMethod = :method AND cacheSchool = :school AND cacheDataSource = :dataSource ORDER BY date ASC")
+    suspend fun getPrayerTimesForMonth(cityName: String, month: Int, year: Int, method: Int, school: Int, dataSource: Int): List<PrayerTimeEntity>
 
     @Query("SELECT * FROM prayer_times WHERE cityName = :cityName AND date = :date LIMIT 1")
     suspend fun getPrayerTimeForDate(cityName: String, date: String): PrayerTimeEntity?
@@ -20,6 +20,6 @@ interface PrayerTimeDao {
     @Query("DELETE FROM prayer_times WHERE cachedAt < :olderThanTimestamp")
     suspend fun deleteOlderThan(olderThanTimestamp: Long)
 
-    @Query("DELETE FROM prayer_times WHERE cityName = :cityName AND cacheMonth = :month AND cacheYear = :year AND cacheMethod = :method AND cacheSchool = :school")
-    suspend fun deleteMonthForCity(cityName: String, month: Int, year: Int, method: Int, school: Int)
+    @Query("DELETE FROM prayer_times WHERE cityName = :cityName AND cacheMonth = :month AND cacheYear = :year AND cacheMethod = :method AND cacheSchool = :school AND cacheDataSource = :dataSource")
+    suspend fun deleteMonthForCity(cityName: String, month: Int, year: Int, method: Int, school: Int, dataSource: Int)
 }

@@ -70,4 +70,10 @@ class SettingsViewModel @Inject constructor(
             preferencesRepository.setUseLocalCalculation(enabled)
         }
     }
+
+    fun setDataSource(source: Int) {
+        viewModelScope.launch {
+            preferencesRepository.setDataSource(source)
+        }
+    }
 }

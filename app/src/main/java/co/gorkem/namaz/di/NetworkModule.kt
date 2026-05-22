@@ -1,7 +1,10 @@
 package co.gorkem.namaz.di
 
+import co.gorkem.namaz.data.remote.api.AladhanApiService
 import co.gorkem.namaz.data.remote.api.ImsakiyemApiService
 import co.gorkem.namaz.data.remote.api.NominatimApiService
+// ... rest of imports are standard ...
+
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -54,6 +57,18 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideAladhanApiService(okHttpClient: OkHttpClient): AladhanApiService {
+        return Retrofit.Builder()
+            .baseUrl("https://api.aladhan.com/v1/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(AladhanApiService::class.java)
+    }
+
+
+    @Provides
+    @Singleton
     @Named("nominatim")
     fun provideNominatimOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
@@ -82,6 +97,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @Named("nominatim")
     fun provideNominatimApiService(@Named("nominatim") retrofit: Retrofit): NominatimApiService {
         return retrofit.create(NominatimApiService::class.java)
     }

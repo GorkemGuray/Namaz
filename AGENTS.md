@@ -22,6 +22,15 @@ Uygulama build alıp başarıyla derlenmektedir. Temel özellikler tamamlanmış
 ./gradlew test
 ```
 
+### Android CLI & SDK Tools
+
+Proje geliştirme sürecinde Android CLI ve SDK araçları (adb, emulator vb.) aşağıdaki görevler için kullanılabilir:
+- **Bağlı cihazları listeleme:** `adb devices`
+- **Derlenen debug APK'sını cihaza yükleme:** `adb install app/build/outputs/apk/debug/app-debug.apk`
+- **Logcat loglarını izleme:** `adb logcat`
+- **Instrumented testleri cihazda çalıştırma:** `./gradlew connectedAndroidTest`
+- **Uygulamayı emülatör/cihaz üzerinden başlatma:** `adb shell monkey -p co.gorkem.namaz -c android.intent.category.LAUNCHER 1`
+
 ### Konfigürasyon
 
 ```
@@ -70,6 +79,14 @@ GET https://ezanvakti.imsakiyem.com/api/locations/search/districts?q={query}&cou
 - Hicri tarih bilgisi (`hijri_date`) response içinde gelir.
 - Rate limit: 100 istek / 5 dakika.
 - **İlçe arama**: `/api/locations/search/districts?q={ilçe adı}` ile ilçe ID'si bulunur.
+
+### Aladhan API — Dünya Geneli Namaz Vakitleri (Varsayılan)
+```
+GET https://api.aladhan.com/v1/calendar/{year}/{month}?latitude={lat}&longitude={lon}&method={method}&school={school}
+```
+- Dünya genelinde koordinat bazlı namaz vakti hesaplamaları için kullanılır.
+- Uygulama içinde varsayılan veri kaynağıdır.
+- Diyanet hesaplama yöntemi için `method=13` parametresi gönderilir.
 
 ### Nominatim / OpenStreetMap (Şehir Arama) — Yedek
 ```
@@ -272,14 +289,17 @@ wear/
 ## Kullanıcı Akışı
 
 1. **İlk açılış** → Konum izni istenir
-   - İzin verilirse: FusedLocationProviderClient → Geocoder → İmsakiyem API (district ID lookup)
-   - İzin verilmezse: CitySelectionScreen (imsakiyem arama), varsayılan İstanbul/Silivri
-2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi
-3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı (API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), dil
-4. **Şehir seçimi**: İmsakiyem API ile ilçe arama + son seçilenler (max 5, JSON olarak DataStore'da)
+   - İzin verilirse: FusedLocationProviderClient → Geocoder → Konum Koordinatları → Aladhan API (Varsayılan) / Imsakiyem API (Diyanet) / Lokal Hesaplama
+   - İzin verilmezse: CitySelectionScreen, varsayılan İstanbul/Silivri
+2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi (uzun konum isimleri sadeleştirilmiş ve taşma sorunları giderilmiştir)
+3. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı seçimi (Aladhan API / İmsakiyem API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), dil
+4. **Şehir seçimi**: Seçilen veri kaynağına göre arama yapılır:
+   - Aladhan API / Lokal Hesaplama için: Nominatim API ile dünya genelinde koordinat arama
+   - İmsakiyem API için: İmsakiyem API ile ilçe arama (büyük/küçük harf ve Türkçe karakter desteğiyle)
+   - Son seçilenler (max 5, JSON olarak DataStore'da)
 5. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi
 6. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
-7. **Wear standalone**: Telefon yoksa saat kendi konumundan API'ye sorar (hardcoded İstanbul koordinatları)
+7. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
 
 ---
 
@@ -294,8 +314,8 @@ wear/
 - Expressive shapes, typography scale.
 
 ### Çevrimdışı (Room)
-- `PrayerTimeEntity` cache'lenir. Cache key: `cityName + month + year + method + school`.
-- `NamazDatabase` version = 3. `fallbackToDestructiveMigration(true)` kullanılır (schema export disabled).
+- `PrayerTimeEntity` cache'lenir. Cache key: `cityName + month + year + method + school + cacheDataSource`.
+- `NamazDatabase` version = 4. `fallbackToDestructiveMigration(true)` kullanılır (schema export disabled).
 - `cleanupOldData(30)` 30 günden eski veriyi siler.
 
 ### Bildirimler
@@ -312,7 +332,8 @@ wear/
 - `UserPreferencesRepository`: standard Preferences DataStore keys kullanır.
 - `UserPreferencesSerializer`: NO-OP stub. Aktif olarak kullanılmaz.
 - `recentCities`: Gson ile JSON string olarak saklanır (max 5, deduplicated).
-- `useLocalCalculation`: Boolean. Açıksa API kullanılmaz, lokal hesaplama yapılır.
+- `dataSource`: Int. Hangi veri kaynağının aktif olduğunu belirtir (0: Aladhan API, 1: Imsakiyem API, 2: Lokal Hesaplama).
+- `useLocalCalculation`: Boolean. Geriye uyumluluk için tutulur. Açıksa API kullanılmaz, lokal hesaplama yapılır.
 
 ### HomeViewModel Race Condition
 - `prayerTimesJob` takip edilir, yeni yükleme önceki job'ı iptal eder.
@@ -355,6 +376,15 @@ wear/
 - **QiblaScreen**: Tam ekran, TopAppBar yok. 5 UI state: Loading/CompassActive/StaticDirection/Error/LocationRequired. ±5° hizalanma titreşimi. Kalibrasyon/manyetik bozulma uyarıları banner yerine inline mikro-metin olarak gösterilir.
 - **Hybrid yaklaşım**: Manyetometre varsa tam pusula, yoksa statik yön + derece gösterimi.
 - **Test**: `QiblaUseCaseTest` - 6 birim testi passing (Istanbul, NYC, Sydney, Kaabe, kardinal yönler).
+
+### Türkçe Karakter Konum Arama Çözümü
+- İmsakiyem API ilçe arama endpoint'inin (`api/locations/search/districts`) büyük/küçük harf ve Türkçe karakter hassasiyetinden kaynaklanan arama sorunları (`kırklareli`, `üsküdar`, `kadıköy` vb. yazılarak arama yapılamaması) çözülmüştür.
+- `CitySelectionViewModel` ve `PrayerTimeRepositoryImpl` içindeki API çağrılarından önce arama terimleri `Locale.forLanguageTag("tr")` ile Türkçe kurallarına uygun olarak **BÜYÜK HARFE** dönüştürülür (`KIRKLARELİ` vb.).
+- Eşleştirme aşamasında da isimlerin karşılaştırılması `lowercase(Locale.forLanguageTag("tr"))` ile yapılarak Türkçe karakterlerin tam eşleşmesi sağlanmıştır.
+
+### Konum İsimleri Sadeleştirmesi ve Arayüz Düzeltmeleri
+- Konum isimlerinin çok uzun olması durumunda `PrayerHeroCard` arayüzünün kayması ve bozulması engellenmiş, metin boyutları ve padding değerleri duyarlı hale getirilmiştir.
+- Nominatim API'sinden gelen karmaşık ve çok uzun adres bilgileri sadeleştirilmiştir (ülke, eyalet vb. fazla detaylar elenerek sadece "Şehir, İlçe" veya "Şehir, Ülke" formatı korunmuştur).
 
 ### Navigate
 - `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)

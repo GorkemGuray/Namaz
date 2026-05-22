@@ -1,11 +1,12 @@
 package co.gorkem.namaz.data.local.room
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "prayer_times")
+@Entity(
+    tableName = "prayer_times",
+    primaryKeys = ["date", "cityName", "cacheMethod", "cacheSchool", "cacheDataSource"]
+)
 data class PrayerTimeEntity(
-    @PrimaryKey
     val date: String,
     val cityName: String,
     val gregorianDate: String,
@@ -23,5 +24,6 @@ data class PrayerTimeEntity(
     val cacheYear: Int,
     val cacheMethod: Int,
     val cacheSchool: Int,
+    val cacheDataSource: Int,
     val cachedAt: Long = System.currentTimeMillis()
 )

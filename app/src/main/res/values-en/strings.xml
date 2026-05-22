@@ -57,6 +57,12 @@
     <string name="settings_language_english">English</string>
     <string name="settings_school">School</string>
     <string name="settings_data_source">Data Source</string>
+    <string name="settings_source_aladhan">Aladhan API</string>
+    <string name="settings_source_aladhan_desc">Online prayer times via Aladhan (Default)</string>
+    <string name="settings_source_imsakiyem">Imsakiyem API</string>
+    <string name="settings_source_imsakiyem_desc">Official Diyanet (Turkey) times</string>
+    <string name="settings_source_local">Local Calculation</string>
+    <string name="settings_source_local_desc">Offline calculations on device (Offline mode)</string>
     <string name="settings_local_calculation">Local Calculation</string>
     <string name="settings_local_calculation_desc">Calculate prayer times locally without internet. When on, API is not used. When off, automatically falls back to local calculation if no internet.</string>
     <string name="school_hanafi">Hanafi</string>

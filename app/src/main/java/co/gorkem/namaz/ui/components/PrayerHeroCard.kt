@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import co.gorkem.namaz.R
@@ -93,14 +94,17 @@ fun PrayerHeroCard(
                 if (locationName.isNotBlank()) {
                     HeroLocationChip(
                         locationName = locationName,
-                        onClick = onLocationClick
+                        onClick = onLocationClick,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                 }
                 if (hijriDate.isNotBlank()) {
                     Text(
                         text = hijriDate,
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.65f)
+                        color = Color.White.copy(alpha = 0.65f),
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
             }
@@ -239,7 +243,9 @@ private fun HeroLocationChip(
         Text(
             text = locationName,
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.95f)
+            color = Color.White.copy(alpha = 0.95f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

@@ -96,8 +96,16 @@ fun HomeScreen(
     }
 
     val locationDisplay = buildString {
-        if (locationInfo.cityName.isNotEmpty()) append(locationInfo.cityName)
-        if (locationInfo.districtName.isNotEmpty()) append(" - ").append(locationInfo.districtName)
+        val city = locationInfo.cityName.trim()
+        val district = locationInfo.districtName.trim()
+        if (city.isNotEmpty()) {
+            append(city)
+            if (district.isNotEmpty() && !district.equals(city, ignoreCase = true)) {
+                append(" - ").append(district)
+            }
+        } else if (district.isNotEmpty()) {
+            append(district)
+        }
     }
 
     Column(modifier = modifier.fillMaxSize()) {
