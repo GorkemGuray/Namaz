@@ -28,7 +28,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -57,6 +59,24 @@ fun CalendarScreen(
     val locationInfo by viewModel.locationInfo.collectAsState()
     val selectedYear by viewModel.selectedYear.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
+
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(prayerTimes) {
+        if (prayerTimes.isNotEmpty()) {
+            val todayIndex = prayerTimes.indexOfFirst { item ->
+                try {
+                    LocalDate.parse(item.date, DateTimeFormatter.ofPattern("dd-MM-yyyy")) == LocalDate.now()
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            if (todayIndex != -1) {
+                val targetIndex = maxOf(0, todayIndex - 3)
+                listState.scrollToItem(targetIndex)
+            }
+        }
+    }
 
     val locationDisplay = buildString {
         val city = locationInfo.cityName.trim()
@@ -229,7 +249,10 @@ fun CalendarScreen(
                                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                             )
 
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
                                 itemsIndexed(prayerTimes) { index, item ->
                                     CalendarRow(item = item)
                                     if (index < prayerTimes.lastIndex) {
