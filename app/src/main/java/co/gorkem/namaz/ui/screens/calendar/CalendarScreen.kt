@@ -285,12 +285,33 @@ private fun CalendarRow(item: PrayerTime) {
             it.format(DateTimeFormatter.ofPattern("d E", Locale.getDefault()))
         } ?: item.date
 
-        Text(
-            text = dateStr,
-            style = textStyle,
+        Column(
             modifier = Modifier.weight(1.3f),
-            textAlign = TextAlign.Center
-        )
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = dateStr,
+                style = textStyle,
+                textAlign = TextAlign.Center
+            )
+            if (item.hijriDay.isNotEmpty() && item.hijriMonthNumber in 1..12) {
+                val shortMonth = getShortHijriMonth(item.hijriMonthNumber, Locale.getDefault())
+                val hijriDisplay = "${item.hijriDay} $shortMonth"
+                Text(
+                    text = hijriDisplay,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = if (isToday) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                    ),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
 
         item.getAllPrayers().forEach { (_, time) ->
             Text(
@@ -302,3 +323,23 @@ private fun CalendarRow(item: PrayerTime) {
         }
     }
 }
+
+private fun getShortHijriMonth(monthNumber: Int, locale: Locale): String {
+    val isTr = locale.language == "tr"
+    return when (monthNumber) {
+        1 -> if (isTr) "Muh" else "Muh"
+        2 -> if (isTr) "Saf" else "Saf"
+        3 -> if (isTr) "Reb I" else "Rab I"
+        4 -> if (isTr) "Reb II" else "Rab II"
+        5 -> if (isTr) "Cem I" else "Jum I"
+        6 -> if (isTr) "Cem II" else "Jum II"
+        7 -> if (isTr) "Rec" else "Raj"
+        8 -> if (isTr) "Şab" else "Sha"
+        9 -> if (isTr) "Ram" else "Ram"
+        10 -> if (isTr) "Şev" else "Shaw"
+        11 -> if (isTr) "Zil.K" else "Dhu.Q"
+        12 -> if (isTr) "Zil.H" else "Dhu.H"
+        else -> ""
+    }
+}
+
