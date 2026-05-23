@@ -227,12 +227,13 @@ app/
     │   │   ├── WearSyncManager.kt             # Data Layer API ile Wear'a JSON sync (/namaz_prayer_data)
     │   │   ├── WearPrayerData.kt              # WearPrayerData, WearPrayerItem, WearNextPrayer, WearKerahatInfo + Gson helpers
     │   │   ├── QiblaSensorManager.kt          # SensorManager wrapper, magnetometer detection, Flow<QiblaOrientation>
-    │   │   ├── NamazWidget.kt                 # GlanceAppWidget: compact/expanded layout, themeToColorProviders sync
-    │   │   ├── NamazWidgetReceiver.kt         # AppWidgetProvider: APPWIDGET_UPDATE receiver
+    │   │   ├── NamazWidget.kt                 # GlanceAppWidget: compact/expanded layout, themeToColorProviders sync, kerahat-aware, AndroidRemoteViews Chronometer
+    │   │   ├── NamazWidgetReceiver.kt         # AppWidgetProvider: APPWIDGET_UPDATE receiver, minute tick start/stop
     │   │   ├── NamazWidgetConfigureActivity.kt # Widget layout seçimi (detailed/compact)
     │   │   ├── NamazWidgetPrefs.kt            # Widget-specific SharedPreferences (layout)
     │   │   ├── NamazWidgetUpdater.kt          # Widget güncelleme yardımcısı
-    │   │   └── NamazWidgetWorker.kt           # @HiltWorker, periyodik widget refresh
+    │   │   ├── NamazWidgetWorker.kt           # @HiltWorker, periyodik widget refresh (15dk fallback)
+    │   │   └── WidgetMinuteReceiver.kt        # AlarmManager ile dakikalık tick BroadcastReceiver
     │   │
     │   └── ui/
     │   ├── state/
@@ -271,6 +272,7 @@ app/
     └── res/
         ├── values/strings.xml, values-en/strings.xml, themes.xml, colors.xml
         ├── drawable/ic_prayer_*.xml, ic_widget_settings.xml, ic_my_location.xml, ic_launcher_*.xml
+        ├── layout/widget_chronometer.xml
         ├── mipmap-*/ic_launcher.webp, ic_launcher_round.webp
         └── xml/backup_rules.xml, data_extraction_rules.xml, namaz_widget_info.xml
 ```
@@ -437,11 +439,12 @@ wear/
 - Konum isimlerinin çok uzun olması durumunda `PrayerHeroCard` arayüzünün kayması ve bozulması engellenmiş, metin boyutları ve padding değerleri duyarlı hale getirilmiştir.
 - Nominatim API'sinden gelen karmaşık ve çok uzun adres bilgileri sadeleştirilmiştir (ülke, eyalet vb. fazla detaylar elenerek sadece "Şehir, İlçe" veya "Şehir, Ülke" formatı korunmuştur).
 
-### Geri Sayım ve Widget Senkronizasyonu (Single Source of Truth)
-- **Ham Zaman Damgası**: Geri sayım süreleri için telefon arayüzü ve Glance widget arayüzü ortak tek bir ham **Epoch Milisaniye Zaman Damgası** (`targetPrayerTimeInMillis` / `targetEpochMillis`) kullanır. Pre-formatted string gönderimi yapılmaz.
-- **Glance Anlık Güncelleme**: DataStore veya veri değişikliklerinde anlık yansıma için `NamazWidgetUpdater` tüm aktif widget'ları (`GlanceId`'lerini alarak) `NamazWidget().update(context, glanceId)` ile anında günceller.
-- **Widget Chronometer Tasarımı**: Native `Chronometer` bileşeni `12sp` boyutunda ve `sans-serif-medium` ağırlığında Material 3 standartlarında tasarlanmıştır. Format parametresi üzerinden dile göre `%s kaldı` veya `%s bitiyor` şeklinde tek satırlık hap (pill) tasarıma dönüştürülmüştür.
-- **Geçiş Alarmları (Exact Alarm)**: Vakit geçiş anlarında Glance widget'ın kendini yeniden derleyerek yeni hedefe göre (akşam vb.) chronometer'ı sıfırlayabilmesi için `AlarmManager.setExactAndAllowWhileIdle()` ile ham vakit geçiş milisaniyesinde (`targetEpochMillis`) `co.gorkem.namaz.ACTION_PRAYER_TIME_TRANSITION` yayını tetiklenir. Her yeni alarm kurulduğunda eski alarm iptal edilir. Android 12+ izin uyumluluğu (`canScheduleExactAlarms`) kontrol edilerek hata toleranslı inexact alarm (`setAndAllowWhileIdle`) fallback'i mevcuttur. Yalnızca günde 5-6 kez çalışarak pil tüketmez.
+### Geri Sayım ve Widget Senkronizasyonu
+- **Gerçek Zamanlı Sayım**: App composable'ları (`CountdownTimer`, `CountdownDisplay`, `WearCountdownHero`) lokal decrement yerine `System.currentTimeMillis()` ile her tick'te hedef epoch millis'ten kalan saniyeyi yeniden hesaplar. Arka plana alınıp geri dönüldüğünde sayaç donma sorunu tamamen çözüldü.
+- **Widget Native Chronometer**: Geri sayım, Glance `Text` yerine Android `Chronometer` widget'ı ile `AndroidRemoteViews` üzerinden render edilir. `SystemClock.elapsedRealtime()` tabanlı countdown mode (`setChronometerCountDown(true)`). Launcher/SystemUI süreci tarafından işletilir — uygulama uyurken %0 CPU, %0 wake lock, Doze/AppStandby geçirmez.
+- **Widget Dakikalık Tick**: `WidgetMinuteReceiver` BroadcastReceiver, `AlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, ...)` ile her dakika başı `:00`'da `NamazWidget().updateAll()` tetikler. `SCHEDULE_EXACT_ALARM` izni manifest'te tanımlı. API 33+ `canScheduleExactAlarms()` kontrolü, SecurityException fallback. Mevcut 15dk WorkManager `NamazWidgetWorker` yedek katman olarak korunur.
+- **Widget Kerahat Senkronizasyonu**: `NamazWidgetState` içinde `isKerahat`, `kerahatPrayerName`, `kerahatRemainingMinutes` alanları. `GetPrayerDashboardUseCase.execute()` ile mevcut domain mantığı widget state'e taşınır. Kerahat aktifken widget kartı `errorContainer` arka plan, `error` badge ile uyarı moduna geçer. Başlık "Kerahat Vakti • Şehir", kart içi "(Kerahat)" etiketi, Chronometer hedefi kerahat bitiş zamanına ayarlanır.
+- **Glance Anlık Güncelleme**: DataStore veya veri değişikliklerinde `NamazWidgetUpdater` tüm aktif widget'ları `NamazWidget().updateAll(context)` ile anında günceller.
 
 ### Navigate
 - `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)

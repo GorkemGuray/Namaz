@@ -11,7 +11,7 @@ Android ve Wear OS için konum bazlı namaz vakitleri uygulaması.
   - **Monochrome Platinum**: Ultra-minimalist yönetici teması
   - Tüm temalar sistem dinamik renklerini (Monet) bypass eder, DataStore üzerinden kalıcıdır
   - Jetpack Compose Glance Widget ile tam renk senkronizasyonu
-- **Ana Ekran Widget (Glance)**: Detaylı (6 vakit + geri sayım) veya sade (sadece sıradaki vakit) layout seçenekli
+- **Ana Ekran Widget (Glance)**: Detaylı (6 vakit + geri sayım) veya sade (sadece sıradaki vakit) layout seçenekli. Native Android `Chronometer` ile pil dostu geri sayım (%0 CPU, Doze geçirmez). Kerahat vakti uyarısı (kırmızı kart + "(Kerahat)" etiketi). AlarmManager dakikalık tick ile güncel kalır.
 - **Üçlü Veri Kaynağı Seçeneği**:
   - **Aladhan API (Varsayılan)**: Dünya genelinde konum koordinatları ile çevrimiçi namaz vakitleri
   - **İmsakiyem API (Diyanet Resmi)**: Türkiye genelinde resmi ilçe bazlı namaz vakitleri
