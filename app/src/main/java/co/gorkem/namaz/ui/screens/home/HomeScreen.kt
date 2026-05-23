@@ -176,7 +176,8 @@ fun HomeScreen(
                                 dashboard = dash,
                                 locationName = locationDisplay,
                                 hijriDate = hijriDateDisplay,
-                                onLocationClick = onLocationClick
+                                onLocationClick = onLocationClick,
+                                onCountdownFinished = { viewModel.refreshDashboardImmediately() }
                             )
                         }
 
@@ -212,7 +213,10 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         item {
-                            CountdownTimer(nextPrayer = np)
+                            CountdownTimer(
+                                nextPrayer = np,
+                                onCountdownFinished = { viewModel.refreshDashboardImmediately() }
+                            )
                         }
 
                         item {

@@ -212,11 +212,23 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun refreshDashboardImmediately() {
+        refreshDashboard()
+    }
+
     private fun refreshDashboard() {
-        val today = todayPrayerTime ?: return
-        val tomorrowKey = LocalDate.now().plusDays(1).format(DATE_FORMAT)
+        val todayDate = LocalDate.now()
+        val todayKey = todayDate.format(DATE_FORMAT)
+        val today = _prayerTimes.value.find { it.date == todayKey } ?: todayPrayerTime ?: return
+        todayPrayerTime = today
+
+        _nextPrayer.value = getNextPrayerUseCase(today)
+
+        val tomorrowKey = todayDate.plusDays(1).format(DATE_FORMAT)
         val tomorrow = _prayerTimes.value.find { it.date == tomorrowKey }
         _dashboardData.value = getPrayerDashboardUseCase.execute(today, tomorrow)
+
+        syncToWear(_prayerTimes.value, _locationInfo.value)
     }
 
     private fun startDashboardRefresh() {

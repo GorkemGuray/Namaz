@@ -18,6 +18,7 @@ import co.gorkem.namaz.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,14 +34,20 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun CountdownTimer(
     nextPrayer: GetNextPrayerUseCase.NextPrayerInfo,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCountdownFinished: () -> Unit = {}
 ) {
     var remainingSeconds by remember { mutableLongStateOf(0L) }
 
+    val currentOnFinished by rememberUpdatedState(onCountdownFinished)
     LaunchedEffect(nextPrayer.targetPrayerTimeInMillis) {
         while (true) {
             val remaining = ((nextPrayer.targetPrayerTimeInMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
             remainingSeconds = remaining
+            if (remaining <= 0) {
+                currentOnFinished()
+                break
+            }
             delay(1000L)
         }
     }

@@ -32,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +64,7 @@ fun PrayerHeroCard(
     locationName: String,
     hijriDate: String = "",
     onLocationClick: () -> Unit = {},
+    onCountdownFinished: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -208,7 +210,8 @@ fun PrayerHeroCard(
                 CountdownDisplay(
                     targetPrayerTimeInMillis = dashboard.nextPrayer.targetPrayerTimeInMillis,
                     textColor = Color.White,
-                    textAlign = TextAlign.End
+                    textAlign = TextAlign.End,
+                    onCountdownFinished = onCountdownFinished
                 )
             }
         }
@@ -263,14 +266,20 @@ fun CountdownDisplay(
     targetPrayerTimeInMillis: Long,
     textColor: Color,
     modifier: Modifier = Modifier,
-    textAlign: TextAlign = TextAlign.Center
+    textAlign: TextAlign = TextAlign.Center,
+    onCountdownFinished: () -> Unit = {}
 ) {
     var remainingSeconds by remember { mutableLongStateOf(0L) }
 
+    val currentOnFinished by rememberUpdatedState(onCountdownFinished)
     LaunchedEffect(targetPrayerTimeInMillis) {
         while (true) {
             val remaining = ((targetPrayerTimeInMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
             remainingSeconds = remaining
+            if (remaining <= 0) {
+                currentOnFinished()
+                break
+            }
             delay(1000L)
         }
     }
