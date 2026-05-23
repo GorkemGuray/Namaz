@@ -76,8 +76,16 @@ class HomeViewModel @Inject constructor(
             var lastCityKey: String? = null
             var lastMethod: Int = -1
             var lastSchool: Int = -1
+            var lastNotificationsEnabled: Boolean? = null
+            var lastNotificationMinutesBefore: Int? = null
             preferencesRepository.preferences.collect { prefs ->
+                val notificationsEnabledChanged = lastNotificationsEnabled != null && prefs.notificationsEnabled != lastNotificationsEnabled
+                val notificationMinutesBeforeChanged = lastNotificationMinutesBefore != null && prefs.notificationMinutesBefore != lastNotificationMinutesBefore
+
                 currentPreferences = prefs
+                lastNotificationsEnabled = prefs.notificationsEnabled
+                lastNotificationMinutesBefore = prefs.notificationMinutesBefore
+
                 val cityKey = "${prefs.manualDistrictId},${prefs.manualLatitude},${prefs.manualLongitude},${prefs.manualCityName}"
                 val methodChanged = prefs.calculationMethod != lastMethod
                 val schoolChanged = prefs.school != lastSchool
@@ -100,6 +108,10 @@ class HomeViewModel @Inject constructor(
                     } else {
                         _needsLocationPermission.value = true
                         loadPrayerTimes(LocationInfo.DEFAULT)
+                    }
+                } else if (notificationsEnabledChanged || notificationMinutesBeforeChanged) {
+                    if (_prayerTimes.value.isNotEmpty()) {
+                        scheduleNotifications(_prayerTimes.value, _locationInfo.value)
                     }
                 }
             }
@@ -242,10 +254,10 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun scheduleNotifications(prayerTimes: List<PrayerTime>, location: LocationInfo) {
+        notificationScheduler.cancelAllNotifications()
         if (!currentPreferences.notificationsEnabled) return
 
         val prefs = currentPreferences
-        notificationScheduler.cancelAllNotifications()
         notificationScheduler.schedulePrayerNotifications(
             prayerTimes = prayerTimes,
             minutesBefore = prefs.notificationMinutesBefore,

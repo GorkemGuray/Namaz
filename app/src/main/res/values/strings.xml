@@ -53,6 +53,7 @@
     <string name="settings_notifications_desc">Vakit geldiğinde bildirim al</string>
     <string name="settings_notification_time">Bildirim Zamanı</string>
     <string name="settings_minutes_before"> dakika önce</string>
+    <string name="settings_notification_on_time">Vakit girdiğinde</string>
     <string name="settings_calculation_method">Hesaplama Yöntemi</string>
     <string name="settings_default">Varsayılan</string>
     <string name="settings_language">Dil</string>

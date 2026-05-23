@@ -53,6 +53,7 @@
     <string name="settings_notifications_desc">Receive notification when prayer time arrives</string>
     <string name="settings_notification_time">Notification Time</string>
     <string name="settings_minutes_before"> minutes before</string>
+    <string name="settings_notification_on_time">On time</string>
     <string name="settings_calculation_method">Calculation Method</string>
     <string name="settings_default">Default</string>
     <string name="settings_language">Language</string>

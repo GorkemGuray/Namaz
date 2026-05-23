@@ -20,7 +20,7 @@ class SettingsViewModel @Inject constructor(
     private val _preferences = MutableStateFlow(UserPreferences())
     val preferences: StateFlow<UserPreferences> = _preferences.asStateFlow()
 
-    val notificationMinutesOptions = listOf(15, 30, 45)
+    val notificationMinutesOptions = listOf(0, 15, 30, 45)
     val calculationMethods = listOf(13, 3, 4, 2)
     val schoolOptions: List<Pair<Int, Int>> = listOf(
         Pair(1, R.string.school_hanafi),

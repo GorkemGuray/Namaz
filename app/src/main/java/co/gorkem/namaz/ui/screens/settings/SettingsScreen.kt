@@ -156,8 +156,13 @@ fun SettingsScreen(
                                             onClick = null
                                         )
                                         Spacer(modifier = Modifier.padding(start = 16.dp))
+                                        val optionText = if (minutes == 0) {
+                                            stringResource(R.string.settings_notification_on_time)
+                                        } else {
+                                            minutes.toString() + stringResource(R.string.settings_minutes_before)
+                                        }
                                         Text(
-                                            text = minutes.toString() + stringResource(R.string.settings_minutes_before),
+                                            text = optionText,
                                             style = MaterialTheme.typography.bodyLarge,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
