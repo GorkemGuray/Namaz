@@ -149,25 +149,30 @@ class NamazWidget : GlanceAppWidget() {
                     1 -> { // Glassmorphism Theme (with semi-transparent colors)
                         ColorProviders(
                             light = LightColorScheme.copy(
-                                background = Color(0xD0FFFFFF),
-                                onBackground = Color(0xFF1C1B1F),
-                                surface = Color(0xD0FFFFFF),
+                                primary = Color(0xFF1E3A34),
+                                onPrimary = Color(0xFFFFFFFF),
+                                secondaryContainer = Color(0x281E3A34),
+                                onSecondaryContainer = Color(0xFF1C1B1F),
+                                background = Color(0xD0FBFBFA),
+                                surface = Color(0xD0FBFBFA),
                                 onSurface = Color(0xFF1C1B1F),
-                                surfaceVariant = Color(0xE0ECE6F0),
-                                onSurfaceVariant = Color(0xFF49454F)
+                                surfaceVariant = Color(0xE0E8F0EC),
+                                onSurfaceVariant = Color(0xFF6A6A6A)
                             ),
                             dark = DarkColorScheme.copy(
-                                background = Color(0x3C121214),
-                                onBackground = Color(0xFFE3E2E6),
-                                surface = Color(0x3C121214),
-                                onSurface = Color(0xFFE3E2E6),
-                                surfaceVariant = Color(0x50333335),
-                                onSurfaceVariant = Color(0xFFCAC4D0)
+                                primary = Color(0xFF3B6053),
+                                onPrimary = Color(0xFFFFFFFF),
+                                secondaryContainer = Color(0x323B6053),
+                                onSecondaryContainer = Color(0xFFE6E6E6),
+                                background = Color(0x3C121414),
+                                surface = Color(0x3C121414),
+                                onSurface = Color(0xFFE6E6E6),
+                                surfaceVariant = Color(0x501F2E2A),
+                                onSurfaceVariant = Color(0xFF909090)
                             )
                         )
                     }
-                    2 -> null // Dynamic Colors (Default GlanceTheme.colors)
-                    else -> { // Classic App Theme
+                    else -> { // Classic App Theme (dynamic colors fallback is now locked custom theme)
                         ColorProviders(
                             light = LightColorScheme,
                             dark = DarkColorScheme
@@ -175,14 +180,8 @@ class NamazWidget : GlanceAppWidget() {
                     }
                 }
 
-                if (widgetColors != null) {
-                    GlanceTheme(colors = widgetColors) {
-                        WidgetContent(state, appWidgetId)
-                    }
-                } else {
-                    GlanceTheme {
-                        WidgetContent(state, appWidgetId)
-                    }
+                GlanceTheme(colors = widgetColors) {
+                    WidgetContent(state, appWidgetId)
                 }
             }
         }
@@ -370,30 +369,13 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
     val remainingStr = formatRemainingTime(remainingMinutes, state.language)
     val remainingLabel = getRemainingLabel(state.language)
 
-    // Customize typography colors for Glassmorphism
-    val onSurfaceColor = if (state.widgetTheme == 1) {
-        DayNightColorProvider(day = Color(0xFF1C1B1F), night = Color(0xFFFFFFFF))
-    } else {
-        GlanceTheme.colors.onSurface
-    }
-
-    val onSurfaceVariantColor = if (state.widgetTheme == 1) {
-        DayNightColorProvider(day = Color(0xFF49454F), night = Color(0xFFCAC4D0))
-    } else {
-        GlanceTheme.colors.onSurfaceVariant
-    }
-    val primaryTextColor = if (state.widgetTheme == 1) {
-        DayNightColorProvider(day = Color(0xFF1A4E6E), night = Color(0xFF9ECAFF))
-    } else {
-        GlanceTheme.colors.primary
-    }
+    // Customize typography colors using GlanceTheme colors
+    val onSurfaceColor = GlanceTheme.colors.onSurface
+    val onSurfaceVariantColor = GlanceTheme.colors.onSurfaceVariant
+    val primaryTextColor = GlanceTheme.colors.primary
 
     // Outer background color mapping
-    val outerBackground = when (state.widgetTheme) {
-        1 -> DayNightColorProvider(day = Color(0xD0FFFFFF), night = Color(0x3C121214))
-        2 -> GlanceTheme.colors.widgetBackground
-        else -> GlanceTheme.colors.surface
-    }
+    val outerBackground = GlanceTheme.colors.surface
 
     val settingsAction = actionRunCallback<NamazWidgetSettingsAction>()
 
@@ -458,17 +440,8 @@ private fun CompactLayout(
     val size = LocalSize.current
     val localizedPrayerName = getLocalizedString(context, nextPrayerName.nameRes, language)
 
-    val cardBg = if (state.widgetTheme == 1) {
-        DayNightColorProvider(day = Color(0x281A4E6E), night = Color(0x329ECAFF))
-    } else {
-        GlanceTheme.colors.secondaryContainer
-    }
-
-    val cardOnBg = if (state.widgetTheme == 1) {
-        DayNightColorProvider(day = Color(0xFF1C1B1F), night = Color(0xFFFFFFFF))
-    } else {
-        GlanceTheme.colors.onSecondaryContainer
-    }
+    val cardBg = GlanceTheme.colors.secondaryContainer
+    val cardOnBg = GlanceTheme.colors.onSecondaryContainer
 
     val badgeBg = GlanceTheme.colors.primary
     val badgeOnBg = GlanceTheme.colors.onPrimary
@@ -674,17 +647,8 @@ private fun ExpandedLayout(
         Spacer(modifier = GlanceModifier.height(4.dp))
 
         // 2. Next Prayer Card (Full Width)
-        val cardBg = if (state.widgetTheme == 1) { // Glassmorphic translucent highlight
-            DayNightColorProvider(day = Color(0x281A4E6E), night = Color(0x329ECAFF))
-        } else {
-            GlanceTheme.colors.secondaryContainer
-        }
-
-        val cardOnBg = if (state.widgetTheme == 1) {
-            DayNightColorProvider(day = Color(0xFF1C1B1F), night = Color(0xFFFFFFFF))
-        } else {
-            GlanceTheme.colors.onSecondaryContainer
-        }
+        val cardBg = GlanceTheme.colors.secondaryContainer
+        val cardOnBg = GlanceTheme.colors.onSecondaryContainer
 
         val badgeBg = GlanceTheme.colors.primary
         val badgeOnBg = GlanceTheme.colors.onPrimary
@@ -762,23 +726,9 @@ private fun ExpandedLayout(
                     PrayerName.YATSI -> R.drawable.ic_prayer_yatsi
                 }
 
-                val textColor = if (isCurrent) {
-                    if (state.widgetTheme == 1) primaryTextColor else GlanceTheme.colors.primary
-                } else {
-                    onSurfaceColor
-                }
-
-                val labelColor = if (isCurrent) {
-                    if (state.widgetTheme == 1) primaryTextColor else GlanceTheme.colors.primary
-                } else {
-                    onSurfaceVariantColor
-                }
-
-                val iconColor = if (isCurrent) {
-                    if (state.widgetTheme == 1) primaryTextColor else GlanceTheme.colors.primary
-                } else {
-                    onSurfaceVariantColor
-                }
+                val textColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceColor
+                val labelColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceVariantColor
+                val iconColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceVariantColor
 
                 val textWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
 

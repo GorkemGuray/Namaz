@@ -197,7 +197,8 @@ fun HomeScreen(
                             PrayerTimesList(
                                 prayerTime = todayTimes,
                                 nextPrayer = dash.nextPrayer,
-                                currentPrayerName = dash.currentPeriod.prayerName
+                                currentPrayerName = dash.currentPeriod.prayerName,
+                                currentPeriodType = dash.currentPeriod.periodType
                             )
                         }
                     }
@@ -233,7 +234,8 @@ fun HomeScreen(
                             PrayerTimesList(
                                 prayerTime = todayTimes,
                                 nextPrayer = np,
-                                currentPrayerName = null
+                                currentPrayerName = null,
+                                currentPeriodType = null
                             )
                         }
                     }
