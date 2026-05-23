@@ -50,8 +50,8 @@ import co.gorkem.namaz.ui.components.CountdownTimer
 import co.gorkem.namaz.ui.components.PrayerHeroCard
 import co.gorkem.namaz.ui.components.PrayerTimesList
 import co.gorkem.namaz.ui.theme.PillShape
+import co.gorkem.namaz.util.DateTimeUtils
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,18 +95,7 @@ fun HomeScreen(
         return
     }
 
-    val locationDisplay = buildString {
-        val city = locationInfo.cityName.trim()
-        val district = locationInfo.districtName.trim()
-        if (city.isNotEmpty()) {
-            append(city)
-            if (district.isNotEmpty() && !district.equals(city, ignoreCase = true)) {
-                append(" - ").append(district)
-            }
-        } else if (district.isNotEmpty()) {
-            append(district)
-        }
-    }
+    val locationDisplay = locationInfo.formattedName
 
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
@@ -156,7 +145,7 @@ fun HomeScreen(
                 }
             }
             else -> {
-                val todayKey = LocalDate.now().format(DATE_FORMAT)
+                val todayKey = LocalDate.now().format(DateTimeUtils.DATE_FORMATTER)
                 val todayTimes = prayerTimes.find { it.date == todayKey }
                     ?: prayerTimes.firstOrNull()
                 val dash = dashboard
@@ -360,4 +349,4 @@ fun LocationPermissionScreen(
     }
 }
 
-private val DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+

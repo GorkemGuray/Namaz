@@ -2,16 +2,14 @@ package co.gorkem.namaz.domain.usecase
 
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
+import co.gorkem.namaz.util.DateTimeUtils
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class GetNextPrayerUseCase @Inject constructor() {
-
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     data class NextPrayerInfo(
         val prayerName: PrayerName,
@@ -26,7 +24,7 @@ class GetNextPrayerUseCase @Inject constructor() {
 
         val prayers = todayPrayerTimes.getAllPrayers()
             .map { (name, timeStr) ->
-                name to LocalTime.parse(timeStr, timeFormatter)
+                name to LocalTime.parse(timeStr, DateTimeUtils.TIME_FORMATTER)
             }
 
         val nextPrayer = prayers.find { (_, time) -> time.isAfter(now) }
@@ -38,7 +36,7 @@ class GetNextPrayerUseCase @Inject constructor() {
             val targetMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             NextPrayerInfo(
                 prayerName = name,
-                prayerTime = time.format(timeFormatter),
+                prayerTime = time.format(DateTimeUtils.TIME_FORMATTER),
                 remainingMinutes = remainingMinutes,
                 targetPrayerTimeInMillis = targetMillis
             )
@@ -49,7 +47,7 @@ class GetNextPrayerUseCase @Inject constructor() {
                 val targetMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 NextPrayerInfo(
                     prayerName = name,
-                    prayerTime = time.format(timeFormatter),
+                    prayerTime = time.format(DateTimeUtils.TIME_FORMATTER),
                     remainingMinutes = remainingMinutes,
                     targetPrayerTimeInMillis = targetMillis
                 )

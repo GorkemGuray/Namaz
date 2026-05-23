@@ -10,6 +10,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.glance.appwidget.updateAll
+import co.gorkem.namaz.util.alarmManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,11 +18,8 @@ import kotlinx.coroutines.launch
 class WidgetMinuteReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d(TAG, "Minute tick received")
-
         val hasWidgets = hasActiveWidgets(context)
         if (!hasWidgets) {
-            Log.d(TAG, "No active widgets, cancelling")
             cancelMinuteUpdates(context)
             return
         }
@@ -46,9 +44,10 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
         private const val REQUEST_CODE = 9001
 
         fun scheduleNextMinute(context: Context) {
+            val alarmManager = context.alarmManager ?: return
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val canSchedule = try {
-                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                     alarmManager.canScheduleExactAlarms()
                 } catch (e: Exception) {
                     false
@@ -58,8 +57,6 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
                     return
                 }
             }
-
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
             cancelMinuteUpdates(context)
 
@@ -89,7 +86,6 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
                         pendingIntent
                     )
                 }
-                Log.d(TAG, "Scheduled next tick at $nextMinute")
             } catch (e: SecurityException) {
                 Log.w(TAG, "Cannot schedule exact alarm, falling back to inexact", e)
                 alarmManager.set(AlarmManager.RTC, nextMinute, pendingIntent)
@@ -97,7 +93,7 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
         }
 
         fun cancelMinuteUpdates(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val alarmManager = context.alarmManager ?: return
             val triggerIntent = Intent(context, WidgetMinuteReceiver::class.java).apply {
                 action = ACTION_WIDGET_TICK
             }

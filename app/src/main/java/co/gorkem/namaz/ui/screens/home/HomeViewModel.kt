@@ -4,13 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
+import co.gorkem.namaz.data.local.datastore.getLocationInfo
 import co.gorkem.namaz.data.remote.NetworkResult
 import co.gorkem.namaz.data.repository.PrayerTimeRepositoryImpl
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
-import co.gorkem.namaz.domain.usecase.GetPrayerDashboardUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
+import co.gorkem.namaz.domain.usecase.GetPrayerDashboardUseCase
 import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.service.GeocoderHelper
 import co.gorkem.namaz.service.LocationTracker
@@ -20,6 +21,7 @@ import co.gorkem.namaz.service.WearNextPrayer
 import co.gorkem.namaz.service.WearPrayerData
 import co.gorkem.namaz.service.WearPrayerItem
 import co.gorkem.namaz.service.WearSyncManager
+import co.gorkem.namaz.util.DateTimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,7 +31,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -95,14 +96,7 @@ class HomeViewModel @Inject constructor(
                     lastSchool = prefs.school
                     if (prefs.manualCityName.isNotEmpty()) {
                         _needsLocationPermission.value = false
-                        loadPrayerTimes(LocationInfo(
-                            latitude = prefs.manualLatitude,
-                            longitude = prefs.manualLongitude,
-                            timezone = prefs.manualTimezone.ifEmpty { "Europe/Istanbul" },
-                            cityName = prefs.manualCityName,
-                            districtName = prefs.manualDistrictName,
-                            districtId = prefs.manualDistrictId
-                        ))
+                        loadPrayerTimes(prefs.getLocationInfo())
                     } else if (locationTracker.hasLocationPermission()) {
                         loadWithCurrentLocation()
                     } else {
@@ -166,7 +160,7 @@ class HomeViewModel @Inject constructor(
         _nextPrayer.value = null
         _dashboardData.value = null
         val today = LocalDate.now()
-        val todayKey = today.format(DATE_FORMAT)
+        val todayKey = today.format(DateTimeUtils.DATE_FORMATTER)
 
         prayerTimesJob = viewModelScope.launch {
             getPrayerTimesUseCase(
@@ -230,13 +224,13 @@ class HomeViewModel @Inject constructor(
 
     private fun refreshDashboard() {
         val todayDate = LocalDate.now()
-        val todayKey = todayDate.format(DATE_FORMAT)
+        val todayKey = todayDate.format(DateTimeUtils.DATE_FORMATTER)
         val today = _prayerTimes.value.find { it.date == todayKey } ?: todayPrayerTime ?: return
         todayPrayerTime = today
 
         _nextPrayer.value = getNextPrayerUseCase(today)
 
-        val tomorrowKey = todayDate.plusDays(1).format(DATE_FORMAT)
+        val tomorrowKey = todayDate.plusDays(1).format(DateTimeUtils.DATE_FORMATTER)
         val tomorrow = _prayerTimes.value.find { it.date == tomorrowKey }
         _dashboardData.value = getPrayerDashboardUseCase.execute(today, tomorrow)
 
@@ -267,7 +261,7 @@ class HomeViewModel @Inject constructor(
 
     private fun syncToWear(prayerTimes: List<PrayerTime>, location: LocationInfo) {
         val today = LocalDate.now()
-        val todayData = prayerTimes.find { it.date == today.format(DATE_FORMAT) } ?: return
+        val todayData = prayerTimes.find { it.date == today.format(DateTimeUtils.DATE_FORMATTER) } ?: return
 
         viewModelScope.launch {
             val kerahatInfo = dashboardData.value?.kerahatInfo
@@ -298,9 +292,5 @@ class HomeViewModel @Inject constructor(
             )
             wearSyncManager.syncPrayerData(wearData)
         }
-    }
-
-    companion object {
-        private val DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy")
     }
 }

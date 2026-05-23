@@ -7,12 +7,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
+import co.gorkem.namaz.util.DateTimeUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,7 +21,6 @@ import javax.inject.Singleton
 class PrayerNotificationScheduler @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     fun schedulePrayerNotifications(
         prayerTimes: List<PrayerTime>,
@@ -29,7 +28,7 @@ class PrayerNotificationScheduler @Inject constructor(
         cityName: String
     ) {
         val today = LocalDate.now()
-        val todayData = prayerTimes.find { it.date == today.format(DATE_FORMAT) }
+        val todayData = prayerTimes.find { it.date == today.format(DateTimeUtils.DATE_FORMATTER) }
             ?: return
 
         val prayers = todayData.getAllPrayers()
@@ -97,16 +96,12 @@ class PrayerNotificationScheduler @Inject constructor(
         minutesBefore: Int
     ): ZonedDateTime? {
         return try {
-            val time = LocalTime.parse(prayerTimeStr, timeFormatter)
-            val date = LocalDate.parse(prayerDateStr, DATE_FORMAT)
+            val time = LocalTime.parse(prayerTimeStr, DateTimeUtils.TIME_FORMATTER)
+            val date = LocalDate.parse(prayerDateStr, DateTimeUtils.DATE_FORMATTER)
             val dateTime = ZonedDateTime.of(date, time, ZoneId.systemDefault())
             dateTime.minusMinutes(minutesBefore.toLong())
         } catch (e: Exception) {
             null
         }
-    }
-
-    companion object {
-        private val DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy")
     }
 }

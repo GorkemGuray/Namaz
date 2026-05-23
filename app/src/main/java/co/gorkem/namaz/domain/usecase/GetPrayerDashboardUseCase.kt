@@ -2,9 +2,9 @@ package co.gorkem.namaz.domain.usecase
 
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
+import co.gorkem.namaz.util.DateTimeUtils
 import java.time.Duration
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 enum class PeriodType {
@@ -38,7 +38,6 @@ data class PrayerDashboardData(
 class GetPrayerDashboardUseCase @Inject constructor(
     private val getNextPrayerUseCase: GetNextPrayerUseCase
 ) {
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     fun execute(
         todayPrayerTimes: PrayerTime,
@@ -48,13 +47,13 @@ class GetPrayerDashboardUseCase @Inject constructor(
 
         val prayers = todayPrayerTimes.getAllPrayers()
             .map { (name, timeStr) ->
-                name to LocalTime.parse(timeStr, timeFormatter)
+                name to LocalTime.parse(timeStr, DateTimeUtils.TIME_FORMATTER)
             }
             .toMap()
 
         val tomorrowPrayers = tomorrowPrayerTimes?.getAllPrayers()
             ?.map { (name, timeStr) ->
-                name to LocalTime.parse(timeStr, timeFormatter)
+                name to LocalTime.parse(timeStr, DateTimeUtils.TIME_FORMATTER)
             }
             ?.toMap()
 

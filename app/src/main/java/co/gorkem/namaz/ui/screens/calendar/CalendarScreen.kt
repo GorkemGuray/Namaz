@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -39,7 +40,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerTime
+import co.gorkem.namaz.util.DateTimeUtils
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -70,7 +71,7 @@ fun CalendarScreen(
         if (prayerTimes.isNotEmpty()) {
             val todayIndex = prayerTimes.indexOfFirst { item ->
                 try {
-                    LocalDate.parse(item.date, DateTimeFormatter.ofPattern("dd-MM-yyyy")) == LocalDate.now()
+                    LocalDate.parse(item.date, DateTimeUtils.DATE_FORMATTER) == LocalDate.now()
                 } catch (_: Exception) {
                     false
                 }
@@ -82,18 +83,7 @@ fun CalendarScreen(
         }
     }
 
-    val locationDisplay = buildString {
-        val city = locationInfo.cityName.trim()
-        val district = locationInfo.districtName.trim()
-        if (city.isNotEmpty()) {
-            append(city)
-            if (district.isNotEmpty() && !district.equals(city, ignoreCase = true)) {
-                append(" - ").append(district)
-            }
-        } else if (district.isNotEmpty()) {
-            append(district)
-        }
-    }
+    val locationDisplay = locationInfo.formattedName
 
     val monthYearText = try {
         val date = LocalDate.of(selectedYear, selectedMonth, 1)
@@ -259,14 +249,14 @@ fun CalendarScreen(
                             ) {
                                 itemsIndexed(prayerTimes) { index, item ->
                                     val dateParsed = try {
-                                        LocalDate.parse(item.date, DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                                        LocalDate.parse(item.date, DateTimeUtils.DATE_FORMATTER)
                                     } catch (_: Exception) {
                                         null
                                     }
                                     val isToday = dateParsed == LocalDate.now()
                                     val isNextToday = try {
                                         if (index < prayerTimes.lastIndex) {
-                                            LocalDate.parse(prayerTimes[index + 1].date, DateTimeFormatter.ofPattern("dd-MM-yyyy")) == LocalDate.now()
+                                            LocalDate.parse(prayerTimes[index + 1].date, DateTimeUtils.DATE_FORMATTER) == LocalDate.now()
                                         } else false
                                     } catch (_: Exception) {
                                         false
@@ -292,7 +282,7 @@ fun CalendarScreen(
 @Composable
 private fun CalendarRow(item: PrayerTime) {
     val dateParsed = try {
-        LocalDate.parse(item.date, DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+        LocalDate.parse(item.date, DateTimeUtils.DATE_FORMATTER)
     } catch (_: Exception) {
         null
     }
@@ -369,7 +359,7 @@ private fun CalendarRow(item: PrayerTime) {
                     textAlign = TextAlign.Center
                 )
                 if (item.hijriDay.isNotEmpty() && item.hijriMonthNumber in 1..12) {
-                    val shortMonth = getShortHijriMonth(item.hijriMonthNumber, Locale.getDefault())
+                    val shortMonth = DateTimeUtils.getShortHijriMonth(item.hijriMonthNumber, Locale.getDefault())
                     val hijriDisplay = "${item.hijriDay} $shortMonth"
                     Text(
                         text = hijriDisplay,
@@ -397,23 +387,3 @@ private fun CalendarRow(item: PrayerTime) {
         }
     }
 }
-
-private fun getShortHijriMonth(monthNumber: Int, locale: Locale): String {
-    val isTr = locale.language == "tr"
-    return when (monthNumber) {
-        1 -> if (isTr) "Muh" else "Muh"
-        2 -> if (isTr) "Saf" else "Saf"
-        3 -> if (isTr) "Reb I" else "Rab I"
-        4 -> if (isTr) "Reb II" else "Rab II"
-        5 -> if (isTr) "Cem I" else "Jum I"
-        6 -> if (isTr) "Cem II" else "Jum II"
-        7 -> if (isTr) "Rec" else "Raj"
-        8 -> if (isTr) "Şab" else "Sha"
-        9 -> if (isTr) "Ram" else "Ram"
-        10 -> if (isTr) "Şev" else "Shaw"
-        11 -> if (isTr) "Zil.K" else "Dhu.Q"
-        12 -> if (isTr) "Zil.H" else "Dhu.H"
-        else -> ""
-    }
-}
-

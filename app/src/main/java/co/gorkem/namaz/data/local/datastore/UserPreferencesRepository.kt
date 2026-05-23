@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 import co.gorkem.namaz.service.NamazWidgetUpdater
+import co.gorkem.namaz.domain.model.LocationInfo
 
 
 data class RecentCity(
@@ -46,6 +47,30 @@ data class UserPreferences(
     val lastAutoTimezone: String = "Europe/Istanbul",
     val manualTimezone: String = "Europe/Istanbul"
 )
+
+fun UserPreferences.getLocationInfo(): LocationInfo {
+    return if (manualCityName.isNotEmpty()) {
+        LocationInfo(
+            latitude = manualLatitude,
+            longitude = manualLongitude,
+            timezone = manualTimezone.ifEmpty { "Europe/Istanbul" },
+            cityName = manualCityName,
+            districtName = manualDistrictName,
+            districtId = manualDistrictId
+        )
+    } else if (lastAutoCityName.isNotEmpty()) {
+        LocationInfo(
+            latitude = lastAutoLatitude,
+            longitude = lastAutoLongitude,
+            timezone = lastAutoTimezone.ifEmpty { "Europe/Istanbul" },
+            cityName = lastAutoCityName,
+            districtName = lastAutoDistrictName,
+            districtId = lastAutoDistrictId
+        )
+    } else {
+        LocationInfo.DEFAULT
+    }
+}
 
 @Singleton
 class UserPreferencesRepository @Inject constructor(

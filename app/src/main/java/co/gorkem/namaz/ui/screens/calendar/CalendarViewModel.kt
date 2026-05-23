@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
+import co.gorkem.namaz.data.local.datastore.getLocationInfo
 import co.gorkem.namaz.data.remote.NetworkResult
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
@@ -82,28 +83,7 @@ class CalendarViewModel @Inject constructor(
     private fun loadTimes() {
         loadJob?.cancel()
         
-        val resolvedLocation = if (currentPreferences.manualCityName.isNotEmpty()) {
-            LocationInfo(
-                latitude = currentPreferences.manualLatitude,
-                longitude = currentPreferences.manualLongitude,
-                timezone = currentPreferences.manualTimezone.ifEmpty { "Europe/Istanbul" },
-                cityName = currentPreferences.manualCityName,
-                districtName = currentPreferences.manualDistrictName,
-                districtId = currentPreferences.manualDistrictId
-            )
-        } else if (currentPreferences.lastAutoCityName.isNotEmpty()) {
-            LocationInfo(
-                latitude = currentPreferences.lastAutoLatitude,
-                longitude = currentPreferences.lastAutoLongitude,
-                timezone = currentPreferences.lastAutoTimezone,
-                cityName = currentPreferences.lastAutoCityName,
-                districtName = currentPreferences.lastAutoDistrictName,
-                districtId = currentPreferences.lastAutoDistrictId
-            )
-        } else {
-            LocationInfo.DEFAULT
-        }
-        
+        val resolvedLocation = currentPreferences.getLocationInfo()
         _locationInfo.value = resolvedLocation
         
         loadJob = viewModelScope.launch {

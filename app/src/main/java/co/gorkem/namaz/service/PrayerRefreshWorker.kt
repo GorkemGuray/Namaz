@@ -9,6 +9,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
+import co.gorkem.namaz.data.local.datastore.getLocationInfo
 import co.gorkem.namaz.data.repository.PrayerTimeRepositoryImpl
 import co.gorkem.namaz.domain.model.LocationInfo
 import dagger.assisted.Assisted
@@ -29,28 +30,7 @@ class PrayerRefreshWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         return try {
             val prefs = preferencesRepository.preferences.first()
-
-            val location = if (prefs.manualCityName.isNotEmpty()) {
-                LocationInfo(
-                    latitude = prefs.manualLatitude,
-                    longitude = prefs.manualLongitude,
-                    timezone = prefs.manualTimezone.ifEmpty { "Europe/Istanbul" },
-                    cityName = prefs.manualCityName,
-                    districtName = prefs.manualDistrictName,
-                    districtId = prefs.manualDistrictId
-                )
-            } else if (prefs.lastAutoCityName.isNotEmpty()) {
-                LocationInfo(
-                    latitude = prefs.lastAutoLatitude,
-                    longitude = prefs.lastAutoLongitude,
-                    timezone = prefs.lastAutoTimezone.ifEmpty { "Europe/Istanbul" },
-                    cityName = prefs.lastAutoCityName,
-                    districtName = prefs.lastAutoDistrictName,
-                    districtId = prefs.lastAutoDistrictId
-                )
-            } else {
-                LocationInfo.DEFAULT
-            }
+            val location = prefs.getLocationInfo()
 
             val today = LocalDate.now()
             val result = prayerTimeRepository.refreshPrayerTimes(
