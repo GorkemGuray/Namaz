@@ -172,7 +172,7 @@ class NamazWidget : GlanceAppWidget() {
 
             val layoutPreference = NamazWidgetPrefs.getWidgetLayout(ctx, appWidgetId)
 
-            val updateTrigger = System.currentTimeMillis()
+            val updateTrigger = remember { System.currentTimeMillis() }
 
             val widgetState by produceState<NamazWidgetState?>(
                 initialValue = null,
@@ -185,6 +185,10 @@ class NamazWidget : GlanceAppWidget() {
                     val loadedState = loadWidgetState(ctx, entryPoint, currentPrefs, layoutPreference)
                     android.util.Log.d("NamazWidget", "provideContent: loaded state layout=$layoutPreference: $loadedState")
                     value = loadedState
+                    // Schedule transition alarm on a background coroutine
+                    loadedState.targetEpochMillis?.let { targetEpoch ->
+                        schedulePrayerTransitionAlarm(ctx, targetEpoch)
+                    }
                 }
             }
 
@@ -197,10 +201,6 @@ class NamazWidget : GlanceAppWidget() {
                 ) { AppThemeSelection.EMERALD_OASIS }
 
                 val widgetColors = themeToColorProviders(appTheme)
-
-                state.targetEpochMillis?.let { targetEpoch ->
-                    schedulePrayerTransitionAlarm(ctx, targetEpoch)
-                }
 
                 GlanceTheme(colors = widgetColors) {
                     WidgetContent(state, appWidgetId)
@@ -1163,7 +1163,8 @@ class NamazWidgetSettingsAction : ActionCallback {
 }
 
 private fun schedulePrayerTransitionAlarm(context: Context, targetEpochMillis: Long) {
-    if (targetEpochMillis <= System.currentTimeMillis()) return
+    val triggerTime = targetEpochMillis + 1500 // Add a 1.5-second buffer to ensure the transition time has safely passed
+    if (triggerTime <= System.currentTimeMillis()) return
 
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
 
@@ -1196,32 +1197,32 @@ private fun schedulePrayerTransitionAlarm(context: Context, targetEpochMillis: L
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
-                    targetEpochMillis,
+                    triggerTime,
                     pendingIntent
                 )
             } else {
                 alarmManager.setExact(
                     AlarmManager.RTC_WAKEUP,
-                    targetEpochMillis,
+                    triggerTime,
                     pendingIntent
                 )
             }
-            Log.d("NamazWidget", "Scheduled exact transition alarm at $targetEpochMillis")
+            Log.d("NamazWidget", "Scheduled exact transition alarm at $triggerTime (target: $targetEpochMillis)")
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
-                    targetEpochMillis,
+                    triggerTime,
                     pendingIntent
                 )
             } else {
                 alarmManager.set(
                     AlarmManager.RTC_WAKEUP,
-                    targetEpochMillis,
+                    triggerTime,
                     pendingIntent
                 )
             }
-            Log.d("NamazWidget", "Scheduled inexact fallback alarm at $targetEpochMillis")
+            Log.d("NamazWidget", "Scheduled inexact fallback alarm at $triggerTime (target: $targetEpochMillis)")
         }
     } catch (e: SecurityException) {
         Log.e("NamazWidget", "SecurityException scheduling exact alarm, falling back to inexact", e)
@@ -1229,13 +1230,13 @@ private fun schedulePrayerTransitionAlarm(context: Context, targetEpochMillis: L
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
-                    targetEpochMillis,
+                    triggerTime,
                     pendingIntent
                 )
             } else {
                 alarmManager.set(
                     AlarmManager.RTC_WAKEUP,
-                    targetEpochMillis,
+                    triggerTime,
                     pendingIntent
                 )
             }
