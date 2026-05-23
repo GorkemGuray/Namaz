@@ -22,14 +22,46 @@ Uygulama build alıp başarıyla derlenmektedir. Temel özellikler tamamlanmış
 ./gradlew test
 ```
 
-### Android CLI & SDK Tools
+### Android CLI & Android Skills
 
-Proje geliştirme sürecinde Android CLI ve SDK araçları (adb, emulator vb.) aşağıdaki görevler için kullanılabilir:
-- **Bağlı cihazları listeleme:** `adb devices`
-- **Derlenen debug APK'sını cihaza yükleme:** `adb install app/build/outputs/apk/debug/app-debug.apk`
-- **Logcat loglarını izleme:** `adb logcat`
-- **Instrumented testleri cihazda çalıştırma:** `./gradlew connectedAndroidTest`
-- **Uygulamayı emülatör/cihaz üzerinden başlatma:** `adb shell monkey -p co.gorkem.namaz -c android.intent.category.LAUNCHER 1`
+Proje geliştirme sürecinde Android CLI (`android`) ve Android Skills (`https://github.com/android/skills`) kullanılmalıdır.
+
+#### 1. Android CLI (`android` komutu)
+Android CLI, Android araç zinciri ile çalışmayı kolaylaştıran resmi bir terminal arayüzüdür. Klasik adb veya emulator komutları yerine Android CLI komutları tercih edilmelidir:
+- **Uygulamayı Çalıştırma / Yükleme:** `android run --debug` (derlenmiş APK'ları cihazda veya emülatörde başlatır).
+- **Proje Analizi:** `android describe` (proje yapısını ve çıktı hedeflerini analiz eder).
+- **Arayüz Analizi ve UI Hatalarını Giderme:** `android layout --pretty` (uygulamanın mevcut ekran düzenini JSON formatında verir. UI hatalarını görsel olarak incelemekten daha hızlıdır).
+- **Ekran Görüntüsü Alma:** `android screen capture` (cihaz ekranını PNG olarak kaydeder).
+- **Dokümantasyon Arama:** `android docs search <terimler>` (Diyanet API, konum servisleri veya diğer Android kütüphaneleri ile ilgili resmi dokümantasyonu arar).
+- **Emülatör Yönetimi:** 
+  - Listeleme: `android emulator list`
+  - Başlatma: `android emulator start <cihaz-adi>`
+  - Durdurma: `android emulator stop <cihaz-adi>`
+- **SDK ve Paket Yönetimi:** `android sdk list --all` veya `android sdk install <paket>`
+- **Skill Yönetimi:** `android skills list` veya `android skills add --skill=<skill-adi>`
+
+Klasik yedek / doğrudan araçlar (gerekirse):
+- `adb devices` (cihazları listeleme)
+- `adb logcat` (logları izleme)
+- `./gradlew connectedAndroidTest` (cihaz testlerini çalıştırma)
+
+#### 2. Android Skills
+Resmi Android en iyi pratiklerini takip etmek için Android Skills entegrasyonu kullanılır. Bir geliştirme görevi yaparken (özellikle yeni kütüphane eklerken, tema güncellerken veya mimari değişikliklerde) ilgili skill yönergeleri okunmalı ve birebir uygulanmalıdır.
+
+**Mevcut / Kullanılabilir Önemli Skill'ler:**
+- **`jetpack-compose-m3`:** Wear OS Compose Material3 bileşenleri ve temalama kuralları.
+- **`styles`:** Compose Styles API entegrasyonu ve bileşen temalandırması.
+- **`edge-to-edge`:** Durum çubuğu ve navigasyon çubuğu taşmalarını düzeltme, pencere içi boşluklar (insets) yönetimi.
+- **`navigation-3`:** Jetpack Navigation 3 mimarisine geçiş ve sayfa geçiş yönetimi.
+- **`r8-analyzer`:** R8/Proguard optimizasyon kuralları ve küçültme ayarları.
+- **`testing-setup`:** Unit test ve UI test stratejisi oluşturma.
+- **`migrate-xml-views-to-jetpack-compose`:** Eski görünüm yapılarını Jetpack Compose'a dönüştürme.
+- **`appfunctions`:** Cihaz içi kısa yollar ve AI ajan entegrasyonları için AppFunctions tanımlama.
+- **`verified-email`:** Credential Manager ile güvenli ve kolay kullanıcı doğrulama.
+
+**Skill Kullanım Kuralı:** 
+Eğer görev yukarıdaki konulardan biriyle ilgiliyse (örneğin; Wear OS'te Material 3 veya ekran kenarlarına taşma sorunları), kod yazmaya başlamadan önce kesinlikle ilgili `SKILL.md` dosyası (`file:///Users/gorkem/.gemini/config/skills/<skill-adı>/SKILL.md` veya plugin altındaki) `view_file` ile okunmalı ve oradaki kurallara sadık kalınmalıdır.
+
 
 ### Konfigürasyon
 
