@@ -354,6 +354,59 @@ fun SettingsScreen(
                 }
             }
 
+            // Tema Section
+            SettingsSection(title = stringResource(R.string.settings_theme)) {
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.selectableGroup()) {
+                        viewModel.themeOptions.forEachIndexed { index, (themeOrdinal, nameRes) ->
+                            val selected = preferences.appTheme == themeOrdinal
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = selected,
+                                        onClick = {
+                                            viewModel.setAppTheme(themeOrdinal)
+                                        },
+                                        role = Role.RadioButton
+                                    )
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selected,
+                                    onClick = null
+                                )
+                                Spacer(modifier = Modifier.padding(start = 16.dp))
+                                Text(
+                                    text = stringResource(nameRes),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (themeOrdinal == 0) {
+                                    Text(
+                                        text = stringResource(R.string.settings_default),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            if (index < viewModel.themeOptions.lastIndex) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 52.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Mezhep Section
             SettingsSection(title = stringResource(R.string.settings_school)) {
                 Surface(

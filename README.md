@@ -4,6 +4,14 @@ Android ve Wear OS için konum bazlı namaz vakitleri uygulaması.
 
 ## Özellikler
 
+- **Dört Premium Tema**:
+  - **Emerald Oasis** (Varsayılan): Modern İslami adaçayı yeşili estetiği
+  - **Sapphire Night**: Derin ruhani gece mavisi paleti
+  - **Amber Sands**: Sıcak miras ve Kabe ışıltıları tonları
+  - **Monochrome Platinum**: Ultra-minimalist yönetici teması
+  - Tüm temalar sistem dinamik renklerini (Monet) bypass eder, DataStore üzerinden kalıcıdır
+  - Jetpack Compose Glance Widget ile tam renk senkronizasyonu
+- **Ana Ekran Widget (Glance)**: Detaylı (6 vakit + geri sayım) veya sade (sadece sıradaki vakit) layout seçenekli
 - **Üçlü Veri Kaynağı Seçeneği**:
   - **Aladhan API (Varsayılan)**: Dünya genelinde konum koordinatları ile çevrimiçi namaz vakitleri
   - **İmsakiyem API (Diyanet Resmi)**: Türkiye genelinde resmi ilçe bazlı namaz vakitleri
@@ -45,4 +53,5 @@ Clean Architecture + MVVM + Hilt DI
 - Kotlin 2.2.10, Compose BOM 2026.02.01
 - Hilt 2.59.2, Retrofit 2.11.0, Room 2.8.4
 - WorkManager 2.11.2, DataStore 1.1.1
+- Glance 1.1.1 (Widget)
 - Wear OS Compose Material3 1.6.1

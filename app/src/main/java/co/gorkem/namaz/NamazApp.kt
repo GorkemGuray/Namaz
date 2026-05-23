@@ -1,5 +1,6 @@
 package co.gorkem.namaz
 
+import android.content.Context
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.tween
@@ -31,21 +32,49 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import co.gorkem.namaz.R
+import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.ui.screens.calendar.CalendarScreen
 import co.gorkem.namaz.ui.screens.cityselection.CitySelectionScreen
 import co.gorkem.namaz.ui.screens.home.HomeScreen
 import co.gorkem.namaz.ui.screens.qibla.QiblaScreen
 import co.gorkem.namaz.ui.screens.settings.SettingsScreen
+import co.gorkem.namaz.ui.theme.AppThemeSelection
+import co.gorkem.namaz.ui.theme.NamazTheme
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface AppThemeEntryPoint {
+    fun userPreferencesRepository(): UserPreferencesRepository
+}
+
+@Composable
+fun rememberAppTheme(): AppThemeSelection {
+    val context = LocalContext.current
+    val entryPoint = remember {
+        EntryPointAccessors.fromApplication(context.applicationContext, AppThemeEntryPoint::class.java)
+    }
+    val repo = remember { entryPoint.userPreferencesRepository() }
+    val prefs by repo.preferences.collectAsState(initial = null)
+    val ordinal = prefs?.appTheme ?: 0
+    return AppThemeSelection.values().getOrElse(ordinal) { AppThemeSelection.EMERALD_OASIS }
+}
 
 sealed class BottomNavItem(
     val titleRes: Int,
@@ -80,9 +109,12 @@ fun NamazApp() {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showCitySheet by rememberSaveable { mutableStateOf(false) }
 
+    val currentTheme = rememberAppTheme()
+
     val items = listOf(BottomNavItem.Times, BottomNavItem.Calendar, BottomNavItem.Qibla, BottomNavItem.Settings)
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    NamazTheme(currentTheme = currentTheme) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -165,5 +197,6 @@ fun NamazApp() {
                 onBack = { showCitySheet = false }
             )
         }
+    }
     }
 }

@@ -52,13 +52,52 @@ import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
-import co.gorkem.namaz.ui.theme.DarkColorScheme
-import co.gorkem.namaz.ui.theme.LightColorScheme
+import co.gorkem.namaz.ui.theme.AppThemeSelection
+import co.gorkem.namaz.ui.theme.EmeraldLightSurface
+import co.gorkem.namaz.ui.theme.EmeraldLightPrimary
+import co.gorkem.namaz.ui.theme.EmeraldLightSecondaryContainer
+import co.gorkem.namaz.ui.theme.EmeraldLightOnSurface
+import co.gorkem.namaz.ui.theme.EmeraldLightOnSurfaceVariant
+import co.gorkem.namaz.ui.theme.EmeraldDarkSurface
+import co.gorkem.namaz.ui.theme.EmeraldDarkPrimary
+import co.gorkem.namaz.ui.theme.EmeraldDarkSecondaryContainer
+import co.gorkem.namaz.ui.theme.EmeraldDarkOnSurface
+import co.gorkem.namaz.ui.theme.EmeraldDarkOnSurfaceVariant
+import co.gorkem.namaz.ui.theme.SapphireLightSurface
+import co.gorkem.namaz.ui.theme.SapphireLightPrimary
+import co.gorkem.namaz.ui.theme.SapphireLightSecondaryContainer
+import co.gorkem.namaz.ui.theme.SapphireLightOnSurface
+import co.gorkem.namaz.ui.theme.SapphireLightOnSurfaceVariant
+import co.gorkem.namaz.ui.theme.SapphireDarkSurface
+import co.gorkem.namaz.ui.theme.SapphireDarkPrimary
+import co.gorkem.namaz.ui.theme.SapphireDarkSecondaryContainer
+import co.gorkem.namaz.ui.theme.SapphireDarkOnSurface
+import co.gorkem.namaz.ui.theme.SapphireDarkOnSurfaceVariant
+import co.gorkem.namaz.ui.theme.AmberLightSurface
+import co.gorkem.namaz.ui.theme.AmberLightPrimary
+import co.gorkem.namaz.ui.theme.AmberLightSecondaryContainer
+import co.gorkem.namaz.ui.theme.AmberLightOnSurface
+import co.gorkem.namaz.ui.theme.AmberLightOnSurfaceVariant
+import co.gorkem.namaz.ui.theme.AmberDarkSurface
+import co.gorkem.namaz.ui.theme.AmberDarkPrimary
+import co.gorkem.namaz.ui.theme.AmberDarkSecondaryContainer
+import co.gorkem.namaz.ui.theme.AmberDarkOnSurface
+import co.gorkem.namaz.ui.theme.AmberDarkOnSurfaceVariant
+import co.gorkem.namaz.ui.theme.MonochromeLightSurface
+import co.gorkem.namaz.ui.theme.MonochromeLightPrimary
+import co.gorkem.namaz.ui.theme.MonochromeLightSecondaryContainer
+import co.gorkem.namaz.ui.theme.MonochromeLightOnSurface
+import co.gorkem.namaz.ui.theme.MonochromeLightOnSurfaceVariant
+import co.gorkem.namaz.ui.theme.MonochromeDarkSurface
+import co.gorkem.namaz.ui.theme.MonochromeDarkPrimary
+import co.gorkem.namaz.ui.theme.MonochromeDarkSecondaryContainer
+import co.gorkem.namaz.ui.theme.MonochromeDarkOnSurface
+import co.gorkem.namaz.ui.theme.MonochromeDarkOnSurfaceVariant
 import androidx.glance.material3.ColorProviders
 import androidx.glance.unit.ColorProvider
-import androidx.glance.color.ColorProvider as DayNightColorProvider
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.glance.action.ActionParameters
-import androidx.glance.action.actionParametersOf
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import dagger.hilt.EntryPoint
@@ -86,7 +125,6 @@ data class NamazWidgetState(
     val nextPrayerTime: String?,
     val remainingMinutes: Long?,
     val currentPrayerName: PrayerName?,
-    val widgetTheme: Int,
     val layoutPreference: Int,
     val error: String? = null
 )
@@ -100,7 +138,6 @@ class NamazWidget : GlanceAppWidget() {
             NamazWidgetEntryPoint::class.java
         )
 
-        // Resolve appWidgetId to load config
         val appWidgetId = try {
             val resolvedId = GlanceAppWidgetManager(context).getAppWidgetId(id)
             android.util.Log.d("NamazWidget", "provideGlance: resolved appWidgetId = $resolvedId for GlanceId: $id")
@@ -113,29 +150,23 @@ class NamazWidget : GlanceAppWidget() {
         provideContent {
             val ctx = LocalContext.current
 
-            // 1. Collect user preferences from DataStore dynamically
             val prefsFlow = remember { entryPoint.userPreferencesRepository().preferences }
             val prefsState by prefsFlow.collectAsState(initial = null)
 
-            // 2. Read widget-specific preferences from SharedPreferences
-            val themePreference = NamazWidgetPrefs.getWidgetTheme(ctx, appWidgetId)
             val layoutPreference = NamazWidgetPrefs.getWidgetLayout(ctx, appWidgetId)
 
-            // 3. Track recomposition/updates via timestamp key
             val updateTrigger = System.currentTimeMillis()
 
-            // 4. Produce widgetState reactively when settings or trigger changes
             val widgetState by produceState<NamazWidgetState?>(
                 initialValue = null,
                 prefsState,
-                themePreference,
                 layoutPreference,
                 updateTrigger
             ) {
                 val currentPrefs = prefsState
                 if (currentPrefs != null) {
-                    val loadedState = loadWidgetState(ctx, entryPoint, currentPrefs, themePreference, layoutPreference)
-                    android.util.Log.d("NamazWidget", "provideContent: loaded state theme=$themePreference, layout=$layoutPreference: $loadedState")
+                    val loadedState = loadWidgetState(ctx, entryPoint, currentPrefs, layoutPreference)
+                    android.util.Log.d("NamazWidget", "provideContent: loaded state layout=$layoutPreference: $loadedState")
                     value = loadedState
                 }
             }
@@ -144,41 +175,11 @@ class NamazWidget : GlanceAppWidget() {
             if (state == null) {
                 LoadingContent()
             } else {
-                // Setup theme colors based on preferences
-                val widgetColors = when (themePreference) {
-                    1 -> { // Glassmorphism Theme (with semi-transparent colors)
-                        ColorProviders(
-                            light = LightColorScheme.copy(
-                                primary = Color(0xFF1E3A34),
-                                onPrimary = Color(0xFFFFFFFF),
-                                secondaryContainer = Color(0x281E3A34),
-                                onSecondaryContainer = Color(0xFF1C1B1F),
-                                background = Color(0xD0FBFBFA),
-                                surface = Color(0xD0FBFBFA),
-                                onSurface = Color(0xFF1C1B1F),
-                                surfaceVariant = Color(0xE0E8F0EC),
-                                onSurfaceVariant = Color(0xFF6A6A6A)
-                            ),
-                            dark = DarkColorScheme.copy(
-                                primary = Color(0xFF3B6053),
-                                onPrimary = Color(0xFFFFFFFF),
-                                secondaryContainer = Color(0x323B6053),
-                                onSecondaryContainer = Color(0xFFE6E6E6),
-                                background = Color(0x3C121414),
-                                surface = Color(0x3C121414),
-                                onSurface = Color(0xFFE6E6E6),
-                                surfaceVariant = Color(0x501F2E2A),
-                                onSurfaceVariant = Color(0xFF909090)
-                            )
-                        )
-                    }
-                    else -> { // Classic App Theme (dynamic colors fallback is now locked custom theme)
-                        ColorProviders(
-                            light = LightColorScheme,
-                            dark = DarkColorScheme
-                        )
-                    }
-                }
+                val appTheme = AppThemeSelection.values().getOrElse(
+                    prefsState?.appTheme ?: 0
+                ) { AppThemeSelection.EMERALD_OASIS }
+
+                val widgetColors = themeToColorProviders(appTheme)
 
                 GlanceTheme(colors = widgetColors) {
                     WidgetContent(state, appWidgetId)
@@ -188,11 +189,239 @@ class NamazWidget : GlanceAppWidget() {
     }
 }
 
+private fun themeToColorProviders(theme: AppThemeSelection): androidx.glance.color.ColorProviders {
+    return when (theme) {
+        AppThemeSelection.EMERALD_OASIS -> ColorProviders(
+            light = lightColorScheme(
+                primary = EmeraldLightPrimary, onPrimary = Color(0xFFFFFFFF),
+                secondaryContainer = EmeraldLightSecondaryContainer,
+                onSecondaryContainer = EmeraldLightOnSurface,
+                background = EmeraldLightSurface, surface = EmeraldLightSurface,
+                onSurface = EmeraldLightOnSurface,
+                surfaceVariant = Color(0xFFF4F3EF), onSurfaceVariant = EmeraldLightOnSurfaceVariant,
+                onBackground = EmeraldLightOnSurface, onSecondary = Color(0xFFFFFFFF),
+                secondary = Color(0xFF3D5A3F),
+                tertiary = Color(0xFF8A6500), onTertiary = Color(0xFFFFFFFF),
+                tertiaryContainer = Color(0xFFFFE08A), onTertiaryContainer = Color(0xFF271900),
+                error = Color(0xFFB3261E), onError = Color(0xFFFFFFFF),
+                errorContainer = Color(0xFFF9DEDC), onErrorContainer = Color(0xFF410E0B),
+                primaryContainer = EmeraldLightSecondaryContainer,
+                onPrimaryContainer = EmeraldLightPrimary,
+                surfaceTint = EmeraldLightPrimary,
+                inverseSurface = Color(0xFF313033), inverseOnSurface = Color(0xFFF4EFF4),
+                inversePrimary = Color(0xFF9BBFB3),
+                surfaceDim = Color(0xFFDDD8DD), surfaceBright = EmeraldLightSurface,
+                surfaceContainerLowest = Color(0xFFFFFFFF),
+                surfaceContainerLow = Color(0xFFF7F2FA),
+                surfaceContainer = Color(0xFFF3EDF7),
+                surfaceContainerHigh = Color(0xFFECE6F0),
+                surfaceContainerHighest = Color(0xFFE6E0E9),
+                outline = Color(0xFF7A8B85), outlineVariant = Color(0xFFC8D3CE),
+                scrim = Color(0xFF000000)
+            ),
+            dark = darkColorScheme(
+                primary = EmeraldDarkPrimary, onPrimary = Color(0xFFFFFFFF),
+                secondaryContainer = EmeraldDarkSecondaryContainer,
+                onSecondaryContainer = EmeraldDarkOnSurface,
+                background = EmeraldDarkSurface, surface = EmeraldDarkSurface,
+                onSurface = EmeraldDarkOnSurface,
+                surfaceVariant = Color(0xFF1A1D1D), onSurfaceVariant = EmeraldDarkOnSurfaceVariant,
+                onBackground = EmeraldDarkOnSurface, onSecondary = Color(0xFF1F3021),
+                secondary = Color(0xFFB4C7B3),
+                tertiary = Color(0xFFE8C462), onTertiary = Color(0xFF402D00),
+                tertiaryContainer = Color(0xFF5C4300), onTertiaryContainer = Color(0xFFFFDEA1),
+                error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
+                errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
+                primaryContainer = EmeraldDarkSecondaryContainer,
+                onPrimaryContainer = EmeraldDarkOnSurface,
+                surfaceTint = EmeraldDarkPrimary,
+                inverseSurface = Color(0xFFE3E2E6), inverseOnSurface = Color(0xFF1C1B1F),
+                inversePrimary = EmeraldLightPrimary,
+                surfaceDim = EmeraldDarkSurface, surfaceBright = Color(0xFF38383A),
+                surfaceContainerLowest = Color(0xFF0D0E0F),
+                surfaceContainerLow = Color(0xFF1A1A1C),
+                surfaceContainer = Color(0xFF1E1E20),
+                surfaceContainerHigh = Color(0xFF29292B),
+                surfaceContainerHighest = Color(0xFF333335),
+                outline = Color(0xFF5A6B64), outlineVariant = Color(0xFF3C4D46),
+                scrim = Color(0xFF000000)
+            )
+        )
+        AppThemeSelection.SAPPHIRE_NIGHT -> ColorProviders(
+            light = lightColorScheme(
+                primary = SapphireLightPrimary, onPrimary = Color(0xFFFFFFFF),
+                secondaryContainer = SapphireLightSecondaryContainer,
+                onSecondaryContainer = SapphireLightOnSurface,
+                background = SapphireLightSurface, surface = SapphireLightSurface,
+                onSurface = SapphireLightOnSurface,
+                surfaceVariant = Color(0xFFF1F3F7), onSurfaceVariant = SapphireLightOnSurfaceVariant,
+                onBackground = SapphireLightOnSurface, onSecondary = Color(0xFFFFFFFF),
+                secondary = Color(0xFF3A5A6E),
+                tertiary = Color(0xFFB4502A), onTertiary = Color(0xFFFFFFFF),
+                tertiaryContainer = Color(0xFFFFDBCE), onTertiaryContainer = Color(0xFF401204),
+                error = Color(0xFFB3261E), onError = Color(0xFFFFFFFF),
+                errorContainer = Color(0xFFF9DEDC), onErrorContainer = Color(0xFF410E0B),
+                primaryContainer = SapphireLightSecondaryContainer,
+                onPrimaryContainer = SapphireLightPrimary,
+                surfaceTint = SapphireLightPrimary,
+                inverseSurface = Color(0xFF2D3138), inverseOnSurface = Color(0xFFF0F2F5),
+                inversePrimary = Color(0xFF8BB0E8),
+                surfaceDim = Color(0xFFDCDEE3), surfaceBright = SapphireLightSurface,
+                surfaceContainerLowest = Color(0xFFFFFFFF),
+                surfaceContainerLow = Color(0xFFF2F4F8),
+                surfaceContainer = Color(0xFFEDEFF4),
+                surfaceContainerHigh = Color(0xFFE7E9EE),
+                surfaceContainerHighest = Color(0xFFE1E3E8),
+                outline = Color(0xFF788596), outlineVariant = Color(0xFFC6CFDB),
+                scrim = Color(0xFF000000)
+            ),
+            dark = darkColorScheme(
+                primary = SapphireDarkPrimary, onPrimary = Color(0xFF001A33),
+                secondaryContainer = SapphireDarkSecondaryContainer,
+                onSecondaryContainer = SapphireDarkOnSurface,
+                background = SapphireDarkSurface, surface = SapphireDarkSurface,
+                onSurface = SapphireDarkOnSurface,
+                surfaceVariant = Color(0xFF181D25), onSurfaceVariant = SapphireDarkOnSurfaceVariant,
+                onBackground = SapphireDarkOnSurface, onSecondary = Color(0xFF003042),
+                secondary = Color(0xFFA0C8E0),
+                tertiary = Color(0xFFE8956A), onTertiary = Color(0xFF501E08),
+                tertiaryContainer = Color(0xFF8E3820), onTertiaryContainer = Color(0xFFFFDBCE),
+                error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
+                errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
+                primaryContainer = SapphireDarkSecondaryContainer,
+                onPrimaryContainer = SapphireDarkOnSurface,
+                surfaceTint = SapphireDarkPrimary,
+                inverseSurface = Color(0xFFE0E4EA), inverseOnSurface = Color(0xFF111827),
+                inversePrimary = SapphireLightPrimary,
+                surfaceDim = SapphireDarkSurface, surfaceBright = Color(0xFF343842),
+                surfaceContainerLowest = Color(0xFF090D12),
+                surfaceContainerLow = Color(0xFF161A22),
+                surfaceContainer = Color(0xFF1A1E26),
+                surfaceContainerHigh = Color(0xFF25292F),
+                surfaceContainerHighest = Color(0xFF30343A),
+                outline = Color(0xFF6E7A8C), outlineVariant = Color(0xFF4A5566),
+                scrim = Color(0xFF000000)
+            )
+        )
+        AppThemeSelection.AMBER_SANDS -> ColorProviders(
+            light = lightColorScheme(
+                primary = AmberLightPrimary, onPrimary = Color(0xFFFFFFFF),
+                secondaryContainer = AmberLightSecondaryContainer,
+                onSecondaryContainer = AmberLightOnSurface,
+                background = AmberLightSurface, surface = AmberLightSurface,
+                onSurface = AmberLightOnSurface,
+                surfaceVariant = Color(0xFFF5F0EA), onSurfaceVariant = AmberLightOnSurfaceVariant,
+                onBackground = AmberLightOnSurface, onSecondary = Color(0xFFFFFFFF),
+                secondary = Color(0xFF6B5840),
+                tertiary = Color(0xFF2A6B6B), onTertiary = Color(0xFFFFFFFF),
+                tertiaryContainer = Color(0xFFCCF0F0), onTertiaryContainer = Color(0xFF002020),
+                error = Color(0xFFB3261E), onError = Color(0xFFFFFFFF),
+                errorContainer = Color(0xFFF9DEDC), onErrorContainer = Color(0xFF410E0B),
+                primaryContainer = AmberLightSecondaryContainer,
+                onPrimaryContainer = AmberLightPrimary,
+                surfaceTint = AmberLightPrimary,
+                inverseSurface = Color(0xFF353230), inverseOnSurface = Color(0xFFF2F0EC),
+                inversePrimary = Color(0xFFC8B090),
+                surfaceDim = Color(0xFFDDDAD7), surfaceBright = AmberLightSurface,
+                surfaceContainerLowest = Color(0xFFFFFFFF),
+                surfaceContainerLow = Color(0xFFF5F2EE),
+                surfaceContainer = Color(0xFFF0EDE9),
+                surfaceContainerHigh = Color(0xFFEAE7E3),
+                surfaceContainerHighest = Color(0xFFE4E1DD),
+                outline = Color(0xFF857C75), outlineVariant = Color(0xFFD4CBC3),
+                scrim = Color(0xFF000000)
+            ),
+            dark = darkColorScheme(
+                primary = AmberDarkPrimary, onPrimary = Color(0xFF3A2410),
+                secondaryContainer = AmberDarkSecondaryContainer,
+                onSecondaryContainer = AmberDarkOnSurface,
+                background = AmberDarkSurface, surface = AmberDarkSurface,
+                onSurface = AmberDarkOnSurface,
+                surfaceVariant = Color(0xFF1E1A18), onSurfaceVariant = AmberDarkOnSurfaceVariant,
+                onBackground = AmberDarkOnSurface, onSecondary = Color(0xFF3A2818),
+                secondary = Color(0xFFC4B098),
+                tertiary = Color(0xFF6BB5B5), onTertiary = Color(0xFF003838),
+                tertiaryContainer = Color(0xFF1A5454), onTertiaryContainer = Color(0xFFCCF0F0),
+                error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
+                errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
+                primaryContainer = AmberDarkSecondaryContainer,
+                onPrimaryContainer = AmberDarkOnSurface,
+                surfaceTint = AmberDarkPrimary,
+                inverseSurface = Color(0xFFE8E4E0), inverseOnSurface = Color(0xFF272524),
+                inversePrimary = AmberLightPrimary,
+                surfaceDim = AmberDarkSurface, surfaceBright = Color(0xFF3A3836),
+                surfaceContainerLowest = Color(0xFF0F0E0D),
+                surfaceContainerLow = Color(0xFF1C1A18),
+                surfaceContainer = Color(0xFF201E1C),
+                surfaceContainerHigh = Color(0xFF2B2927),
+                surfaceContainerHighest = Color(0xFF363432),
+                outline = Color(0xFF7E7670), outlineVariant = Color(0xFF524A42),
+                scrim = Color(0xFF000000)
+            )
+        )
+        AppThemeSelection.MONOCHROME_PLATINUM -> ColorProviders(
+            light = lightColorScheme(
+                primary = MonochromeLightPrimary, onPrimary = Color(0xFFFFFFFF),
+                secondaryContainer = MonochromeLightSecondaryContainer,
+                onSecondaryContainer = MonochromeLightOnSurface,
+                background = MonochromeLightSurface, surface = MonochromeLightSurface,
+                onSurface = MonochromeLightOnSurface,
+                surfaceVariant = Color(0xFFF5F5F5), onSurfaceVariant = MonochromeLightOnSurfaceVariant,
+                onBackground = MonochromeLightOnSurface, onSecondary = Color(0xFFFFFFFF),
+                secondary = Color(0xFF4A4A4A),
+                tertiary = Color(0xFF525252), onTertiary = Color(0xFFFFFFFF),
+                tertiaryContainer = Color(0xFFE8E8E8), onTertiaryContainer = Color(0xFF1A1A1A),
+                error = Color(0xFFB3261E), onError = Color(0xFFFFFFFF),
+                errorContainer = Color(0xFFF9DEDC), onErrorContainer = Color(0xFF410E0B),
+                primaryContainer = MonochromeLightSecondaryContainer,
+                onPrimaryContainer = MonochromeLightPrimary,
+                surfaceTint = MonochromeLightPrimary,
+                inverseSurface = Color(0xFF2D2D2D), inverseOnSurface = Color(0xFFF0F0F0),
+                inversePrimary = Color(0xFFB8B8B8),
+                surfaceDim = Color(0xFFE0E0E0), surfaceBright = MonochromeLightSurface,
+                surfaceContainerLowest = Color(0xFFFFFFFF),
+                surfaceContainerLow = Color(0xFFF8F8F8),
+                surfaceContainer = Color(0xFFF2F2F2),
+                surfaceContainerHigh = Color(0xFFECECEC),
+                surfaceContainerHighest = Color(0xFFE6E6E6),
+                outline = Color(0xFF7A7A7A), outlineVariant = Color(0xFFCCCCCC),
+                scrim = Color(0xFF000000)
+            ),
+            dark = darkColorScheme(
+                primary = MonochromeDarkPrimary, onPrimary = Color(0xFF1A1A1A),
+                secondaryContainer = MonochromeDarkSecondaryContainer,
+                onSecondaryContainer = MonochromeDarkOnSurface,
+                background = MonochromeDarkSurface, surface = MonochromeDarkSurface,
+                onSurface = MonochromeDarkOnSurface,
+                surfaceVariant = Color(0xFF141414), onSurfaceVariant = MonochromeDarkOnSurfaceVariant,
+                onBackground = MonochromeDarkOnSurface, onSecondary = Color(0xFF2A2A2A),
+                secondary = Color(0xFFB8B8B8),
+                tertiary = Color(0xFFA3A3A3), onTertiary = Color(0xFF2A2A2A),
+                tertiaryContainer = Color(0xFF3A3A3A), onTertiaryContainer = Color(0xFFE8E8E8),
+                error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
+                errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
+                primaryContainer = MonochromeDarkSecondaryContainer,
+                onPrimaryContainer = MonochromeDarkOnSurface,
+                surfaceTint = MonochromeDarkPrimary,
+                inverseSurface = Color(0xFFE0E0E0), inverseOnSurface = Color(0xFF1A1A1A),
+                inversePrimary = MonochromeLightPrimary,
+                surfaceDim = MonochromeDarkSurface, surfaceBright = Color(0xFF303030),
+                surfaceContainerLowest = Color(0xFF050505),
+                surfaceContainerLow = Color(0xFF121212),
+                surfaceContainer = Color(0xFF161616),
+                surfaceContainerHigh = Color(0xFF212121),
+                surfaceContainerHighest = Color(0xFF2C2C2C),
+                outline = Color(0xFF6E6E6E), outlineVariant = Color(0xFF484848),
+                scrim = Color(0xFF000000)
+            )
+        )
+    }
+}
+
 private suspend fun loadWidgetState(
     context: Context,
     entryPoint: NamazWidgetEntryPoint,
     prefs: UserPreferences,
-    widgetTheme: Int,
     layoutPreference: Int
 ): NamazWidgetState {
     return try {
@@ -250,7 +479,6 @@ private suspend fun loadWidgetState(
                         nextPrayerTime = nextInfo?.prayerTime,
                         remainingMinutes = nextInfo?.remainingMinutes,
                         currentPrayerName = currentPrayerName,
-                        widgetTheme = widgetTheme,
                         layoutPreference = layoutPreference
                     )
                 } else {
@@ -262,7 +490,6 @@ private suspend fun loadWidgetState(
                         nextPrayerTime = null,
                         remainingMinutes = null,
                         currentPrayerName = null,
-                        widgetTheme = widgetTheme,
                         layoutPreference = layoutPreference,
                         error = "Bugünün vakitleri bulunamadı"
                     )
@@ -277,7 +504,6 @@ private suspend fun loadWidgetState(
                     nextPrayerTime = null,
                     remainingMinutes = null,
                     currentPrayerName = null,
-                    widgetTheme = widgetTheme,
                     layoutPreference = layoutPreference,
                     error = result.message
                 )
@@ -295,7 +521,6 @@ private suspend fun loadWidgetState(
             nextPrayerTime = null,
             remainingMinutes = null,
             currentPrayerName = null,
-            widgetTheme = widgetTheme,
             layoutPreference = layoutPreference,
             error = "Yükleniyor..."
         )
@@ -308,7 +533,6 @@ private suspend fun loadWidgetState(
             nextPrayerTime = null,
             remainingMinutes = null,
             currentPrayerName = null,
-            widgetTheme = widgetTheme,
             layoutPreference = layoutPreference,
             error = e.localizedMessage ?: "Bilinmeyen hata"
         )
@@ -369,14 +593,10 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
     val remainingStr = formatRemainingTime(remainingMinutes, state.language)
     val remainingLabel = getRemainingLabel(state.language)
 
-    // Customize typography colors using GlanceTheme colors
     val onSurfaceColor = GlanceTheme.colors.onSurface
     val onSurfaceVariantColor = GlanceTheme.colors.onSurfaceVariant
-    val primaryTextColor = GlanceTheme.colors.primary
 
-    // Outer background color mapping
     val outerBackground = GlanceTheme.colors.surface
-
     val settingsAction = actionRunCallback<NamazWidgetSettingsAction>()
 
     Box(
@@ -387,7 +607,6 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
             .padding(12.dp)
             .clickable(actionStartActivity<MainActivity>())
     ) {
-        // Detailed layout requires sufficient space (width >= 220dp, height >= 140dp) and layout selection 0
         if (size.width < 220.dp || size.height < 140.dp || state.layoutPreference == 1) {
             CompactLayout(
                 cityName = state.cityName,
@@ -398,9 +617,7 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 language = state.language,
                 onSurfaceColor = onSurfaceColor,
                 onSurfaceVariantColor = onSurfaceVariantColor,
-                primaryTextColor = primaryTextColor,
-                settingsAction = settingsAction,
-                state = state
+                settingsAction = settingsAction
             )
         } else {
             ExpandedLayout(
@@ -414,9 +631,7 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 language = state.language,
                 onSurfaceColor = onSurfaceColor,
                 onSurfaceVariantColor = onSurfaceVariantColor,
-                primaryTextColor = primaryTextColor,
-                settingsAction = settingsAction,
-                state = state
+                settingsAction = settingsAction
             )
         }
     }
@@ -432,9 +647,7 @@ private fun CompactLayout(
     language: String,
     onSurfaceColor: ColorProvider,
     onSurfaceVariantColor: ColorProvider,
-    primaryTextColor: ColorProvider,
-    settingsAction: androidx.glance.action.Action,
-    state: NamazWidgetState
+    settingsAction: androidx.glance.action.Action
 ) {
     val context = LocalContext.current
     val size = LocalSize.current
@@ -442,10 +655,8 @@ private fun CompactLayout(
 
     val cardBg = GlanceTheme.colors.secondaryContainer
     val cardOnBg = GlanceTheme.colors.onSecondaryContainer
-
     val badgeBg = GlanceTheme.colors.primary
     val badgeOnBg = GlanceTheme.colors.onPrimary
-
     val isNarrow = size.width < 180.dp
 
     Column(
@@ -453,7 +664,6 @@ private fun CompactLayout(
         verticalAlignment = Alignment.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        // 1. Header Bar
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -481,9 +691,7 @@ private fun CompactLayout(
 
         Spacer(modifier = GlanceModifier.height(8.dp))
 
-        // 2. Next Prayer Card
         if (isNarrow) {
-            // Vertical Layout for narrow sizes
             Column(
                 modifier = GlanceModifier
                     .fillMaxWidth()
@@ -531,7 +739,6 @@ private fun CompactLayout(
                 }
             }
         } else {
-            // Horizontal Layout for standard compact sizes
             Column(
                 modifier = GlanceModifier
                     .fillMaxWidth()
@@ -571,7 +778,6 @@ private fun CompactLayout(
                         )
                     }
 
-                    // Badge
                     Box(
                         modifier = GlanceModifier
                             .background(badgeBg)
@@ -606,9 +812,7 @@ private fun ExpandedLayout(
     language: String,
     onSurfaceColor: ColorProvider,
     onSurfaceVariantColor: ColorProvider,
-    primaryTextColor: ColorProvider,
-    settingsAction: androidx.glance.action.Action,
-    state: NamazWidgetState
+    settingsAction: androidx.glance.action.Action
 ) {
     val context = LocalContext.current
     val localizedPrayerName = getLocalizedString(context, nextPrayerName.nameRes, language)
@@ -618,7 +822,6 @@ private fun ExpandedLayout(
         verticalAlignment = Alignment.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        // 1. Header Bar
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -646,10 +849,8 @@ private fun ExpandedLayout(
 
         Spacer(modifier = GlanceModifier.height(4.dp))
 
-        // 2. Next Prayer Card (Full Width)
         val cardBg = GlanceTheme.colors.secondaryContainer
         val cardOnBg = GlanceTheme.colors.onSecondaryContainer
-
         val badgeBg = GlanceTheme.colors.primary
         val badgeOnBg = GlanceTheme.colors.onPrimary
 
@@ -687,7 +888,6 @@ private fun ExpandedLayout(
                 )
             }
 
-            // Countdown Badge
             Box(
                 modifier = GlanceModifier
                     .background(badgeBg)
@@ -708,7 +908,6 @@ private fun ExpandedLayout(
 
         Spacer(modifier = GlanceModifier.height(6.dp))
 
-        // 3. Today's Prayer Times Row (Full Width - equal division prevents wrapping)
         Row(
             modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
             verticalAlignment = Alignment.CenterVertically
@@ -729,7 +928,6 @@ private fun ExpandedLayout(
                 val textColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceColor
                 val labelColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceVariantColor
                 val iconColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceVariantColor
-
                 val textWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
 
                 Column(
@@ -739,7 +937,6 @@ private fun ExpandedLayout(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Chain: Label -> Icon -> Time String
                     Text(
                         text = localizedName,
                         style = TextStyle(

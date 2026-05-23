@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,8 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -58,21 +55,14 @@ class NamazWidgetConfigureActivity : ComponentActivity() {
             AppWidgetManager.INVALID_APPWIDGET_ID
         ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
 
-        android.util.Log.d("NamazWidgetConfigure", "onCreate: intent = $intent, extras = ${intent?.extras}, appWidgetId = $appWidgetId")
-
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-            android.util.Log.e("NamazWidgetConfigure", "onCreate: INVALID_APPWIDGET_ID, finishing")
             finish()
             return
         }
 
-        // Default to CANCELED in case user presses back key
         setResult(RESULT_CANCELED, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
 
-        // Read current values if we are reconfiguring
-        val currentTheme = NamazWidgetPrefs.getWidgetTheme(this, appWidgetId)
         val currentLayout = NamazWidgetPrefs.getWidgetLayout(this, appWidgetId)
-        android.util.Log.d("NamazWidgetConfigure", "onCreate: current values for $appWidgetId: theme = $currentTheme, layout = $currentLayout")
 
         setContent {
             NamazTheme {
@@ -81,11 +71,8 @@ class NamazWidgetConfigureActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     ConfigurationScreen(
-                        initialTheme = currentTheme,
                         initialLayout = currentLayout,
-                        onSave = { selectedTheme, selectedLayout ->
-                            android.util.Log.d("NamazWidgetConfigure", "onSave: saving settings for $appWidgetId: theme = $selectedTheme, layout = $selectedLayout")
-                            NamazWidgetPrefs.setWidgetTheme(this@NamazWidgetConfigureActivity, appWidgetId, selectedTheme)
+                        onSave = { selectedLayout ->
                             NamazWidgetPrefs.setWidgetLayout(this@NamazWidgetConfigureActivity, appWidgetId, selectedLayout)
 
                             lifecycleScope.launch {
@@ -94,12 +81,9 @@ class NamazWidgetConfigureActivity : ComponentActivity() {
                                     val glanceId = manager.getGlanceIdBy(appWidgetId)
                                     NamazWidget().update(this@NamazWidgetConfigureActivity, glanceId)
                                 } catch (e: Exception) {
-                                    android.util.Log.e("NamazWidgetConfigure", "Error updating specific widget, falling back to updateAll", e)
                                     try {
                                         NamazWidget().updateAll(this@NamazWidgetConfigureActivity)
-                                    } catch (e2: Exception) {
-                                        android.util.Log.e("NamazWidgetConfigure", "Error in updateAll", e2)
-                                    }
+                                    } catch (_: Exception) {}
                                 }
 
                                 val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
@@ -116,11 +100,9 @@ class NamazWidgetConfigureActivity : ComponentActivity() {
 
 @Composable
 private fun ConfigurationScreen(
-    initialTheme: Int,
     initialLayout: Int,
-    onSave: (theme: Int, layout: Int) -> Unit
+    onSave: (layout: Int) -> Unit
 ) {
-    var selectedTheme by remember { mutableIntStateOf(initialTheme) }
     var selectedLayout by remember { mutableIntStateOf(initialLayout) }
 
     Column(
@@ -145,41 +127,6 @@ private fun ConfigurationScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Widget Theme Selection
-        Text(
-            text = stringResource(R.string.widget_setting_theme),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ThemeOptionCard(
-            title = stringResource(R.string.widget_theme_app),
-            description = stringResource(R.string.widget_theme_app_desc),
-            selected = selectedTheme == 0,
-            onClick = { selectedTheme = 0 }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ThemeOptionCard(
-            title = stringResource(R.string.widget_theme_glass),
-            description = stringResource(R.string.widget_theme_glass_desc),
-            selected = selectedTheme == 1,
-            onClick = { selectedTheme = 1 }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ThemeOptionCard(
-            title = stringResource(R.string.widget_theme_dynamic),
-            description = stringResource(R.string.widget_theme_dynamic_desc),
-            selected = selectedTheme == 2,
-            onClick = { selectedTheme = 2 }
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Layout Selector
         Text(
             text = stringResource(R.string.widget_setting_layout),
             style = MaterialTheme.typography.titleMedium,
@@ -202,49 +149,13 @@ private fun ConfigurationScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { onSave(selectedTheme, selectedLayout) },
+            onClick = { onSave(selectedLayout) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = stringResource(R.string.widget_settings_save),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-private fun ThemeOptionCard(
-    title: String,
-    description: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-        ),
-        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
         }
     }

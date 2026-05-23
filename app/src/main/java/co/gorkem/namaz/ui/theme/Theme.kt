@@ -1,14 +1,11 @@
 package co.gorkem.namaz.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -19,95 +16,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import co.gorkem.namaz.domain.model.PrayerName
 
-// ========== Fallback Color Schemes ==========
-
-internal val LightColorScheme = lightColorScheme(
-    primary = LightPrimary,
-    onPrimary = LightOnPrimary,
-    primaryContainer = LightPrimaryContainer,
-    onPrimaryContainer = LightOnPrimaryContainer,
-    secondary = LightSecondary,
-    onSecondary = LightOnSecondary,
-    secondaryContainer = LightSecondaryContainer,
-    onSecondaryContainer = LightOnSecondaryContainer,
-    tertiary = LightTertiary,
-    onTertiary = LightOnTertiary,
-    tertiaryContainer = LightTertiaryContainer,
-    onTertiaryContainer = LightOnTertiaryContainer,
-    error = LightError,
-    onError = LightOnError,
-    errorContainer = LightErrorContainer,
-    onErrorContainer = LightOnErrorContainer,
-    background = LightBackground,
-    onBackground = LightOnBackground,
-    surface = LightSurface,
-    onSurface = LightOnSurface,
-    surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = LightOnSurfaceVariant,
-    surfaceTint = LightSurfaceTint,
-    inverseSurface = LightInverseSurface,
-    inverseOnSurface = LightInverseOnSurface,
-    inversePrimary = LightInversePrimary,
-    outline = LightOutline,
-    outlineVariant = LightOutlineVariant,
-    scrim = LightScrim,
-    surfaceDim = LightSurfaceDim,
-    surfaceBright = LightSurfaceBright,
-    surfaceContainerLowest = LightSurfaceContainerLowest,
-    surfaceContainerLow = LightSurfaceContainerLow,
-    surfaceContainer = LightSurfaceContainer,
-    surfaceContainerHigh = LightSurfaceContainerHigh,
-    surfaceContainerHighest = LightSurfaceContainerHighest
-)
-
-internal val DarkColorScheme = darkColorScheme(
-    primary = DarkPrimary,
-    onPrimary = DarkOnPrimary,
-    primaryContainer = DarkPrimaryContainer,
-    onPrimaryContainer = DarkOnPrimaryContainer,
-    secondary = DarkSecondary,
-    onSecondary = DarkOnSecondary,
-    secondaryContainer = DarkSecondaryContainer,
-    onSecondaryContainer = DarkOnSecondaryContainer,
-    tertiary = DarkTertiary,
-    onTertiary = DarkOnTertiary,
-    tertiaryContainer = DarkTertiaryContainer,
-    onTertiaryContainer = DarkOnTertiaryContainer,
-    error = DarkError,
-    onError = DarkOnError,
-    errorContainer = DarkErrorContainer,
-    onErrorContainer = DarkOnErrorContainer,
-    background = DarkBackground,
-    onBackground = DarkOnBackground,
-    surface = DarkSurface,
-    onSurface = DarkOnSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = DarkOnSurfaceVariant,
-    surfaceTint = DarkSurfaceTint,
-    inverseSurface = DarkInverseSurface,
-    inverseOnSurface = DarkInverseOnSurface,
-    inversePrimary = DarkInversePrimary,
-    outline = DarkOutline,
-    outlineVariant = DarkOutlineVariant,
-    scrim = DarkScrim,
-    surfaceDim = DarkSurfaceDim,
-    surfaceBright = DarkSurfaceBright,
-    surfaceContainerLowest = DarkSurfaceContainerLowest,
-    surfaceContainerLow = DarkSurfaceContainerLow,
-    surfaceContainer = DarkSurfaceContainer,
-    surfaceContainerHigh = DarkSurfaceContainerHigh,
-    surfaceContainerHighest = DarkSurfaceContainerHighest
-)
-
-// ========== Prayer Context ==========
-
-/**
- * CompositionLocal for the current prayer context.
- * When set, the theme subtly shifts its color tone to match the prayer time.
- */
 val LocalPrayerContext = staticCompositionLocalOf<PrayerName?> { null }
-
-// ========== Color Blend Utility ==========
 
 private fun blend(base: Color, tint: Color, ratio: Float): Color {
     return Color(
@@ -117,8 +26,6 @@ private fun blend(base: Color, tint: Color, ratio: Float): Color {
         alpha = base.alpha
     )
 }
-
-// ========== Prayer-Tinted Color Scheme ==========
 
 @Composable
 private fun prayerColorScheme(
@@ -162,20 +69,16 @@ private fun prayerColorScheme(
     )
 }
 
-// ========== Main Theme Composable ==========
-
 @Composable
 fun NamazTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
+    currentTheme: AppThemeSelection = AppThemeSelection.EMERALD_OASIS,
     content: @Composable () -> Unit
 ) {
-    val baseColorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-
+    val baseColorScheme = currentTheme.toColorScheme(darkTheme)
     val prayer = LocalPrayerContext.current
     val colorScheme = prayerColorScheme(baseColorScheme, prayer, darkTheme)
 
-    // Apply edge-to-edge status bar styling
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

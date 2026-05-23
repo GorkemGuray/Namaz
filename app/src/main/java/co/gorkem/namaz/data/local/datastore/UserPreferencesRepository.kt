@@ -31,6 +31,7 @@ data class UserPreferences(
     val useLocalCalculation: Boolean = false,
     val dataSource: Int = 0,
     val language: String = "tr",
+    val appTheme: Int = 0,
     val manualCityName: String = "",
     val manualDistrictName: String = "",
     val manualDistrictId: String = "",
@@ -74,6 +75,7 @@ class UserPreferencesRepository @Inject constructor(
         val LAST_AUTO_DISTRICT_ID = stringPreferencesKey("last_auto_district_id")
         val LAST_AUTO_TIMEZONE = stringPreferencesKey("last_auto_timezone")
         val MANUAL_TIMEZONE = stringPreferencesKey("manual_timezone")
+        val APP_THEME = intPreferencesKey("app_theme")
     }
 
     val preferences: Flow<UserPreferences> = dataStore.data.map { prefs ->
@@ -94,6 +96,7 @@ class UserPreferencesRepository @Inject constructor(
             useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
             dataSource = prefs[DATA_SOURCE] ?: 0,
             language = prefs[LANGUAGE] ?: "tr",
+            appTheme = prefs[APP_THEME] ?: 0,
             manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
             manualDistrictName = prefs[MANUAL_DISTRICT_NAME] ?: "",
             manualDistrictId = prefs[MANUAL_DISTRICT_ID] ?: "",
@@ -150,6 +153,11 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setLanguage(language: String) {
         dataStore.edit { prefs -> prefs[LANGUAGE] = language }
+        updateWidget()
+    }
+
+    suspend fun setAppTheme(theme: Int) {
+        dataStore.edit { prefs -> prefs[APP_THEME] = theme }
         updateWidget()
     }
 

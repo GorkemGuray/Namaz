@@ -176,4 +176,9 @@
     <string name="widget_layout_detailed">Detaylı (Sıradaki Vakit + Bugünün Vakitleri)</string>
     <string name="widget_layout_compact">Sade (Sadece Sıradaki Vakit ve Geri Sayım)</string>
     <string name="widget_settings_save">Ayarları Kaydet</string>
+    <string name="settings_theme">Tema</string>
+    <string name="theme_emerald_oasis">Emerald Oasis</string>
+    <string name="theme_sapphire_night">Sapphire Night</string>
+    <string name="theme_amber_sands">Amber Sands</string>
+    <string name="theme_monochrome_platinum">Monochrome Platinum</string>
 </resources>

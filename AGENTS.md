@@ -94,6 +94,7 @@ Wear:        compose-material3 1.6.1, tiles-material 1.6.0, complications 1.3.0
 Wearable:    play-services-wearable 20.0.1
 Horologist:  0.7.15
 Desugar:     2.1.5
+Glance:       1.1.1 (Widget)
 ```
 
 ---
@@ -154,7 +155,7 @@ GET https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdeta
 
 ## Proje Yapısı
 
-### app/ (Mobil Modül) — `co.gorkem.namaz` — 53 Kotlin dosyası
+### app/ (Mobil Modül) — `co.gorkem.namaz` — 63 Kotlin dosyası
 
 ```
 app/
@@ -164,9 +165,10 @@ app/
     ├── AndroidManifest.xml
     │   Permissions: ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, POST_NOTIFICATIONS
     │   @HiltAndroidApp NamazApplication, @AndroidEntryPoint MainActivity
+    │   Widget: APPWIDGET_UPDATE receiver + configure activity + WorkManager init provider
     ├── java/co/gorkem/namaz/
-    │   ├── NamazApp.kt                    # Root composable, 4-tab bottom nav (Vakitler/Takvim/Kıble/Ayarlar)
-    │   ├── NamazApplication.kt            # @HiltAndroidApp, notification channel + worker schedule
+    │   ├── NamazApp.kt                    # Root composable, 4-tab bottom nav (Vakitler/Takvim/Kıble/Ayarlar) + AppThemeEntryPoint + rememberAppTheme()
+    │   ├── NamazApplication.kt            # @HiltAndroidApp, Configuration.Provider (HiltWorkerFactory), notification channel + worker schedule
     │   ├── MainActivity.kt                # @AndroidEntryPoint, edge-to-edge, LocaleManager.attachBaseContext
     │   ├── LocaleManager.kt               # i18n: SharedPreferences-based locale, activity recreate
     │   │
@@ -198,14 +200,14 @@ app/
     │   │   │       ├── ImsakiyemResponse.kt  # BaseResponse, DayPrayerDto, DistrictDto, HijriDateDto
     │   │   │       └── NominatimResponse.kt   # NominatimPlace, NominatimAddress
     │   │   ├── repository/
-    │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache, method+school-aware cache key
+    │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache, method+school-aware cache key, widget updater
     │   │   └── local/
     │   │       ├── room/
     │   │       │   ├── NamazDatabase.kt        # Room v3, PrayerTimeEntity, fallbackToDestructiveMigration(true)
     │   │       │   ├── PrayerTimeDao.kt        # Queries by city+month+year+method+school, deleteOlderThan
     │   │       │   └── PrayerTimeEntity.kt     # date (PK), cityName, 6 prayer times, hijri fields, cacheSchool
     │   │       └── datastore/
-    │   │           ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, language, recentCities
+    │   │           ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, language, recentCities, appTheme → widget updater
     │   │           ├── UserPreferencesSerializer.kt # NO-OP stub (not actively used; standard Preferences keys used)
     │   │           └── UserPreferencesDataStore.kt  # preferencesDataStore extension
     │   │
@@ -219,26 +221,32 @@ app/
     │   │   ├── LocationTracker.kt           # FusedLocationProviderClient, hasLocationPermission()
     │   │   ├── GeocoderHelper.kt            # Reverse geocode: lat/lon → il/ilçe (Turkish locale)
     │   │   ├── NotificationHelper.kt        # Notification channel + bildirim gösterme (POST_NOTIFICATIONS check)
-    │   │   ├── PrayerNotificationWorker.kt  # @HiltWorker, tek vakit bildirimi
+    │   │   ├── PrayerNotificationWorker.kt  # @HiltWorker, tek vakit bildirimi + widget update
     │   │   ├── PrayerNotificationScheduler.kt # 6 vakit bildirimi zamanlaması (WorkManager OneTimeWorkRequest)
     │   │   ├── PrayerRefreshWorker.kt         # @HiltWorker, every 6h periodic refresh + notification reschedule
     │   │   ├── WearSyncManager.kt             # Data Layer API ile Wear'a JSON sync (/namaz_prayer_data)
     │   │   ├── WearPrayerData.kt              # WearPrayerData, WearPrayerItem, WearNextPrayer, WearKerahatInfo + Gson helpers
-    │   │   └── QiblaSensorManager.kt          # SensorManager wrapper, magnetometer detection, Flow<QiblaOrientation>
+    │   │   ├── QiblaSensorManager.kt          # SensorManager wrapper, magnetometer detection, Flow<QiblaOrientation>
+    │   │   ├── NamazWidget.kt                 # GlanceAppWidget: compact/expanded layout, themeToColorProviders sync
+    │   │   ├── NamazWidgetReceiver.kt         # AppWidgetProvider: APPWIDGET_UPDATE receiver
+    │   │   ├── NamazWidgetConfigureActivity.kt # Widget layout seçimi (detailed/compact)
+    │   │   ├── NamazWidgetPrefs.kt            # Widget-specific SharedPreferences (layout)
+    │   │   ├── NamazWidgetUpdater.kt          # Widget güncelleme yardımcısı
+    │   │   └── NamazWidgetWorker.kt           # @HiltWorker, periyodik widget refresh
     │   │
     │   └── ui/
     │   ├── state/
     │   │   ├── HomeUiState.kt  # sealed: Loading, Success, Error, PermissionRequired
     │   │   └── QiblaUiState.kt # sealed: Loading, CompassActive, StaticDirection, Error, LocationRequired
     │       ├── theme/
-    │       │   ├── Theme.kt       # NamazTheme (dynamic color, prayer-tinted scheme)
-    │       │   ├── Color.kt       # M3 expressive light/dark colors + PrayerTints
+    │       │   ├── Theme.kt       # NamazTheme(currentTheme: AppThemeSelection), prayer-tinted scheme, bypasses system dynamic colors
+    │       │   ├── Color.kt       # AppThemeSelection enum (EMERALD/SAPPHIRE/AMBER/MONOCHROME) + 4 tam M3 palet + Glance hex sabitleri + PrayerTints
     │       │   ├── PrayerColors.kt # Atmospheric gradient brushes per prayer time
     │       │   ├── Shape.kt       # ExpressiveShapes, HeroCardShape, PillShape
     │       │   └── Type.kt        # ExpressiveTypography scale
     │       ├── components/
     │       │   ├── PrayerHeroCard.kt       # Hero card: countdown + location + period info + hijri date
-    │       │   ├── PrayerTimesList.kt      # 6 prayer rows: next prayer badge, current prayer highlight
+    │       │   ├── PrayerTimesList.kt      # 6 prayer rows: PrayerRowState enum (Passed/Active/Upcoming/Normal), period-aware
     │       │   ├── PrayerIcon.kt           # PrayerName → ImageVector + tint mapping
     │       │   ├── CountdownTimer.kt       # Standalone countdown composable
     │       │   ├── QiblaCompass.kt         # Canvas compass: ring, tick marks, rotating Kaaba icon on circumference, cardinal labels at edge
@@ -254,17 +262,17 @@ app/
     │           │   ├── CitySelectionScreen.kt    # Search (Nominatim), recent cities, use my location
     │           │   └── CitySelectionViewModel.kt # Debounced search (400ms), save/clear preferences
     │           ├── settings/
-    │           │   ├── SettingsScreen.kt    # Notifications, language (recreate), method, mezhep
-    │           │   └── SettingsViewModel.kt # UserPreferences via DataStore
+    │           │   ├── SettingsScreen.kt    # Notifications, language (recreate), method, mezhep, tema (4 seçenek)
+    │           │   └── SettingsViewModel.kt # UserPreferences via DataStore + appTheme setter
     │           └── qibla/
     │               ├── QiblaScreen.kt      # Functional compass: sensor-driven + static fallback, all UI states
     │               └── QiblaViewModel.kt   # Lifecycle-aware, Flow-based sensor + UseCase orchestration
     │
     └── res/
         ├── values/strings.xml, values-en/strings.xml, themes.xml, colors.xml
-        ├── drawable/ic_my_location.xml, ic_launcher_*.xml
+        ├── drawable/ic_prayer_*.xml, ic_widget_settings.xml, ic_my_location.xml, ic_launcher_*.xml
         ├── mipmap-*/ic_launcher.webp, ic_launcher_round.webp
-        └── xml/backup_rules.xml, data_extraction_rules.xml
+        └── xml/backup_rules.xml, data_extraction_rules.xml, namaz_widget_info.xml
 ```
 
 ### wear/ (Wear OS Modül) — `co.gorkem.namaz.wear` — 19 Kotlin dosyası
@@ -328,7 +336,7 @@ wear/
    - İzin verilmezse: CitySelectionScreen, varsayılan İstanbul/Silivri
 2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi (uzun konum isimleri sadeleştirilmiş ve taşma sorunları giderilmiştir)
 3. **Aylık Takvim**: Sol/sağ oklar ile ay bazlı ileri/geri geçiş yapılabilen, 5 günlük vakit + güneş sütunlarını barındıran, bulunulan günü vurgulayan responsive tablo ekranı
-4. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı seçimi (Aladhan API / İmsakiyem API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), dil
+4. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı seçimi (Aladhan API / İmsakiyem API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), tema (4 seçenek: Emerald Oasis / Sapphire Night / Amber Sands / Monochrome Platinum), dil
 5. **Şehir seçimi**: Seçilen veri kaynağına göre arama yapılır:
    - Aladhan API / Lokal Hesaplama için: Nominatim API ile dünya genelinde koordinat arama
    - İmsakiyem API için: İmsakiyem API ile ilçe arama (büyük/küçük harf ve Türkçe karakter desteğiyle)
@@ -346,8 +354,14 @@ wear/
 - Code style: Yorum yok (AGENTS.md convention).
 
 ### Tema
-- Material 3 dynamic color + namaz vakitlerine özel gradient/renk paleti (PrayerColors.kt).
-- Expressive shapes, typography scale.
+- 4 özel premium tema: Emerald Oasis (varsayılan), Sapphire Night, Amber Sands, Monochrome Platinum.
+- Sistem dinamik renkleri (Monet) tamamen bypass edilir — `dynamicColor = false` zorunlu.
+- `AppThemeSelection` enum'u DataStore'da `appTheme` (Int, 0-3) olarak saklanır.
+- `NamazTheme(currentTheme: AppThemeSelection)` — `when` ile seçili temanın tam M3 `ColorScheme`'ini yükler.
+- `rememberAppTheme()`: `NamazApp` seviyesinde DataStore'dan tema okur, `NamazTheme`'e geçirir.
+- Widget senkronizasyonu: `themeToColorProviders()` ile `AppThemeSelection` → Glance `ColorProviders` birebir hex eşleme.
+- `PrayerTints`: Her temada namaz vakitlerine özel yüzey tonlaması (surface/primaryContainer blend) korunur.
+- Expressive shapes, typography scale (Theme.kt'te `NamazTheme` içinde `MaterialTheme`'e verilir).
 
 ### Çevrimdışı (Room)
 - `PrayerTimeEntity` cache'lenir. Cache key: `cityName + month + year + method + school + cacheDataSource`.
@@ -370,6 +384,7 @@ wear/
 - `recentCities`: Gson ile JSON string olarak saklanır (max 5, deduplicated).
 - `dataSource`: Int. Hangi veri kaynağının aktif olduğunu belirtir (0: Aladhan API, 1: Imsakiyem API, 2: Lokal Hesaplama).
 - `useLocalCalculation`: Boolean. Geriye uyumluluk için tutulur. Açıksa API kullanılmaz, lokal hesaplama yapılır.
+- `appTheme`: Int. Aktif temayı belirtir (0: Emerald Oasis, 1: Sapphire Night, 2: Amber Sands, 3: Monochrome Platinum). Her preference değişikliğinde widget otomatik güncellenir.
 
 ### HomeViewModel Race Condition
 - `prayerTimesJob` takip edilir, yeni yükleme önceki job'ı iptal eder.

@@ -27,6 +27,13 @@ class SettingsViewModel @Inject constructor(
         Pair(0, R.string.school_shafi)
     )
 
+    val themeOptions: List<Pair<Int, Int>> = listOf(
+        Pair(0, R.string.theme_emerald_oasis),
+        Pair(1, R.string.theme_sapphire_night),
+        Pair(2, R.string.theme_amber_sands),
+        Pair(3, R.string.theme_monochrome_platinum)
+    )
+
     init {
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
@@ -74,6 +81,12 @@ class SettingsViewModel @Inject constructor(
     fun setDataSource(source: Int) {
         viewModelScope.launch {
             preferencesRepository.setDataSource(source)
+        }
+    }
+
+    fun setAppTheme(theme: Int) {
+        viewModelScope.launch {
+            preferencesRepository.setAppTheme(theme)
         }
     }
 }
