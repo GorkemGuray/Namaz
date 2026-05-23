@@ -809,18 +809,17 @@ private fun CompactLayout(
                     modifier = GlanceModifier
                         .background(badgeBg)
                         .cornerRadius(16.dp)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AndroidRemoteViews(chronometerRemoteViews)
-                        Spacer(modifier = GlanceModifier.width(3.dp))
                         Text(
                             text = labelText,
                             style = TextStyle(
                                 color = badgeOnBgColor,
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold
                             ),
                             maxLines = 1
@@ -872,18 +871,17 @@ private fun CompactLayout(
                         modifier = GlanceModifier
                             .background(badgeBg)
                             .cornerRadius(16.dp)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             AndroidRemoteViews(chronometerRemoteViews)
-                            Spacer(modifier = GlanceModifier.width(3.dp))
                             Text(
                                 text = labelText,
                                 style = TextStyle(
                                     color = badgeOnBgColor,
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
                                 maxLines = 1
@@ -1017,18 +1015,17 @@ private fun ExpandedLayout(
                 modifier = GlanceModifier
                     .background(badgeBg)
                     .cornerRadius(16.dp)
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     AndroidRemoteViews(chronometerRemoteViews)
-                    Spacer(modifier = GlanceModifier.width(3.dp))
                     Text(
                         text = labelText,
                         style = TextStyle(
                             color = badgeOnBgColor,
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         ),
                         maxLines = 1
