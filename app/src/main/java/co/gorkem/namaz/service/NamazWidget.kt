@@ -51,6 +51,7 @@ import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
+import co.gorkem.namaz.domain.usecase.GetPrayerDashboardUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
 import co.gorkem.namaz.ui.theme.AppThemeSelection
 import co.gorkem.namaz.ui.theme.EmeraldLightSurface
@@ -115,6 +116,7 @@ interface NamazWidgetEntryPoint {
     fun prayerTimeRepository(): PrayerTimeRepositoryImpl
     fun getPrayerTimesUseCase(): GetPrayerTimesUseCase
     fun getNextPrayerUseCase(): GetNextPrayerUseCase
+    fun getPrayerDashboardUseCase(): GetPrayerDashboardUseCase
 }
 
 data class NamazWidgetState(
@@ -126,6 +128,9 @@ data class NamazWidgetState(
     val remainingMinutes: Long?,
     val currentPrayerName: PrayerName?,
     val layoutPreference: Int,
+    val isKerahat: Boolean = false,
+    val kerahatPrayerName: String? = null,
+    val kerahatRemainingMinutes: Long = 0,
     val error: String? = null
 )
 
@@ -427,6 +432,7 @@ private suspend fun loadWidgetState(
     return try {
         val getPrayerTimesUseCase = entryPoint.getPrayerTimesUseCase()
         val getNextPrayerUseCase = entryPoint.getNextPrayerUseCase()
+        val getPrayerDashboardUseCase = entryPoint.getPrayerDashboardUseCase()
 
         val language = prefs.language
 
@@ -454,6 +460,7 @@ private suspend fun loadWidgetState(
 
         val today = LocalDate.now()
         val todayKey = today.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+        val tomorrowKey = today.plusDays(1).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
 
         var widgetState: NamazWidgetState? = null
 
@@ -471,6 +478,10 @@ private suspend fun loadWidgetState(
                     val nextPrayerName = nextInfo?.prayerName
                     val currentPrayerName = nextPrayerName?.let { getCurrentPrayer(it) }
 
+                    val tomorrowPrayer = result.data.find { it.date == tomorrowKey }
+                    val dashboard = getPrayerDashboardUseCase.execute(todayPrayer, tomorrowPrayer)
+                    val kerahatInfo = dashboard?.kerahatInfo
+
                     widgetState = NamazWidgetState(
                         cityName = if (location.districtName.isNotEmpty()) location.districtName else location.cityName,
                         language = language,
@@ -479,7 +490,10 @@ private suspend fun loadWidgetState(
                         nextPrayerTime = nextInfo?.prayerTime,
                         remainingMinutes = nextInfo?.remainingMinutes,
                         currentPrayerName = currentPrayerName,
-                        layoutPreference = layoutPreference
+                        layoutPreference = layoutPreference,
+                        isKerahat = kerahatInfo?.isCurrentlyKerahat == true,
+                        kerahatPrayerName = kerahatInfo?.prayerName?.name,
+                        kerahatRemainingMinutes = kerahatInfo?.remainingToEndMinutes ?: 0
                     )
                 } else {
                     widgetState = NamazWidgetState(
@@ -593,6 +607,12 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
     val remainingStr = formatRemainingTime(remainingMinutes, state.language)
     val remainingLabel = getRemainingLabel(state.language)
 
+    val kerahatRemainingStr = if (state.isKerahat && state.kerahatRemainingMinutes > 0) {
+        formatRemainingTime(state.kerahatRemainingMinutes, state.language)
+    } else {
+        ""
+    }
+
     val onSurfaceColor = GlanceTheme.colors.onSurface
     val onSurfaceVariantColor = GlanceTheme.colors.onSurfaceVariant
 
@@ -617,7 +637,10 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 language = state.language,
                 onSurfaceColor = onSurfaceColor,
                 onSurfaceVariantColor = onSurfaceVariantColor,
-                settingsAction = settingsAction
+                settingsAction = settingsAction,
+                isKerahat = state.isKerahat,
+                kerahatPrayerName = state.kerahatPrayerName,
+                kerahatRemainingStr = kerahatRemainingStr
             )
         } else {
             ExpandedLayout(
@@ -631,7 +654,10 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 language = state.language,
                 onSurfaceColor = onSurfaceColor,
                 onSurfaceVariantColor = onSurfaceVariantColor,
-                settingsAction = settingsAction
+                settingsAction = settingsAction,
+                isKerahat = state.isKerahat,
+                kerahatPrayerName = state.kerahatPrayerName,
+                kerahatRemainingStr = kerahatRemainingStr
             )
         }
     }
@@ -647,17 +673,27 @@ private fun CompactLayout(
     language: String,
     onSurfaceColor: ColorProvider,
     onSurfaceVariantColor: ColorProvider,
-    settingsAction: androidx.glance.action.Action
+    settingsAction: androidx.glance.action.Action,
+    isKerahat: Boolean = false,
+    kerahatPrayerName: String? = null,
+    kerahatRemainingStr: String = ""
 ) {
     val context = LocalContext.current
     val size = LocalSize.current
     val localizedPrayerName = getLocalizedString(context, nextPrayerName.nameRes, language)
 
-    val cardBg = GlanceTheme.colors.secondaryContainer
-    val cardOnBg = GlanceTheme.colors.onSecondaryContainer
-    val badgeBg = GlanceTheme.colors.primary
-    val badgeOnBg = GlanceTheme.colors.onPrimary
+    val isKerahatActive = isKerahat && kerahatPrayerName != null
+    val cardBg = if (isKerahatActive) GlanceTheme.colors.errorContainer else GlanceTheme.colors.secondaryContainer
+    val cardOnBg = if (isKerahatActive) GlanceTheme.colors.onErrorContainer else GlanceTheme.colors.onSecondaryContainer
+    val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
+    val badgeOnBg = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
     val isNarrow = size.width < 180.dp
+
+    val kerahatLabel = if (isKerahatActive) {
+        mapKerahatPrayerName(context, kerahatPrayerName!!, language)
+    } else {
+        ""
+    }
 
     Column(
         modifier = GlanceModifier.fillMaxSize(),
@@ -668,10 +704,16 @@ private fun CompactLayout(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val headerText = when {
+                isKerahatActive && !isNarrow -> "Kerahat Vakti • $cityName"
+                isKerahatActive && isNarrow -> cityName
+                isNarrow -> cityName
+                else -> "Namaz Vakitleri • $cityName"
+            }
             Text(
-                text = if (isNarrow) cityName else "Namaz Vakitleri • $cityName",
+                text = headerText,
                 style = TextStyle(
-                    color = onSurfaceVariantColor,
+                    color = if (isKerahatActive) GlanceTheme.colors.error else onSurfaceVariantColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 ),
@@ -685,7 +727,7 @@ private fun CompactLayout(
                     .width(18.dp)
                     .height(18.dp)
                     .clickable(settingsAction),
-                colorFilter = ColorFilter.tint(onSurfaceVariantColor)
+                colorFilter = ColorFilter.tint(if (isKerahatActive) GlanceTheme.colors.error else onSurfaceVariantColor)
             )
         }
 
@@ -702,7 +744,7 @@ private fun CompactLayout(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = localizedPrayerName,
+                    text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
                     style = TextStyle(
                         color = cardOnBg,
                         fontSize = 12.sp,
@@ -728,7 +770,7 @@ private fun CompactLayout(
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "$remainingStr $remainingLabel",
+                        text = if (isKerahatActive) "$kerahatRemainingStr $kerahatLabel bitiyor" else "$remainingStr $remainingLabel",
                         style = TextStyle(
                             color = badgeOnBg,
                             fontSize = 10.sp,
@@ -758,7 +800,7 @@ private fun CompactLayout(
                         horizontalAlignment = Alignment.Start
                     ) {
                         Text(
-                            text = localizedPrayerName,
+                            text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
                             style = TextStyle(
                                 color = cardOnBg,
                                 fontSize = 12.sp,
@@ -785,7 +827,7 @@ private fun CompactLayout(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "$remainingStr $remainingLabel",
+                            text = if (isKerahatActive) "$kerahatRemainingStr bitiyor" else "$remainingStr $remainingLabel",
                             style = TextStyle(
                                 color = badgeOnBg,
                                 fontSize = 10.sp,
@@ -812,10 +854,20 @@ private fun ExpandedLayout(
     language: String,
     onSurfaceColor: ColorProvider,
     onSurfaceVariantColor: ColorProvider,
-    settingsAction: androidx.glance.action.Action
+    settingsAction: androidx.glance.action.Action,
+    isKerahat: Boolean = false,
+    kerahatPrayerName: String? = null,
+    kerahatRemainingStr: String = ""
 ) {
     val context = LocalContext.current
     val localizedPrayerName = getLocalizedString(context, nextPrayerName.nameRes, language)
+    val isKerahatActive = isKerahat && kerahatPrayerName != null
+
+    val kerahatLabel = if (isKerahatActive) {
+        mapKerahatPrayerName(context, kerahatPrayerName!!, language)
+    } else {
+        ""
+    }
 
     Column(
         modifier = GlanceModifier.fillMaxSize(),
@@ -826,10 +878,11 @@ private fun ExpandedLayout(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val headerText = if (isKerahatActive) "Kerahat Vakti • $cityName" else "Namaz Vakitleri • $cityName"
             Text(
-                text = "Namaz Vakitleri • $cityName",
+                text = headerText,
                 style = TextStyle(
-                    color = onSurfaceVariantColor,
+                    color = if (isKerahatActive) GlanceTheme.colors.error else onSurfaceVariantColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 ),
@@ -843,16 +896,16 @@ private fun ExpandedLayout(
                     .width(18.dp)
                     .height(18.dp)
                     .clickable(settingsAction),
-                colorFilter = ColorFilter.tint(onSurfaceVariantColor)
+                colorFilter = ColorFilter.tint(if (isKerahatActive) GlanceTheme.colors.error else onSurfaceVariantColor)
             )
         }
 
         Spacer(modifier = GlanceModifier.height(4.dp))
 
-        val cardBg = GlanceTheme.colors.secondaryContainer
-        val cardOnBg = GlanceTheme.colors.onSecondaryContainer
-        val badgeBg = GlanceTheme.colors.primary
-        val badgeOnBg = GlanceTheme.colors.onPrimary
+        val cardBg = if (isKerahatActive) GlanceTheme.colors.errorContainer else GlanceTheme.colors.secondaryContainer
+        val cardOnBg = if (isKerahatActive) GlanceTheme.colors.onErrorContainer else GlanceTheme.colors.onSecondaryContainer
+        val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
+        val badgeOnBg = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
 
         Row(
             modifier = GlanceModifier
@@ -868,7 +921,7 @@ private fun ExpandedLayout(
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = localizedPrayerName,
+                    text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
                     style = TextStyle(
                         color = cardOnBg,
                         fontSize = 12.sp,
@@ -895,7 +948,7 @@ private fun ExpandedLayout(
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
-                    text = "$remainingStr $remainingLabel",
+                    text = if (isKerahatActive) "$kerahatRemainingStr bitiyor" else "$remainingStr $remainingLabel",
                     style = TextStyle(
                         color = badgeOnBg,
                         fontSize = 10.sp,
@@ -977,6 +1030,18 @@ private fun ExpandedLayout(
             }
         }
     }
+}
+
+@Composable
+private fun mapKerahatPrayerName(context: Context, prayerNameStr: String, language: String): String {
+    val resId = when (prayerNameStr) {
+        "GUNES" -> R.string.prayer_gunes
+        "OGLE" -> R.string.prayer_ogle
+        "AKSAM" -> R.string.prayer_aksam
+        "IKINDI" -> R.string.prayer_ikindi
+        else -> return prayerNameStr
+    }
+    return getLocalizedString(context, resId, language)
 }
 
 @Composable
