@@ -10,11 +10,13 @@ class NamazWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
         NamazWidgetWorker.startPeriodicUpdate(context)
+        WidgetMinuteReceiver.scheduleNextMinute(context)
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
         NamazWidgetWorker.stopPeriodicUpdate(context)
+        WidgetMinuteReceiver.cancelMinuteUpdates(context)
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {

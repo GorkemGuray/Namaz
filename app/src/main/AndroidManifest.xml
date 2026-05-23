@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:name=".NamazApplication"
@@ -40,6 +41,14 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/namaz_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".service.WidgetMinuteReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="co.gorkem.namaz.WIDGET_MINUTE_TICK" />
+            </intent-filter>
         </receiver>
 
         <activity
