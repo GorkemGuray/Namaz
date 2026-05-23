@@ -21,25 +21,40 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-
 import androidx.compose.ui.unit.dp
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
 import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun CountdownTimer(
     nextPrayer: GetNextPrayerUseCase.NextPrayerInfo,
     modifier: Modifier = Modifier
 ) {
-    var remainingSeconds by remember {
-        mutableLongStateOf(nextPrayer.remainingMinutes * 60)
-    }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    var remainingSeconds by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(nextPrayer) {
-        remainingSeconds = nextPrayer.remainingMinutes * 60
-        while (remainingSeconds > 0) {
+        val now = LocalTime.now()
+        val prayerTime = LocalTime.parse(nextPrayer.prayerTime, timeFormatter)
+        val today = LocalDate.now()
+
+        val targetDateTime = if (prayerTime.isAfter(now)) {
+            LocalDateTime.of(today, prayerTime)
+        } else {
+            LocalDateTime.of(today.plusDays(1), prayerTime)
+        }
+
+        val targetMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+        while (true) {
+            val remaining = ((targetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+            remainingSeconds = remaining
             delay(1000L)
-            remainingSeconds--
         }
     }
 

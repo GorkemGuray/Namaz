@@ -51,6 +51,11 @@ import co.gorkem.namaz.wear.data.WearPrayerItem
 import co.gorkem.namaz.wear.ui.WearViewModel
 import co.gorkem.namaz.wear.ui.prayerNameFromEnum
 import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun WearHomeScreen(
@@ -223,13 +228,26 @@ private fun WearCountdownHero(
     nextPrayer: WearNextPrayer,
     modifier: Modifier = Modifier
 ) {
-    var remaining by remember { mutableLongStateOf(nextPrayer.remainingMinutes * 60) }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    var remaining by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(nextPrayer) {
-        remaining = nextPrayer.remainingMinutes * 60
-        while (remaining > 0) {
+        val now = LocalTime.now()
+        val prayerTime = LocalTime.parse(nextPrayer.time, timeFormatter)
+        val today = LocalDate.now()
+
+        val targetDateTime = if (prayerTime.isAfter(now)) {
+            LocalDateTime.of(today, prayerTime)
+        } else {
+            LocalDateTime.of(today.plusDays(1), prayerTime)
+        }
+
+        val targetMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+        while (true) {
+            val remainingSecs = ((targetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+            remaining = remainingSecs
             delay(1000L)
-            remaining--
         }
     }
 

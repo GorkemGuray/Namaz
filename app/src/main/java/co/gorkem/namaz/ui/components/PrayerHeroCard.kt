@@ -28,8 +28,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +50,11 @@ import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.domain.usecase.PeriodType
 import co.gorkem.namaz.ui.theme.HeroCardShape
 import co.gorkem.namaz.ui.theme.prayerHeroGradient
+import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -198,7 +206,7 @@ fun PrayerHeroCard(
                 }
 
                 CountdownDisplay(
-                    remainingMinutes = dashboard.nextPrayer.remainingMinutes,
+                    prayerTime = dashboard.nextPrayer.prayerTime,
                     textColor = Color.White,
                     textAlign = TextAlign.End
                 )
@@ -252,24 +260,37 @@ private fun HeroLocationChip(
 
 @Composable
 fun CountdownDisplay(
-    remainingMinutes: Long,
+    prayerTime: String,
     textColor: Color,
     modifier: Modifier = Modifier,
     textAlign: TextAlign = TextAlign.Center
 ) {
-    val remainingSeconds = remember { androidx.compose.runtime.mutableStateOf(remainingMinutes * 60L) }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    var remainingSeconds by remember { mutableLongStateOf(0L) }
 
-    androidx.compose.runtime.LaunchedEffect(remainingMinutes) {
-        remainingSeconds.value = remainingMinutes * 60L
-        while (remainingSeconds.value > 0) {
-            kotlinx.coroutines.delay(1000L)
-            remainingSeconds.value--
+    LaunchedEffect(prayerTime) {
+        val now = LocalTime.now()
+        val parsedTime = LocalTime.parse(prayerTime, timeFormatter)
+        val today = LocalDate.now()
+
+        val targetDateTime = if (parsedTime.isAfter(now)) {
+            LocalDateTime.of(today, parsedTime)
+        } else {
+            LocalDateTime.of(today.plusDays(1), parsedTime)
+        }
+
+        val targetMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+        while (true) {
+            val remaining = ((targetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+            remainingSeconds = remaining
+            delay(1000L)
         }
     }
 
-    val hours = remainingSeconds.value / 3600
-    val minutes = (remainingSeconds.value % 3600) / 60
-    val seconds = remainingSeconds.value % 60
+    val hours = remainingSeconds / 3600
+    val minutes = (remainingSeconds % 3600) / 60
+    val seconds = remainingSeconds % 60
 
     val displayText = when {
         hours > 0 -> String.format("%02d:%02d:%02d", hours, minutes, seconds)
