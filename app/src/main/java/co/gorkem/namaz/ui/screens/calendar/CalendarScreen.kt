@@ -1,6 +1,7 @@
 package co.gorkem.namaz.ui.screens.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,8 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -254,8 +258,23 @@ fun CalendarScreen(
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 itemsIndexed(prayerTimes) { index, item ->
+                                    val dateParsed = try {
+                                        LocalDate.parse(item.date, DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                                    } catch (_: Exception) {
+                                        null
+                                    }
+                                    val isToday = dateParsed == LocalDate.now()
+                                    val isNextToday = try {
+                                        if (index < prayerTimes.lastIndex) {
+                                            LocalDate.parse(prayerTimes[index + 1].date, DateTimeFormatter.ofPattern("dd-MM-yyyy")) == LocalDate.now()
+                                        } else false
+                                    } catch (_: Exception) {
+                                        false
+                                    }
+
                                     CalendarRow(item = item)
-                                    if (index < prayerTimes.lastIndex) {
+
+                                    if (index < prayerTimes.lastIndex && !isToday && !isNextToday) {
                                         HorizontalDivider(
                                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                                         )
@@ -281,7 +300,7 @@ private fun CalendarRow(item: PrayerTime) {
     val isToday = dateParsed == LocalDate.now()
 
     val rowBg = if (isToday) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
     } else {
         Color.Transparent
     }
@@ -297,52 +316,84 @@ private fun CalendarRow(item: PrayerTime) {
         )
     }
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(rowBg)
-            .padding(vertical = 10.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val dateStr = dateParsed?.let {
-            it.format(DateTimeFormatter.ofPattern("d E", Locale.getDefault()))
-        } ?: item.date
-
-        Column(
-            modifier = Modifier.weight(1.3f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = dateStr,
-                style = textStyle,
-                textAlign = TextAlign.Center
+            .padding(horizontal = if (isToday) 4.dp else 0.dp, vertical = if (isToday) 2.dp else 0.dp)
+            .background(
+                color = rowBg,
+                shape = if (isToday) RoundedCornerShape(10.dp) else RectangleShape
             )
-            if (item.hijriDay.isNotEmpty() && item.hijriMonthNumber in 1..12) {
-                val shortMonth = getShortHijriMonth(item.hijriMonthNumber, Locale.getDefault())
-                val hijriDisplay = "${item.hijriDay} $shortMonth"
+            .then(
+                if (isToday) {
+                    Modifier.border(
+                        width = 1.5.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                } else Modifier
+            )
+    ) {
+        if (isToday) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 6.dp)
+                    .width(4.dp)
+                    .height(22.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val dateStr = dateParsed?.let {
+                it.format(DateTimeFormatter.ofPattern("d E", Locale.getDefault()))
+            } ?: item.date
+
+            Column(
+                modifier = Modifier.weight(1.3f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = hijriDisplay,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = if (isToday) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
-                    ),
+                    text = dateStr,
+                    style = textStyle,
+                    textAlign = TextAlign.Center
+                )
+                if (item.hijriDay.isNotEmpty() && item.hijriMonthNumber in 1..12) {
+                    val shortMonth = getShortHijriMonth(item.hijriMonthNumber, Locale.getDefault())
+                    val hijriDisplay = "${item.hijriDay} $shortMonth"
+                    Text(
+                        text = hijriDisplay,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = if (isToday) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            item.getAllPrayers().forEach { (_, time) ->
+                Text(
+                    text = time,
+                    style = textStyle,
+                    modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                 )
             }
-        }
-
-        item.getAllPrayers().forEach { (_, time) ->
-            Text(
-                text = time,
-                style = textStyle,
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center
-            )
         }
     }
 }
