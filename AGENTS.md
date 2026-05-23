@@ -441,6 +441,7 @@ wear/
 - **Ham Zaman Damgası**: Geri sayım süreleri için telefon arayüzü ve Glance widget arayüzü ortak tek bir ham **Epoch Milisaniye Zaman Damgası** (`targetPrayerTimeInMillis` / `targetEpochMillis`) kullanır. Pre-formatted string gönderimi yapılmaz.
 - **Glance Anlık Güncelleme**: DataStore veya veri değişikliklerinde anlık yansıma için `NamazWidgetUpdater` tüm aktif widget'ları (`GlanceId`'lerini alarak) `NamazWidget().update(context, glanceId)` ile anında günceller.
 - **Widget Chronometer Tasarımı**: Native `Chronometer` bileşeni `12sp` boyutunda ve `sans-serif-medium` ağırlığında Material 3 standartlarında tasarlanmıştır. Format parametresi üzerinden dile göre `%s kaldı` veya `%s bitiyor` şeklinde tek satırlık hap (pill) tasarıma dönüştürülmüştür.
+- **Geçiş Alarmları (Exact Alarm)**: Vakit geçiş anlarında Glance widget'ın kendini yeniden derleyerek yeni hedefe göre (akşam vb.) chronometer'ı sıfırlayabilmesi için `AlarmManager.setExactAndAllowWhileIdle()` ile ham vakit geçiş milisaniyesinde (`targetEpochMillis`) `co.gorkem.namaz.ACTION_PRAYER_TIME_TRANSITION` yayını tetiklenir. Her yeni alarm kurulduğunda eski alarm iptal edilir. Android 12+ izin uyumluluğu (`canScheduleExactAlarms`) kontrol edilerek hata toleranslı inexact alarm (`setAndAllowWhileIdle`) fallback'i mevcuttur. Yalnızca günde 5-6 kez çalışarak pil tüketmez.
 
 ### Navigate
 - `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)

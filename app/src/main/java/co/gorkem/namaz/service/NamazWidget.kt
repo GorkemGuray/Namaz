@@ -1,9 +1,13 @@
 package co.gorkem.namaz.service
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.SystemClock
+import android.util.Log
 import android.widget.RemoteViews
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.Composable
@@ -193,6 +197,10 @@ class NamazWidget : GlanceAppWidget() {
                 ) { AppThemeSelection.EMERALD_OASIS }
 
                 val widgetColors = themeToColorProviders(appTheme)
+
+                state.targetEpochMillis?.let { targetEpoch ->
+                    schedulePrayerTransitionAlarm(ctx, targetEpoch)
+                }
 
                 GlanceTheme(colors = widgetColors) {
                     WidgetContent(state, appWidgetId)
@@ -1151,5 +1159,90 @@ class NamazWidgetSettingsAction : ActionCallback {
         } catch (e: Exception) {
             android.util.Log.e("NamazWidgetSettingsAction", "Failed to start settings activity", e)
         }
+    }
+}
+
+private fun schedulePrayerTransitionAlarm(context: Context, targetEpochMillis: Long) {
+    if (targetEpochMillis <= System.currentTimeMillis()) return
+
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+
+    val intent = Intent(context, NamazWidgetReceiver::class.java).apply {
+        action = NamazWidgetReceiver.ACTION_PRAYER_TIME_TRANSITION
+    }
+
+    val pendingIntent = PendingIntent.getBroadcast(
+        context,
+        9002,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    // Safely cancel the previous transition alarm
+    alarmManager.cancel(pendingIntent)
+
+    val canScheduleExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        try {
+            alarmManager.canScheduleExactAlarms()
+        } catch (e: Exception) {
+            false
+        }
+    } else {
+        true
+    }
+
+    try {
+        if (canScheduleExact) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    targetEpochMillis,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    targetEpochMillis,
+                    pendingIntent
+                )
+            }
+            Log.d("NamazWidget", "Scheduled exact transition alarm at $targetEpochMillis")
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    targetEpochMillis,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    targetEpochMillis,
+                    pendingIntent
+                )
+            }
+            Log.d("NamazWidget", "Scheduled inexact fallback alarm at $targetEpochMillis")
+        }
+    } catch (e: SecurityException) {
+        Log.e("NamazWidget", "SecurityException scheduling exact alarm, falling back to inexact", e)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    targetEpochMillis,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    targetEpochMillis,
+                    pendingIntent
+                )
+            }
+        } catch (e2: Exception) {
+            Log.e("NamazWidget", "Failed to schedule inexact fallback alarm", e2)
+        }
+    } catch (e: Exception) {
+        Log.e("NamazWidget", "Failed to schedule transition alarm", e)
     }
 }
