@@ -48,6 +48,22 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import co.gorkem.namaz.LocaleManager
 import co.gorkem.namaz.MainActivity
 import co.gorkem.namaz.R
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextAlign
+import co.gorkem.namaz.util.NotificationPermissionHelper
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +72,100 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val preferences by viewModel.preferences.collectAsState()
+
+    val context = LocalContext.current
+    var showRationaleDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+
+    val isSystemPermissionGranted = remember(preferences.notificationsEnabled) {
+        NotificationPermissionHelper.checkNotificationPermission(context)
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.setNotificationPermissionRequested(true)
+        if (isGranted) {
+            viewModel.setNotificationsEnabled(true)
+        } else {
+            viewModel.setNotificationsEnabled(false)
+            val shouldShowRationale = NotificationPermissionHelper.shouldShowRationale(context)
+            if (shouldShowRationale) {
+                showRationaleDialog = true
+            } else {
+                showSettingsDialog = true
+            }
+        }
+    }
+
+    val handleNotificationToggle: (Boolean) -> Unit = { enabled ->
+        if (enabled) {
+            val systemGranted = NotificationPermissionHelper.checkNotificationPermission(context)
+            if (systemGranted) {
+                viewModel.setNotificationsEnabled(true)
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (!preferences.notificationPermissionRequested) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        val shouldShowRationale = NotificationPermissionHelper.shouldShowRationale(context)
+                        if (shouldShowRationale) {
+                            showRationaleDialog = true
+                        } else {
+                            showSettingsDialog = true
+                        }
+                    }
+                } else {
+                    viewModel.setNotificationsEnabled(true)
+                }
+            }
+        } else {
+            viewModel.setNotificationsEnabled(false)
+        }
+    }
+
+    LaunchedEffect(preferences.notificationsEnabled, isSystemPermissionGranted) {
+        if (preferences.notificationsEnabled && !isSystemPermissionGranted) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (!preferences.notificationPermissionRequested) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    val shouldShowRationale = NotificationPermissionHelper.shouldShowRationale(context)
+                    if (shouldShowRationale) {
+                        showRationaleDialog = true
+                    } else {
+                        showSettingsDialog = true
+                    }
+                }
+            }
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val systemGranted = NotificationPermissionHelper.checkNotificationPermission(context)
+                if (systemGranted) {
+                    if (!preferences.notificationsEnabled) {
+                        viewModel.setNotificationsEnabled(true)
+                    }
+                    showRationaleDialog = false
+                    showSettingsDialog = false
+                } else {
+                    if (showSettingsDialog || showRationaleDialog) {
+                        showRationaleDialog = false
+                        showSettingsDialog = false
+                        viewModel.setNotificationsEnabled(false)
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
@@ -105,7 +215,7 @@ fun SettingsScreen(
                     trailingContent = {
                         Switch(
                             checked = preferences.notificationsEnabled,
-                            onCheckedChange = { viewModel.setNotificationsEnabled(it) }
+                            onCheckedChange = handleNotificationToggle
                         )
                     },
                     colors = ListItemDefaults.colors(
@@ -465,6 +575,133 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showRationaleDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showRationaleDialog = false 
+                viewModel.setNotificationsEnabled(false)
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Notifications,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.notification_permission_rationale_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.notification_permission_rationale_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRationaleDialog = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.notification_permission_grant),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRationaleDialog = false
+                        viewModel.setNotificationsEnabled(false)
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.notification_permission_cancel),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            iconContentColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    if (showSettingsDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showSettingsDialog = false 
+                viewModel.setNotificationsEnabled(false)
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Notifications,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.notification_permission_settings_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.notification_permission_settings_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSettingsDialog = false
+                        viewModel.setNotificationsEnabled(false)
+                        NotificationPermissionHelper.openAppSettings(context)
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.notification_permission_settings_action),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showSettingsDialog = false
+                        viewModel.setNotificationsEnabled(false)
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.notification_permission_cancel),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            iconContentColor = MaterialTheme.colorScheme.error,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

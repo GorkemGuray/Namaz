@@ -182,4 +182,15 @@
     <string name="theme_sapphire_night">Sapphire Night</string>
     <string name="theme_amber_sands">Amber Sands</string>
     <string name="theme_monochrome_platinum">Monochrome Platinum</string>
+
+    <!-- Notification Permission Rationale -->
+    <string name="notification_permission_rationale_title">Notification Permission Required</string>
+    <string name="notification_permission_rationale_desc">To notify you exactly at prayer times so you never miss a salah, system notification access is required.</string>
+    <string name="notification_permission_grant">Grant Permission</string>
+    <string name="notification_permission_cancel">Cancel</string>
+
+    <!-- Notification Permission Settings -->
+    <string name="notification_permission_settings_title">Notification Permission Disabled</string>
+    <string name="notification_permission_settings_desc">You enabled in-app notifications, but system notifications are disabled. To receive prayer alerts, please manually enable notifications in the system settings.</string>
+    <string name="notification_permission_settings_action">Open Settings</string>
 </resources>

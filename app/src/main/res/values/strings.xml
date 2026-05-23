@@ -182,4 +182,15 @@
     <string name="theme_sapphire_night">Sapphire Night</string>
     <string name="theme_amber_sands">Amber Sands</string>
     <string name="theme_monochrome_platinum">Monochrome Platinum</string>
+
+    <!-- Notification Permission Rationale -->
+    <string name="notification_permission_rationale_title">Bildirim İzni Gerekli</string>
+    <string name="notification_permission_rationale_desc">Namaz vakitlerini kaçırmamanız için ezan vakitlerinde sizi tam zamanında bilgilendirebilmemiz adına sistem bildirim izni gerekmektedir.</string>
+    <string name="notification_permission_grant">İzin Ver</string>
+    <string name="notification_permission_cancel">İptal</string>
+
+    <!-- Notification Permission Settings -->
+    <string name="notification_permission_settings_title">Bildirim İzni Devre Dışı</string>
+    <string name="notification_permission_settings_desc">Uygulama içi bildirimleri etkinleştirdiniz ancak sistem bildirim izni kapalı. Vakit bildirimlerini alabilmek için lütfen cihaz ayarlarından bildirim iznini etkinleştirin.</string>
+    <string name="notification_permission_settings_action">Ayarları Aç</string>
 </resources>

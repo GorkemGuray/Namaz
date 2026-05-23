@@ -22,6 +22,9 @@ import co.gorkem.namaz.service.WearPrayerData
 import co.gorkem.namaz.service.WearPrayerItem
 import co.gorkem.namaz.service.WearSyncManager
 import co.gorkem.namaz.util.DateTimeUtils
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import co.gorkem.namaz.util.NotificationPermissionHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -43,7 +46,8 @@ class HomeViewModel @Inject constructor(
     private val notificationScheduler: PrayerNotificationScheduler,
     private val wearSyncManager: WearSyncManager,
     private val preferencesRepository: UserPreferencesRepository,
-    private val prayerTimeRepo: PrayerTimeRepositoryImpl
+    private val prayerTimeRepo: PrayerTimeRepositoryImpl,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _prayerTimes = MutableStateFlow<List<PrayerTime>>(emptyList())
@@ -80,6 +84,13 @@ class HomeViewModel @Inject constructor(
             var lastNotificationsEnabled: Boolean? = null
             var lastNotificationMinutesBefore: Int? = null
             preferencesRepository.preferences.collect { prefs ->
+                // Silently align toggle with system permission if previously requested and enabled, but now system permission is denied
+                if (prefs.notificationsEnabled && prefs.notificationPermissionRequested &&
+                    !NotificationPermissionHelper.checkNotificationPermission(context)) {
+                    preferencesRepository.setNotificationsEnabled(false)
+                    return@collect
+                }
+
                 val notificationsEnabledChanged = lastNotificationsEnabled != null && prefs.notificationsEnabled != lastNotificationsEnabled
                 val notificationMinutesBeforeChanged = lastNotificationMinutesBefore != null && prefs.notificationMinutesBefore != lastNotificationMinutesBefore
 

@@ -26,6 +26,7 @@ data class RecentCity(
 
 data class UserPreferences(
     val notificationsEnabled: Boolean = true,
+    val notificationPermissionRequested: Boolean = false,
     val notificationMinutesBefore: Int = 15,
     val calculationMethod: Int = 13,
     val school: Int = 0,
@@ -81,6 +82,7 @@ class UserPreferencesRepository @Inject constructor(
 
     companion object Keys {
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        val NOTIFICATION_PERMISSION_REQUESTED = booleanPreferencesKey("notification_permission_requested")
         val NOTIFICATION_MINUTES_BEFORE = intPreferencesKey("notification_minutes_before")
         val CALCULATION_METHOD = intPreferencesKey("calculation_method")
         val SCHOOL = intPreferencesKey("school")
@@ -115,6 +117,7 @@ class UserPreferencesRepository @Inject constructor(
 
         UserPreferences(
             notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
+            notificationPermissionRequested = prefs[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
             notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
             calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
             school = prefs[SCHOOL] ?: 0,
@@ -140,6 +143,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[NOTIFICATIONS_ENABLED] = enabled }
+    }
+
+    suspend fun setNotificationPermissionRequested(requested: Boolean) {
+        dataStore.edit { prefs -> prefs[NOTIFICATION_PERMISSION_REQUESTED] = requested }
     }
 
     suspend fun setNotificationMinutesBefore(minutes: Int) {

@@ -48,6 +48,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setNotificationPermissionRequested(requested: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setNotificationPermissionRequested(requested)
+        }
+    }
+
     fun setNotificationMinutesBefore(minutes: Int) {
         viewModelScope.launch {
             preferencesRepository.setNotificationMinutesBefore(minutes)
