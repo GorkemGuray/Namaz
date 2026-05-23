@@ -42,9 +42,10 @@ fun CountdownTimer(
     val currentOnFinished by rememberUpdatedState(onCountdownFinished)
     LaunchedEffect(nextPrayer.targetPrayerTimeInMillis) {
         while (true) {
-            val remaining = ((nextPrayer.targetPrayerTimeInMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+            val nowWall = System.currentTimeMillis()
+            val remaining = ((nextPrayer.targetPrayerTimeInMillis - nowWall) / 1000).coerceAtLeast(0)
             remainingSeconds = remaining
-            if (remaining <= 0) {
+            if (nowWall >= nextPrayer.targetPrayerTimeInMillis + 1200) {
                 currentOnFinished()
                 break
             }
