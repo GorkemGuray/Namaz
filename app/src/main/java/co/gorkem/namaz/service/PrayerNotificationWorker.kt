@@ -34,6 +34,8 @@ class PrayerNotificationWorker @AssistedInject constructor(
             notificationId = notificationId
         )
 
+        NamazWidgetUpdater.update(applicationContext)
+
         return Result.success()
     }
 }

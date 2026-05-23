@@ -23,6 +23,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
+import co.gorkem.namaz.service.NamazWidgetUpdater
+
 
 @Singleton
 class PrayerTimeRepositoryImpl @Inject constructor(
@@ -77,6 +79,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 prayerTimeDao.insertAll(prayerTimes.map {
                     it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
+                NamazWidgetUpdater.update(context)
                 emit(NetworkResult.Success(prayerTimes))
             } else if (cached.isEmpty()) {
                 val fallbackTimes = calculateLocally(location, month, year, method, school)
@@ -84,6 +87,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                     prayerTimeDao.insertAll(fallbackTimes.map {
                         it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                     })
+                    NamazWidgetUpdater.update(context)
                     emit(NetworkResult.Success(fallbackTimes))
                 } else {
                     emit(NetworkResult.Error("Vakitler alınamadı"))
@@ -96,6 +100,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                     prayerTimeDao.insertAll(fallbackTimes.map {
                         it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                     })
+                    NamazWidgetUpdater.update(context)
                     emit(NetworkResult.Success(fallbackTimes))
                 } else {
                     emit(NetworkResult.Error(e.message ?: "Bilinmeyen hata"))
@@ -278,6 +283,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 prayerTimeDao.insertAll(prayerTimes.map {
                     it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
+                NamazWidgetUpdater.update(context)
                 Result.success(prayerTimes)
             } else {
                 val fallbackTimes = calculateLocally(location, month, year, method, school)
@@ -285,6 +291,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                     prayerTimeDao.insertAll(fallbackTimes.map {
                         it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                     })
+                    NamazWidgetUpdater.update(context)
                     Result.success(fallbackTimes)
                 } else {
                     Result.failure(Exception("Vakitler alınamadı"))
@@ -297,6 +304,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 prayerTimeDao.insertAll(fallbackTimes.map {
                     it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
+                NamazWidgetUpdater.update(context)
                 Result.success(fallbackTimes)
             } else {
                 Result.failure(e)

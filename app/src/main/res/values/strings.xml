@@ -157,4 +157,23 @@
     <string name="default_city">İstanbul</string>
     <string name="default_district">Fatih</string>
     <string name="default_timezone">Europe/Istanbul</string>
+
+    <!-- Widget -->
+    <string name="widget_name">Namaz Vakitleri Widget</string>
+    <string name="widget_desc">Namaz vakitlerini ve kalan süreyi ana ekranınızda görün.</string>
+
+    <!-- Widget Configuration -->
+    <string name="widget_settings_title">Widget Ayarları</string>
+    <string name="widget_settings_desc">Ana ekran widget\'ınızı kişiselleştirin.</string>
+    <string name="widget_setting_theme">Widget Teması</string>
+    <string name="widget_theme_app">Uygulama Teması</string>
+    <string name="widget_theme_app_desc">Uygulamanın yeşil/mavi manevi renk paletini kullanır.</string>
+    <string name="widget_theme_glass">Yarı Saydam Cam Efekti</string>
+    <string name="widget_theme_glass_desc">Modern ve şık yarı saydam cam tasarımı.</string>
+    <string name="widget_theme_dynamic">Dinamik Renkler</string>
+    <string name="widget_theme_dynamic_desc">Duvar kağıdınıza göre değişen Material You renkleri (Android 12+).</string>
+    <string name="widget_setting_layout">Widget Arayüzü</string>
+    <string name="widget_layout_detailed">Detaylı (Sıradaki Vakit + Bugünün Vakitleri)</string>
+    <string name="widget_layout_compact">Sade (Sadece Sıradaki Vakit ve Geri Sayım)</string>
+    <string name="widget_settings_save">Ayarları Kaydet</string>
 </resources>

@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import co.gorkem.namaz.service.NamazWidgetUpdater
+
 
 data class RecentCity(
     val name: String,
@@ -118,10 +120,12 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setCalculationMethod(method: Int) {
         dataStore.edit { prefs -> prefs[CALCULATION_METHOD] = method }
+        updateWidget()
     }
 
     suspend fun setSchool(school: Int) {
         dataStore.edit { prefs -> prefs[SCHOOL] = school }
+        updateWidget()
     }
 
     suspend fun setUseLocalCalculation(enabled: Boolean) {
@@ -133,6 +137,7 @@ class UserPreferencesRepository @Inject constructor(
                 prefs[DATA_SOURCE] = 0
             }
         }
+        updateWidget()
     }
 
     suspend fun setDataSource(source: Int) {
@@ -140,10 +145,12 @@ class UserPreferencesRepository @Inject constructor(
             prefs[DATA_SOURCE] = source
             prefs[USE_LOCAL_CALCULATION] = (source == 2)
         }
+        updateWidget()
     }
 
     suspend fun setLanguage(language: String) {
         dataStore.edit { prefs -> prefs[LANGUAGE] = language }
+        updateWidget()
     }
 
     suspend fun setManualCity(
@@ -161,6 +168,7 @@ class UserPreferencesRepository @Inject constructor(
             prefs[MANUAL_LONGITUDE] = longitude.toString()
         }
         addRecentCity(RecentCity(name, latitude, longitude, districtId))
+        updateWidget()
     }
 
     suspend fun clearManualCity() {
@@ -171,6 +179,7 @@ class UserPreferencesRepository @Inject constructor(
             prefs.remove(MANUAL_LATITUDE)
             prefs.remove(MANUAL_LONGITUDE)
         }
+        updateWidget()
     }
 
     private suspend fun addRecentCity(city: RecentCity) {
@@ -211,11 +220,17 @@ class UserPreferencesRepository @Inject constructor(
             prefs[LAST_AUTO_DISTRICT_ID] = districtId
             prefs[LAST_AUTO_TIMEZONE] = timezone
         }
+        updateWidget()
     }
 
     suspend fun updateManualTimezone(timezone: String) {
         dataStore.edit { prefs ->
             prefs[MANUAL_TIMEZONE] = timezone
         }
+        updateWidget()
+    }
+
+    private fun updateWidget() {
+        NamazWidgetUpdater.update(context)
     }
 }

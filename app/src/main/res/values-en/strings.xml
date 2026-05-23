@@ -157,4 +157,23 @@
     <string name="default_city">Istanbul</string>
     <string name="default_district">Fatih</string>
     <string name="default_timezone">Europe/Istanbul</string>
+
+    <!-- Widget -->
+    <string name="widget_name">Prayer Times Widget</string>
+    <string name="widget_desc">View prayer times and remaining time on your home screen.</string>
+
+    <!-- Widget Configuration -->
+    <string name="widget_settings_title">Widget Settings</string>
+    <string name="widget_settings_desc">Customize your home screen widget.</string>
+    <string name="widget_setting_theme">Widget Theme</string>
+    <string name="widget_theme_app">App Theme</string>
+    <string name="widget_theme_app_desc">Uses the application\'s spiritual green/blue/gold color palette.</string>
+    <string name="widget_theme_glass">Glassmorphism</string>
+    <string name="widget_theme_glass_desc">Sleek and modern semi-transparent background overlay.</string>
+    <string name="widget_theme_dynamic">Dynamic Colors</string>
+    <string name="widget_theme_dynamic_desc">Material You colors that change based on your wallpaper (Android 12+).</string>
+    <string name="widget_setting_layout">Widget Layout</string>
+    <string name="widget_layout_detailed">Detailed (Next Prayer + Today\'s Times)</string>
+    <string name="widget_layout_compact">Compact (Next Prayer &amp; Countdown Only)</string>
+    <string name="widget_settings_save">Save Settings</string>
 </resources>

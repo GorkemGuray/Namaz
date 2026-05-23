@@ -24,7 +24,7 @@ import co.gorkem.namaz.domain.model.PrayerName
 
 // ========== Fallback Color Schemes ==========
 
-private val LightColorScheme = lightColorScheme(
+internal val LightColorScheme = lightColorScheme(
     primary = LightPrimary,
     onPrimary = LightOnPrimary,
     primaryContainer = LightPrimaryContainer,
@@ -63,7 +63,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceContainerHighest = LightSurfaceContainerHighest
 )
 
-private val DarkColorScheme = darkColorScheme(
+internal val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
     onPrimary = DarkOnPrimary,
     primaryContainer = DarkPrimaryContainer,
