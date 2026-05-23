@@ -133,6 +133,7 @@ data class NamazWidgetState(
     val nextPrayerName: PrayerName?,
     val nextPrayerTime: String?,
     val remainingMinutes: Long?,
+    val targetEpochMillis: Long?,
     val currentPrayerName: PrayerName?,
     val layoutPreference: Int,
     val isKerahat: Boolean = false,
@@ -489,6 +490,13 @@ private suspend fun loadWidgetState(
                     val dashboard = getPrayerDashboardUseCase.execute(todayPrayer, tomorrowPrayer)
                     val kerahatInfo = dashboard?.kerahatInfo
 
+                    val targetEpoch = if (kerahatInfo?.isCurrentlyKerahat == true) {
+                        val targetDateTime = LocalDateTime.of(today, kerahatInfo.endTime)
+                        targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    } else {
+                        nextInfo?.targetPrayerTimeInMillis
+                    }
+
                     widgetState = NamazWidgetState(
                         cityName = if (location.districtName.isNotEmpty()) location.districtName else location.cityName,
                         language = language,
@@ -496,6 +504,7 @@ private suspend fun loadWidgetState(
                         nextPrayerName = nextPrayerName,
                         nextPrayerTime = nextInfo?.prayerTime,
                         remainingMinutes = nextInfo?.remainingMinutes,
+                        targetEpochMillis = targetEpoch,
                         currentPrayerName = currentPrayerName,
                         layoutPreference = layoutPreference,
                         isKerahat = kerahatInfo?.isCurrentlyKerahat == true,
@@ -510,6 +519,7 @@ private suspend fun loadWidgetState(
                         nextPrayerName = null,
                         nextPrayerTime = null,
                         remainingMinutes = null,
+                        targetEpochMillis = null,
                         currentPrayerName = null,
                         layoutPreference = layoutPreference,
                         error = "Bugünün vakitleri bulunamadı"
@@ -524,6 +534,7 @@ private suspend fun loadWidgetState(
                     nextPrayerName = null,
                     nextPrayerTime = null,
                     remainingMinutes = null,
+                    targetEpochMillis = null,
                     currentPrayerName = null,
                     layoutPreference = layoutPreference,
                     error = result.message
@@ -541,6 +552,7 @@ private suspend fun loadWidgetState(
             nextPrayerName = null,
             nextPrayerTime = null,
             remainingMinutes = null,
+            targetEpochMillis = null,
             currentPrayerName = null,
             layoutPreference = layoutPreference,
             error = "Yükleniyor..."
@@ -553,6 +565,7 @@ private suspend fun loadWidgetState(
             nextPrayerName = null,
             nextPrayerTime = null,
             remainingMinutes = null,
+            targetEpochMillis = null,
             currentPrayerName = null,
             layoutPreference = layoutPreference,
             error = e.localizedMessage ?: "Bilinmeyen hata"
@@ -611,11 +624,7 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
         return
     }
 
-    val targetEpochMillis = if (state.isKerahat && state.kerahatRemainingMinutes > 0) {
-        System.currentTimeMillis() + (state.kerahatRemainingMinutes * 60 * 1000)
-    } else {
-        computePrayerTargetEpoch(nextPrayerTime)
-    }
+    val targetEpochMillis = state.targetEpochMillis ?: 0L
 
     val remainingLabel = getRemainingLabel(state.language)
 
@@ -719,22 +728,22 @@ private fun CompactLayout(
         ""
     }
 
-    val chronometerRemoteViews = remember(targetEpochMillis, badgeOnBgColor) {
+    val chronometerFormat = if (isKerahatActive) {
+        if (language == "en") "%s $kerahatLabel ends" else "%s $kerahatLabel bitiyor"
+    } else {
+        if (language == "en") "%s left" else "%s kaldı"
+    }
+
+    val chronometerRemoteViews = remember(targetEpochMillis, badgeOnBgColor, chronometerFormat) {
         val rv = RemoteViews(context.packageName, R.layout.widget_chronometer)
         val nowElapsed = SystemClock.elapsedRealtime()
         val nowWall = System.currentTimeMillis()
         val remainingWall = maxOf(targetEpochMillis - nowWall, 0)
         val targetElapsed = nowElapsed + remainingWall
-        rv.setChronometer(R.id.widget_chronometer, targetElapsed, "%s", true)
+        rv.setChronometer(R.id.widget_chronometer, targetElapsed, chronometerFormat, true)
         rv.setChronometerCountDown(R.id.widget_chronometer, true)
         rv.setTextColor(R.id.widget_chronometer, badgeOnBgColor.getColor(context).toArgb())
         rv
-    }
-
-    val labelText = if (isKerahatActive) {
-        "$kerahatLabel bitiyor"
-    } else {
-        remainingLabel
     }
 
     Column(
@@ -808,23 +817,11 @@ private fun CompactLayout(
                 Box(
                     modifier = GlanceModifier
                         .background(badgeBg)
-                        .cornerRadius(16.dp)
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .cornerRadius(12.dp)
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        AndroidRemoteViews(chronometerRemoteViews)
-                        Text(
-                            text = labelText,
-                            style = TextStyle(
-                                color = badgeOnBgColor,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            maxLines = 1
-                        )
-                    }
+                    AndroidRemoteViews(chronometerRemoteViews)
                 }
             }
         } else {
@@ -870,23 +867,11 @@ private fun CompactLayout(
                     Box(
                         modifier = GlanceModifier
                             .background(badgeBg)
-                            .cornerRadius(16.dp)
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                            .cornerRadius(12.dp)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            AndroidRemoteViews(chronometerRemoteViews)
-                            Text(
-                                text = labelText,
-                                style = TextStyle(
-                                    color = badgeOnBgColor,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                maxLines = 1
-                            )
-                        }
+                        AndroidRemoteViews(chronometerRemoteViews)
                     }
                 }
             }
@@ -926,22 +911,22 @@ private fun ExpandedLayout(
     val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
     val badgeOnBgColor = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
 
-    val chronometerRemoteViews = remember(targetEpochMillis, badgeOnBgColor) {
+    val chronometerFormat = if (isKerahatActive) {
+        if (language == "en") "%s $kerahatLabel ends" else "%s $kerahatLabel bitiyor"
+    } else {
+        if (language == "en") "%s left" else "%s kaldı"
+    }
+
+    val chronometerRemoteViews = remember(targetEpochMillis, badgeOnBgColor, chronometerFormat) {
         val rv = RemoteViews(context.packageName, R.layout.widget_chronometer)
         val nowElapsed = SystemClock.elapsedRealtime()
         val nowWall = System.currentTimeMillis()
         val remainingWall = maxOf(targetEpochMillis - nowWall, 0)
         val targetElapsed = nowElapsed + remainingWall
-        rv.setChronometer(R.id.widget_chronometer, targetElapsed, "%s", true)
+        rv.setChronometer(R.id.widget_chronometer, targetElapsed, chronometerFormat, true)
         rv.setChronometerCountDown(R.id.widget_chronometer, true)
         rv.setTextColor(R.id.widget_chronometer, badgeOnBgColor.getColor(context).toArgb())
         rv
-    }
-
-    val labelText = if (isKerahatActive) {
-        "$kerahatLabel bitiyor"
-    } else {
-        remainingLabel
     }
 
     Column(
@@ -1014,23 +999,11 @@ private fun ExpandedLayout(
             Box(
                 modifier = GlanceModifier
                     .background(badgeBg)
-                    .cornerRadius(16.dp)
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                    .cornerRadius(12.dp)
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    AndroidRemoteViews(chronometerRemoteViews)
-                    Text(
-                        text = labelText,
-                        style = TextStyle(
-                            color = badgeOnBgColor,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        maxLines = 1
-                    )
-                }
+                AndroidRemoteViews(chronometerRemoteViews)
             }
         }
 

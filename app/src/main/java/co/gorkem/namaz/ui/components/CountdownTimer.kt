@@ -35,24 +35,11 @@ fun CountdownTimer(
     nextPrayer: GetNextPrayerUseCase.NextPrayerInfo,
     modifier: Modifier = Modifier
 ) {
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var remainingSeconds by remember { mutableLongStateOf(0L) }
 
-    LaunchedEffect(nextPrayer) {
-        val now = LocalTime.now()
-        val prayerTime = LocalTime.parse(nextPrayer.prayerTime, timeFormatter)
-        val today = LocalDate.now()
-
-        val targetDateTime = if (prayerTime.isAfter(now)) {
-            LocalDateTime.of(today, prayerTime)
-        } else {
-            LocalDateTime.of(today.plusDays(1), prayerTime)
-        }
-
-        val targetMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
+    LaunchedEffect(nextPrayer.targetPrayerTimeInMillis) {
         while (true) {
-            val remaining = ((targetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+            val remaining = ((nextPrayer.targetPrayerTimeInMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
             remainingSeconds = remaining
             delay(1000L)
         }

@@ -437,5 +437,10 @@ wear/
 - Konum isimlerinin çok uzun olması durumunda `PrayerHeroCard` arayüzünün kayması ve bozulması engellenmiş, metin boyutları ve padding değerleri duyarlı hale getirilmiştir.
 - Nominatim API'sinden gelen karmaşık ve çok uzun adres bilgileri sadeleştirilmiştir (ülke, eyalet vb. fazla detaylar elenerek sadece "Şehir, İlçe" veya "Şehir, Ülke" formatı korunmuştur).
 
+### Geri Sayım ve Widget Senkronizasyonu (Single Source of Truth)
+- **Ham Zaman Damgası**: Geri sayım süreleri için telefon arayüzü ve Glance widget arayüzü ortak tek bir ham **Epoch Milisaniye Zaman Damgası** (`targetPrayerTimeInMillis` / `targetEpochMillis`) kullanır. Pre-formatted string gönderimi yapılmaz.
+- **Glance Anlık Güncelleme**: DataStore veya veri değişikliklerinde anlık yansıma için `NamazWidgetUpdater` tüm aktif widget'ları (`GlanceId`'lerini alarak) `NamazWidget().update(context, glanceId)` ile anında günceller.
+- **Widget Chronometer Tasarımı**: Native `Chronometer` bileşeni `12sp` boyutunda ve `sans-serif-medium` ağırlığında Material 3 standartlarında tasarlanmıştır. Format parametresi üzerinden dile göre `%s kaldı` veya `%s bitiyor` şeklinde tek satırlık hap (pill) tasarıma dönüştürülmüştür.
+
 ### Navigate
 - `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)

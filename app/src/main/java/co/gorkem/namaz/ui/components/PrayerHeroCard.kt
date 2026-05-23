@@ -206,7 +206,7 @@ fun PrayerHeroCard(
                 }
 
                 CountdownDisplay(
-                    prayerTime = dashboard.nextPrayer.prayerTime,
+                    targetPrayerTimeInMillis = dashboard.nextPrayer.targetPrayerTimeInMillis,
                     textColor = Color.White,
                     textAlign = TextAlign.End
                 )
@@ -260,29 +260,16 @@ private fun HeroLocationChip(
 
 @Composable
 fun CountdownDisplay(
-    prayerTime: String,
+    targetPrayerTimeInMillis: Long,
     textColor: Color,
     modifier: Modifier = Modifier,
     textAlign: TextAlign = TextAlign.Center
 ) {
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var remainingSeconds by remember { mutableLongStateOf(0L) }
 
-    LaunchedEffect(prayerTime) {
-        val now = LocalTime.now()
-        val parsedTime = LocalTime.parse(prayerTime, timeFormatter)
-        val today = LocalDate.now()
-
-        val targetDateTime = if (parsedTime.isAfter(now)) {
-            LocalDateTime.of(today, parsedTime)
-        } else {
-            LocalDateTime.of(today.plusDays(1), parsedTime)
-        }
-
-        val targetMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
+    LaunchedEffect(targetPrayerTimeInMillis) {
         while (true) {
-            val remaining = ((targetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+            val remaining = ((targetPrayerTimeInMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
             remainingSeconds = remaining
             delay(1000L)
         }
@@ -304,8 +291,8 @@ fun CountdownDisplay(
             fontFeatureSettings = "tnum"
         ),
         color = textColor,
-        textAlign = textAlign,
-        modifier = modifier
+        textAlign = TextAlign.Center,
+        modifier = modifier.widthIn(min = 140.dp)
     )
 
     val subLabel = when {
@@ -317,7 +304,7 @@ fun CountdownDisplay(
         text = subLabel,
         style = MaterialTheme.typography.labelSmall,
         color = textColor.copy(alpha = 0.6f),
-        textAlign = textAlign,
+        textAlign = TextAlign.End,
         modifier = Modifier.padding(top = 2.dp)
     )
 }
