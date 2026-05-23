@@ -3,6 +3,9 @@ package co.gorkem.namaz.service
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
+import android.widget.RemoteViews
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
@@ -21,6 +24,7 @@ import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.background
 import androidx.glance.appwidget.cornerRadius
@@ -107,6 +111,9 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @EntryPoint
@@ -604,7 +611,12 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
         return
     }
 
-    val remainingStr = formatRemainingTime(remainingMinutes, state.language)
+    val targetEpochMillis = if (state.isKerahat && state.kerahatRemainingMinutes > 0) {
+        System.currentTimeMillis() + (state.kerahatRemainingMinutes * 60 * 1000)
+    } else {
+        computePrayerTargetEpoch(nextPrayerTime)
+    }
+
     val remainingLabel = getRemainingLabel(state.language)
 
     val kerahatRemainingStr = if (state.isKerahat && state.kerahatRemainingMinutes > 0) {
@@ -632,23 +644,22 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 cityName = state.cityName,
                 nextPrayerName = nextPrayerName,
                 nextPrayerTime = nextPrayerTime,
-                remainingStr = remainingStr,
-                remainingLabel = remainingLabel,
+                targetEpochMillis = targetEpochMillis,
                 language = state.language,
                 onSurfaceColor = onSurfaceColor,
                 onSurfaceVariantColor = onSurfaceVariantColor,
                 settingsAction = settingsAction,
                 isKerahat = state.isKerahat,
                 kerahatPrayerName = state.kerahatPrayerName,
-                kerahatRemainingStr = kerahatRemainingStr
+                kerahatRemainingStr = kerahatRemainingStr,
+                remainingLabel = remainingLabel
             )
         } else {
             ExpandedLayout(
                 cityName = state.cityName,
                 nextPrayerName = nextPrayerName,
                 nextPrayerTime = nextPrayerTime,
-                remainingStr = remainingStr,
-                remainingLabel = remainingLabel,
+                targetEpochMillis = targetEpochMillis,
                 todayPrayerTimes = state.todayPrayerTimes,
                 currentPrayerName = state.currentPrayerName,
                 language = state.language,
@@ -657,10 +668,23 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 settingsAction = settingsAction,
                 isKerahat = state.isKerahat,
                 kerahatPrayerName = state.kerahatPrayerName,
-                kerahatRemainingStr = kerahatRemainingStr
+                kerahatRemainingStr = kerahatRemainingStr,
+                remainingLabel = remainingLabel
             )
         }
     }
+}
+
+private fun computePrayerTargetEpoch(prayerTimeStr: String): Long {
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val prayerLocalTime = LocalTime.parse(prayerTimeStr, timeFormatter)
+    val today = LocalDate.now()
+    val targetDateTime = if (prayerLocalTime.isAfter(LocalTime.now())) {
+        LocalDateTime.of(today, prayerLocalTime)
+    } else {
+        LocalDateTime.of(today.plusDays(1), prayerLocalTime)
+    }
+    return targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }
 
 @Composable
@@ -668,15 +692,15 @@ private fun CompactLayout(
     cityName: String,
     nextPrayerName: PrayerName,
     nextPrayerTime: String,
-    remainingStr: String,
-    remainingLabel: String,
+    targetEpochMillis: Long,
     language: String,
     onSurfaceColor: ColorProvider,
     onSurfaceVariantColor: ColorProvider,
     settingsAction: androidx.glance.action.Action,
     isKerahat: Boolean = false,
     kerahatPrayerName: String? = null,
-    kerahatRemainingStr: String = ""
+    kerahatRemainingStr: String = "",
+    remainingLabel: String = ""
 ) {
     val context = LocalContext.current
     val size = LocalSize.current
@@ -686,13 +710,31 @@ private fun CompactLayout(
     val cardBg = if (isKerahatActive) GlanceTheme.colors.errorContainer else GlanceTheme.colors.secondaryContainer
     val cardOnBg = if (isKerahatActive) GlanceTheme.colors.onErrorContainer else GlanceTheme.colors.onSecondaryContainer
     val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
-    val badgeOnBg = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
+    val badgeOnBgColor = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
     val isNarrow = size.width < 180.dp
 
     val kerahatLabel = if (isKerahatActive) {
         mapKerahatPrayerName(context, kerahatPrayerName!!, language)
     } else {
         ""
+    }
+
+    val chronometerRemoteViews = remember(targetEpochMillis, badgeOnBgColor) {
+        val rv = RemoteViews(context.packageName, R.layout.widget_chronometer)
+        val nowElapsed = SystemClock.elapsedRealtime()
+        val nowWall = System.currentTimeMillis()
+        val remainingWall = maxOf(targetEpochMillis - nowWall, 0)
+        val targetElapsed = nowElapsed + remainingWall
+        rv.setChronometer(R.id.widget_chronometer, targetElapsed, "%s", true)
+        rv.setChronometerCountDown(R.id.widget_chronometer, true)
+        rv.setTextColor(R.id.widget_chronometer, badgeOnBgColor.getColor(context).toArgb())
+        rv
+    }
+
+    val labelText = if (isKerahatActive) {
+        "$kerahatLabel bitiyor"
+    } else {
+        remainingLabel
     }
 
     Column(
@@ -769,15 +811,21 @@ private fun CompactLayout(
                         .cornerRadius(16.dp)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Text(
-                        text = if (isKerahatActive) "$kerahatRemainingStr $kerahatLabel bitiyor" else "$remainingStr $remainingLabel",
-                        style = TextStyle(
-                            color = badgeOnBg,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        maxLines = 1
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AndroidRemoteViews(chronometerRemoteViews)
+                        Spacer(modifier = GlanceModifier.width(3.dp))
+                        Text(
+                            text = labelText,
+                            style = TextStyle(
+                                color = badgeOnBgColor,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         } else {
@@ -826,15 +874,21 @@ private fun CompactLayout(
                             .cornerRadius(16.dp)
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text(
-                            text = if (isKerahatActive) "$kerahatRemainingStr bitiyor" else "$remainingStr $remainingLabel",
-                            style = TextStyle(
-                                color = badgeOnBg,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            maxLines = 1
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AndroidRemoteViews(chronometerRemoteViews)
+                            Spacer(modifier = GlanceModifier.width(3.dp))
+                            Text(
+                                text = labelText,
+                                style = TextStyle(
+                                    color = badgeOnBgColor,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }
@@ -847,8 +901,7 @@ private fun ExpandedLayout(
     cityName: String,
     nextPrayerName: PrayerName,
     nextPrayerTime: String,
-    remainingStr: String,
-    remainingLabel: String,
+    targetEpochMillis: Long,
     todayPrayerTimes: List<Pair<PrayerName, String>>,
     currentPrayerName: PrayerName?,
     language: String,
@@ -857,7 +910,8 @@ private fun ExpandedLayout(
     settingsAction: androidx.glance.action.Action,
     isKerahat: Boolean = false,
     kerahatPrayerName: String? = null,
-    kerahatRemainingStr: String = ""
+    kerahatRemainingStr: String = "",
+    remainingLabel: String = ""
 ) {
     val context = LocalContext.current
     val localizedPrayerName = getLocalizedString(context, nextPrayerName.nameRes, language)
@@ -867,6 +921,29 @@ private fun ExpandedLayout(
         mapKerahatPrayerName(context, kerahatPrayerName!!, language)
     } else {
         ""
+    }
+
+    val cardBg = if (isKerahatActive) GlanceTheme.colors.errorContainer else GlanceTheme.colors.secondaryContainer
+    val cardOnBg = if (isKerahatActive) GlanceTheme.colors.onErrorContainer else GlanceTheme.colors.onSecondaryContainer
+    val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
+    val badgeOnBgColor = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
+
+    val chronometerRemoteViews = remember(targetEpochMillis, badgeOnBgColor) {
+        val rv = RemoteViews(context.packageName, R.layout.widget_chronometer)
+        val nowElapsed = SystemClock.elapsedRealtime()
+        val nowWall = System.currentTimeMillis()
+        val remainingWall = maxOf(targetEpochMillis - nowWall, 0)
+        val targetElapsed = nowElapsed + remainingWall
+        rv.setChronometer(R.id.widget_chronometer, targetElapsed, "%s", true)
+        rv.setChronometerCountDown(R.id.widget_chronometer, true)
+        rv.setTextColor(R.id.widget_chronometer, badgeOnBgColor.getColor(context).toArgb())
+        rv
+    }
+
+    val labelText = if (isKerahatActive) {
+        "$kerahatLabel bitiyor"
+    } else {
+        remainingLabel
     }
 
     Column(
@@ -901,11 +978,6 @@ private fun ExpandedLayout(
         }
 
         Spacer(modifier = GlanceModifier.height(4.dp))
-
-        val cardBg = if (isKerahatActive) GlanceTheme.colors.errorContainer else GlanceTheme.colors.secondaryContainer
-        val cardOnBg = if (isKerahatActive) GlanceTheme.colors.onErrorContainer else GlanceTheme.colors.onSecondaryContainer
-        val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
-        val badgeOnBg = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
 
         Row(
             modifier = GlanceModifier
@@ -947,15 +1019,21 @@ private fun ExpandedLayout(
                     .cornerRadius(16.dp)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Text(
-                    text = if (isKerahatActive) "$kerahatRemainingStr bitiyor" else "$remainingStr $remainingLabel",
-                    style = TextStyle(
-                        color = badgeOnBg,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    maxLines = 1
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AndroidRemoteViews(chronometerRemoteViews)
+                    Spacer(modifier = GlanceModifier.width(3.dp))
+                    Text(
+                        text = labelText,
+                        style = TextStyle(
+                            color = badgeOnBgColor,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        maxLines = 1
+                    )
+                }
             }
         }
 
