@@ -53,6 +53,10 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".service.LocationPassiveReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".service.NamazWidgetConfigureActivity"
             android:exported="true">

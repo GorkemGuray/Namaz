@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.Priority
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
@@ -22,7 +23,7 @@ class LocationTracker @Inject constructor(
         if (!hasLocationPermission()) return null
 
         return suspendCancellableCoroutine { continuation ->
-            fusedLocationClient.lastLocation
+            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
                 .addOnSuccessListener { location ->
                     continuation.resume(location)
                 }
@@ -48,5 +49,23 @@ class LocationTracker @Inject constructor(
                     context,
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun registerPassiveLocationListener() {
+        if (hasLocationPermission()) {
+            val request = com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 3600000L) // 1 hour max
+                .setMinUpdateDistanceMeters(2000f) // 2km displacement
+                .build()
+            
+            val intent = android.content.Intent(context, LocationPassiveReceiver::class.java)
+            val pendingIntent = android.app.PendingIntent.getBroadcast(
+                context, 
+                0, 
+                intent, 
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+            )
+            
+            fusedLocationClient.requestLocationUpdates(request, pendingIntent)
+        }
     }
 }

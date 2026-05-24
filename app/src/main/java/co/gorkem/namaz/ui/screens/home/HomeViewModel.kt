@@ -98,9 +98,15 @@ class HomeViewModel @Inject constructor(
                 lastNotificationsEnabled = prefs.notificationsEnabled
                 lastNotificationMinutesBefore = prefs.notificationMinutesBefore
 
-                val cityKey = "${prefs.manualDistrictId},${prefs.manualLatitude},${prefs.manualLongitude},${prefs.manualCityName}"
+                val cityKey = if (prefs.manualCityName.isNotEmpty()) {
+                    "manual:${prefs.manualDistrictId},${prefs.manualCityName}"
+                } else {
+                    "auto:${prefs.lastAutoDistrictId},${prefs.lastAutoCityName}"
+                }
+                
                 val methodChanged = prefs.calculationMethod != lastMethod
                 val schoolChanged = prefs.school != lastSchool
+                
                 if (cityKey != lastCityKey || methodChanged || schoolChanged) {
                     lastCityKey = cityKey
                     lastMethod = prefs.calculationMethod
@@ -125,6 +131,7 @@ class HomeViewModel @Inject constructor(
 
     fun onLocationPermissionGranted() {
         _needsLocationPermission.value = false
+        locationTracker.registerPassiveLocationListener()
         loadWithCurrentLocation()
     }
 

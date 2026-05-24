@@ -67,9 +67,6 @@ import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
 import co.gorkem.namaz.ui.theme.AppThemeSelection
 import co.gorkem.namaz.ui.theme.AppThemeUtils
 import androidx.glance.unit.ColorProvider
-import androidx.glance.action.ActionParameters
-import androidx.glance.appwidget.action.ActionCallback
-import androidx.glance.appwidget.action.actionRunCallback
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -77,9 +74,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -358,14 +353,13 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
     val onSurfaceVariantColor = GlanceTheme.colors.onSurfaceVariant
 
     val outerBackground = GlanceTheme.colors.surface
-    val settingsAction = actionRunCallback<NamazWidgetSettingsAction>()
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(outerBackground)
             .cornerRadius(android.R.dimen.system_app_widget_background_radius)
-            .padding(12.dp)
+            .padding(8.dp)
             .clickable(actionStartActivity<MainActivity>())
     ) {
         if (size.width < 220.dp || size.height < 140.dp || state.layoutPreference == 1) {
@@ -377,7 +371,6 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 language = state.language,
                 onSurfaceColor = onSurfaceColor,
                 onSurfaceVariantColor = onSurfaceVariantColor,
-                settingsAction = settingsAction,
                 isKerahat = state.isKerahat,
                 kerahatPrayerName = state.kerahatPrayerName,
                 kerahatRemainingStr = kerahatRemainingStr,
@@ -394,7 +387,6 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 language = state.language,
                 onSurfaceColor = onSurfaceColor,
                 onSurfaceVariantColor = onSurfaceVariantColor,
-                settingsAction = settingsAction,
                 isKerahat = state.isKerahat,
                 kerahatPrayerName = state.kerahatPrayerName,
                 kerahatRemainingStr = kerahatRemainingStr,
@@ -415,7 +407,6 @@ private fun CompactLayout(
     language: String,
     onSurfaceColor: ColorProvider,
     onSurfaceVariantColor: ColorProvider,
-    settingsAction: androidx.glance.action.Action,
     isKerahat: Boolean = false,
     kerahatPrayerName: String? = null,
     kerahatRemainingStr: String = "",
@@ -430,7 +421,7 @@ private fun CompactLayout(
     val cardOnBg = if (isKerahatActive) GlanceTheme.colors.onErrorContainer else GlanceTheme.colors.onSecondaryContainer
     val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
     val badgeOnBgColor = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
-    val isNarrow = size.width < 180.dp
+    val stackVertically = size.height >= 120.dp || size.width < 220.dp
 
     val kerahatLabel = if (isKerahatActive) {
         mapKerahatPrayerName(context, kerahatPrayerName!!, language)
@@ -466,41 +457,32 @@ private fun CompactLayout(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val headerText = when {
-                isKerahatActive && !isNarrow -> "Kerahat Vakti • $cityName"
-                isKerahatActive && isNarrow -> cityName
-                isNarrow -> cityName
+                isKerahatActive && stackVertically -> cityName
+                isKerahatActive -> "Kerahat Vakti • $cityName"
+                stackVertically -> cityName
                 else -> "Namaz Vakitleri • $cityName"
             }
             Text(
                 text = headerText,
                 style = TextStyle(
                     color = if (isKerahatActive) GlanceTheme.colors.error else onSurfaceVariantColor,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                modifier = GlanceModifier.defaultWeight(),
                 maxLines = 1
-            )
-            Image(
-                provider = ImageProvider(R.drawable.ic_widget_settings),
-                contentDescription = "Settings",
-                modifier = GlanceModifier
-                    .width(18.dp)
-                    .height(18.dp)
-                    .clickable(settingsAction),
-                colorFilter = ColorFilter.tint(if (isKerahatActive) GlanceTheme.colors.error else onSurfaceVariantColor)
             )
         }
 
         Spacer(modifier = GlanceModifier.height(8.dp))
 
-        if (isNarrow) {
+        if (stackVertically) {
             Column(
                 modifier = GlanceModifier
                     .fillMaxWidth()
+                    .defaultWeight()
                     .background(cardBg)
-                    .cornerRadius(12.dp)
-                    .padding(10.dp),
+                    .cornerRadius(16.dp)
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -508,27 +490,27 @@ private fun CompactLayout(
                     text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
                     style = TextStyle(
                         color = cardOnBg,
-                        fontSize = 12.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     ),
                     maxLines = 1
                 )
-                Spacer(modifier = GlanceModifier.height(4.dp))
+                Spacer(modifier = GlanceModifier.height(6.dp))
                 Text(
                     text = nextPrayerTime,
                     style = TextStyle(
                         color = cardOnBg,
-                        fontSize = 24.sp,
+                        fontSize = 36.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     maxLines = 1
                 )
-                Spacer(modifier = GlanceModifier.height(6.dp))
+                Spacer(modifier = GlanceModifier.height(12.dp))
                 Box(
                     modifier = GlanceModifier
                         .background(badgeBg)
-                        .cornerRadius(12.dp)
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .cornerRadius(16.dp)
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     AndroidRemoteViews(chronometerRemoteViews)
@@ -538,14 +520,15 @@ private fun CompactLayout(
             Column(
                 modifier = GlanceModifier
                     .fillMaxWidth()
+                    .defaultWeight()
                     .background(cardBg)
-                    .cornerRadius(12.dp)
-                    .padding(12.dp),
+                    .cornerRadius(16.dp)
+                    .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalAlignment = Alignment.Start
             ) {
                 Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
+                    modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(
@@ -557,17 +540,17 @@ private fun CompactLayout(
                             text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
                             style = TextStyle(
                                 color = cardOnBg,
-                                fontSize = 12.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
                             ),
                             maxLines = 1
                         )
-                        Spacer(modifier = GlanceModifier.height(2.dp))
+                        Spacer(modifier = GlanceModifier.height(4.dp))
                         Text(
                             text = nextPrayerTime,
                             style = TextStyle(
                                 color = cardOnBg,
-                                fontSize = 20.sp,
+                                fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold
                             ),
                             maxLines = 1
@@ -577,8 +560,8 @@ private fun CompactLayout(
                     Box(
                         modifier = GlanceModifier
                             .background(badgeBg)
-                            .cornerRadius(12.dp)
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                            .cornerRadius(16.dp)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         AndroidRemoteViews(chronometerRemoteViews)
@@ -600,7 +583,6 @@ private fun ExpandedLayout(
     language: String,
     onSurfaceColor: ColorProvider,
     onSurfaceVariantColor: ColorProvider,
-    settingsAction: androidx.glance.action.Action,
     isKerahat: Boolean = false,
     kerahatPrayerName: String? = null,
     kerahatRemainingStr: String = "",
@@ -656,17 +638,7 @@ private fun ExpandedLayout(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                modifier = GlanceModifier.defaultWeight(),
                 maxLines = 1
-            )
-            Image(
-                provider = ImageProvider(R.drawable.ic_widget_settings),
-                contentDescription = "Settings",
-                modifier = GlanceModifier
-                    .width(18.dp)
-                    .height(18.dp)
-                    .clickable(settingsAction),
-                colorFilter = ColorFilter.tint(if (isKerahatActive) GlanceTheme.colors.error else onSurfaceVariantColor)
             )
         }
 
@@ -675,9 +647,10 @@ private fun ExpandedLayout(
         Row(
             modifier = GlanceModifier
                 .fillMaxWidth()
+                .defaultWeight()
                 .background(cardBg)
-                .cornerRadius(12.dp)
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .cornerRadius(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -689,17 +662,17 @@ private fun ExpandedLayout(
                     text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
                     style = TextStyle(
                         color = cardOnBg,
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     ),
                     maxLines = 1
                 )
-                Spacer(modifier = GlanceModifier.height(2.dp))
+                Spacer(modifier = GlanceModifier.height(4.dp))
                 Text(
                     text = nextPrayerTime,
                     style = TextStyle(
                         color = cardOnBg,
-                        fontSize = 22.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     maxLines = 1
@@ -709,8 +682,8 @@ private fun ExpandedLayout(
             Box(
                 modifier = GlanceModifier
                     .background(badgeBg)
-                    .cornerRadius(12.dp)
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                    .cornerRadius(16.dp)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 AndroidRemoteViews(chronometerRemoteViews)
@@ -723,9 +696,30 @@ private fun ExpandedLayout(
             modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val now = java.time.LocalTime.now()
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+
             todayPrayerTimes.forEachIndexed { index, (name, time) ->
                 val isCurrent = name == currentPrayerName
                 val localizedName = getLocalizedString(context, name.nameRes, language)
+
+                val prayerTime = try {
+                    java.time.LocalTime.parse(time, formatter)
+                } catch (e: Exception) {
+                    java.time.LocalTime.MAX
+                }
+                val isPassed = !isCurrent && now.isAfter(prayerTime)
+
+                val baseTextColor = onSurfaceColor.getColor(context).toArgb()
+                val baseLabelColor = onSurfaceVariantColor.getColor(context).toArgb()
+
+                val fadedTextColor = ColorProvider(Color(baseTextColor).copy(alpha = 0.6f))
+                val fadedLabelColor = ColorProvider(Color(baseLabelColor).copy(alpha = 0.6f))
+
+                val textColor = if (isCurrent) GlanceTheme.colors.primary else if (isPassed) fadedTextColor else onSurfaceColor
+                val labelColor = if (isCurrent) GlanceTheme.colors.primary else if (isPassed) fadedLabelColor else onSurfaceVariantColor
+                val iconColor = if (isCurrent) GlanceTheme.colors.primary else if (isPassed) fadedLabelColor else onSurfaceVariantColor
+                val textWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
 
                 val iconRes = when (name) {
                     PrayerName.IMSAK -> R.drawable.ic_prayer_imsak
@@ -735,11 +729,6 @@ private fun ExpandedLayout(
                     PrayerName.AKSAM -> R.drawable.ic_prayer_aksam
                     PrayerName.YATSI -> R.drawable.ic_prayer_yatsi
                 }
-
-                val textColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceColor
-                val labelColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceVariantColor
-                val iconColor = if (isCurrent) GlanceTheme.colors.primary else onSurfaceVariantColor
-                val textWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
 
                 Column(
                     modifier = GlanceModifier
@@ -752,36 +741,36 @@ private fun ExpandedLayout(
                         text = localizedName,
                         style = TextStyle(
                             color = labelColor,
-                            fontSize = 10.sp,
-                            fontWeight = textWeight
-                        ),
-                        maxLines = 1
-                    )
-                    Spacer(modifier = GlanceModifier.height(2.dp))
-                    Image(
-                        provider = ImageProvider(iconRes),
-                        contentDescription = localizedName,
-                        modifier = GlanceModifier.width(18.dp).height(18.dp),
-                        colorFilter = ColorFilter.tint(iconColor)
-                    )
-                    Spacer(modifier = GlanceModifier.height(2.dp))
-                    Text(
-                        text = time,
-                        style = TextStyle(
-                            color = textColor,
                             fontSize = 11.sp,
                             fontWeight = textWeight
                         ),
                         maxLines = 1
                     )
+                    Spacer(modifier = GlanceModifier.height(4.dp))
+                    Image(
+                        provider = ImageProvider(iconRes),
+                        contentDescription = localizedName,
+                        modifier = GlanceModifier.width(22.dp).height(22.dp),
+                        colorFilter = ColorFilter.tint(iconColor)
+                    )
+                    Spacer(modifier = GlanceModifier.height(4.dp))
+                    Text(
+                        text = time,
+                        style = TextStyle(
+                            color = textColor,
+                            fontSize = 12.sp,
+                            fontWeight = textWeight
+                        ),
+                        maxLines = 1
+                    )
                     if (isCurrent) {
-                        Spacer(modifier = GlanceModifier.height(2.dp))
+                        Spacer(modifier = GlanceModifier.height(4.dp))
                         Box(
                             modifier = GlanceModifier
-                                .width(10.dp)
-                                .height(2.dp)
+                                .width(16.dp)
+                                .height(3.dp)
                                 .background(iconColor)
-                                .cornerRadius(1.dp)
+                                .cornerRadius(1.5.dp)
                         ) {}
                     }
                 }
@@ -841,26 +830,6 @@ private fun LoadingContent() {
                 fontWeight = FontWeight.Medium
             )
         )
-    }
-}
-
-class NamazWidgetSettingsAction : ActionCallback {
-    override suspend fun onAction(
-        context: Context,
-        glanceId: GlanceId,
-        parameters: ActionParameters
-    ) {
-        try {
-            val manager = GlanceAppWidgetManager(context)
-            val appWidgetId = manager.getAppWidgetId(glanceId)
-            val intent = Intent(context, NamazWidgetConfigureActivity::class.java).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            android.util.Log.e("NamazWidgetSettingsAction", "Failed to start settings activity", e)
-        }
     }
 }
 

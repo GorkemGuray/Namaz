@@ -36,7 +36,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context
 ) : PrayerTimeRepository {
 
-    private suspend fun getActiveDataSource(): Int {
+    internal suspend fun getActiveDataSource(): Int {
         val prefs = preferencesRepository.preferences.first()
         if (prefs.useLocalCalculation) return 2
         return prefs.dataSource
@@ -57,52 +57,53 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         school: Int
     ): Flow<NetworkResult<List<PrayerTime>>> = flow {
         val activeDataSource = getActiveDataSource()
-        val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)
+        val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
+        val recordCount = prayerTimeDao.getMonthRecordCount(location.cityName, month, year, method, school, activeDataSource)
+        
+        val cached = if (recordCount > 0) {
+            prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)
+        } else emptyList()
 
-        if (cached.isEmpty()) {
-            emit(NetworkResult.Loading)
-        } else {
+        if (cached.isNotEmpty()) {
             emit(NetworkResult.Success(cached.map { it.toDomainModel() }))
+        } else {
+            emit(NetworkResult.Loading)
         }
 
-        try {
-            val useLocal = activeDataSource == 2 || !isNetworkAvailable()
-            val prayerTimes = if (useLocal) {
-                calculateLocally(location, month, year, method, school)
-            } else if (activeDataSource == 1) {
-                fetchFromImsakiyemApi(location, month, year, method, school)
-            } else {
-                fetchFromAladhanApi(location, month, year, method, school)
-            }
-
-            if (prayerTimes.isNotEmpty()) {
-                prayerTimeDao.insertAll(prayerTimes.map {
+        if (activeDataSource == 2 || !isNetworkAvailable()) {
+            val localTimes = calculateLocally(location, month, year, method, school)
+            if (localTimes.isNotEmpty()) {
+                prayerTimeDao.insertAll(localTimes.map {
                     it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
                 NamazWidgetUpdater.update(context)
-                emit(NetworkResult.Success(prayerTimes))
-            } else if (cached.isEmpty()) {
-                val fallbackTimes = calculateLocally(location, month, year, method, school)
-                if (fallbackTimes.isNotEmpty()) {
-                    prayerTimeDao.insertAll(fallbackTimes.map {
+                emit(NetworkResult.Success(localTimes))
+            } else {
+                emit(NetworkResult.Error("Lokal hesaplama yapılamadı"))
+            }
+        } else {
+            try {
+                val prayerTimes = if (activeDataSource == 1) {
+                    fetchFromImsakiyemApi(location, month, year, method, school)
+                } else {
+                    fetchFromAladhanApi(location, month, year, method, school)
+                }
+
+                if (prayerTimes.isNotEmpty()) {
+                    prayerTimeDao.insertAll(prayerTimes.map {
                         it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                     })
                     NamazWidgetUpdater.update(context)
-                    emit(NetworkResult.Success(fallbackTimes))
-                } else {
+                    emit(NetworkResult.Success(prayerTimes))
+                } else if (cached.isEmpty()) {
                     emit(NetworkResult.Error("Vakitler alınamadı"))
                 }
-            }
-        } catch (e: Exception) {
-            if (cached.isEmpty()) {
-                val fallbackTimes = calculateLocally(location, month, year, method, school)
-                if (fallbackTimes.isNotEmpty()) {
-                    prayerTimeDao.insertAll(fallbackTimes.map {
-                        it.toEntity(location.cityName, month, year, method, school, activeDataSource)
-                    })
-                    NamazWidgetUpdater.update(context)
-                    emit(NetworkResult.Success(fallbackTimes))
-                } else {
+            } catch (e: java.net.UnknownHostException) {
+                if (cached.isEmpty()) {
+                    emit(NetworkResult.Error("İnternet bağlantısı yok (Çevrimdışı)"))
+                }
+            } catch (e: Exception) {
+                if (cached.isEmpty()) {
                     emit(NetworkResult.Error(e.message ?: "Bilinmeyen hata"))
                 }
             }
@@ -268,12 +269,30 @@ class PrayerTimeRepositoryImpl @Inject constructor(
     }
 
     suspend fun refreshPrayerTimes(location: LocationInfo, month: Int, year: Int, method: Int, school: Int): Result<List<PrayerTime>> {
+        val activeDataSource = getActiveDataSource()
+        val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
+        val recordCount = prayerTimeDao.getMonthRecordCount(location.cityName, month, year, method, school, activeDataSource)
+
+        if (recordCount >= daysInMonth) {
+            val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)
+            return Result.success(cached.map { it.toDomainModel() })
+        }
+
+        if (activeDataSource == 2 || !isNetworkAvailable()) {
+            val localTimes = calculateLocally(location, month, year, method, school)
+            return if (localTimes.isNotEmpty()) {
+                prayerTimeDao.insertAll(localTimes.map {
+                    it.toEntity(location.cityName, month, year, method, school, activeDataSource)
+                })
+                NamazWidgetUpdater.update(context)
+                Result.success(localTimes)
+            } else {
+                Result.failure(Exception("Lokal hesaplama yapılamadı"))
+            }
+        }
+
         return try {
-            val activeDataSource = getActiveDataSource()
-            val useLocal = activeDataSource == 2 || !isNetworkAvailable()
-            val prayerTimes = if (useLocal) {
-                calculateLocally(location, month, year, method, school)
-            } else if (activeDataSource == 1) {
+            val prayerTimes = if (activeDataSource == 1) {
                 fetchFromImsakiyemApi(location, month, year, method, school)
             } else {
                 fetchFromAladhanApi(location, month, year, method, school)
@@ -286,26 +305,17 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 NamazWidgetUpdater.update(context)
                 Result.success(prayerTimes)
             } else {
-                val fallbackTimes = calculateLocally(location, month, year, method, school)
-                if (fallbackTimes.isNotEmpty()) {
-                    prayerTimeDao.insertAll(fallbackTimes.map {
-                        it.toEntity(location.cityName, month, year, method, school, activeDataSource)
-                    })
-                    NamazWidgetUpdater.update(context)
-                    Result.success(fallbackTimes)
+                val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)
+                if (cached.isNotEmpty()) {
+                    Result.success(cached.map { it.toDomainModel() })
                 } else {
                     Result.failure(Exception("Vakitler alınamadı"))
                 }
             }
         } catch (e: Exception) {
-            val activeDataSource = getActiveDataSource()
-            val fallbackTimes = calculateLocally(location, month, year, method, school)
-            if (fallbackTimes.isNotEmpty()) {
-                prayerTimeDao.insertAll(fallbackTimes.map {
-                    it.toEntity(location.cityName, month, year, method, school, activeDataSource)
-                })
-                NamazWidgetUpdater.update(context)
-                Result.success(fallbackTimes)
+            val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)
+            if (cached.isNotEmpty()) {
+                Result.success(cached.map { it.toDomainModel() })
             } else {
                 Result.failure(e)
             }

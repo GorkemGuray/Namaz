@@ -11,6 +11,10 @@ interface PrayerTimeDao {
     @Query("SELECT * FROM prayer_times WHERE cityName = :cityName AND cacheMonth = :month AND cacheYear = :year AND cacheMethod = :method AND cacheSchool = :school AND cacheDataSource = :dataSource ORDER BY date ASC")
     suspend fun getPrayerTimesForMonth(cityName: String, month: Int, year: Int, method: Int, school: Int, dataSource: Int): List<PrayerTimeEntity>
 
+    @Query("SELECT COUNT(*) FROM prayer_times WHERE cityName = :cityName AND cacheMonth = :month AND cacheYear = :year AND cacheMethod = :method AND cacheSchool = :school AND cacheDataSource = :dataSource")
+    suspend fun getMonthRecordCount(cityName: String, month: Int, year: Int, method: Int, school: Int, dataSource: Int): Int
+
+
     @Query("SELECT * FROM prayer_times WHERE cityName = :cityName AND date = :date LIMIT 1")
     suspend fun getPrayerTimeForDate(cityName: String, date: String): PrayerTimeEntity?
 
