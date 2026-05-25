@@ -62,16 +62,17 @@ class QiblaViewModel @Inject constructor(
             qiblaDirection = qiblaUseCase(info.latitude, info.longitude)
 
             if (sensorManager.hasMagnetometer()) {
-                startCompassMode()
+                startCompassMode(info)
             } else {
                 _uiState.value = QiblaUiState.StaticDirection(
-                    qiblaDirection = qiblaDirection!!
+                    qiblaDirection = qiblaDirection!!,
+                    userLocation = info
                 )
             }
         }
     }
 
-    private fun startCompassMode() {
+    private fun startCompassMode(userLocation: LocationInfo) {
         sensorManager.getOrientationEvents()
             .catch { e ->
                 _uiState.value = QiblaUiState.Error(
@@ -82,7 +83,8 @@ class QiblaViewModel @Inject constructor(
                 when (orientation) {
                     is QiblaSensorManager.QiblaOrientation.MagnetometerUnavailable -> {
                         _uiState.value = QiblaUiState.StaticDirection(
-                            qiblaDirection = qiblaDirection!!
+                            qiblaDirection = qiblaDirection!!,
+                            userLocation = userLocation
                         )
                     }
                     is QiblaSensorManager.QiblaOrientation.Available -> {
@@ -90,6 +92,7 @@ class QiblaViewModel @Inject constructor(
                         val delta = calculateAlignmentDelta(orientation.azimuth, qibla.bearing)
                         _uiState.value = QiblaUiState.CompassActive(
                             qiblaDirection = qibla,
+                            userLocation = userLocation,
                             deviceAzimuth = orientation.azimuth,
                             pitch = orientation.pitch,
                             roll = orientation.roll,

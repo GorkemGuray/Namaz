@@ -30,7 +30,7 @@ desugarJdkLibs = "2.1.5"
 wearTiles = "1.6.0"
 wearComplications = "1.3.0"
 glance = "1.1.1"
-
+maplibreCompose = "0.12.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -92,7 +92,7 @@ wear-complications-data-source = { group = "androidx.wear.watchface", name = "wa
 androidx-glance = { group = "androidx.glance", name = "glance", version.ref = "glance" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
-
+maplibre-compose = { group = "org.maplibre.compose", name = "maplibre-compose", version.ref = "maplibreCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

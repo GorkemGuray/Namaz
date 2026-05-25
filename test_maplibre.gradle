@@ -1,0 +1,3 @@
+apply plugin: 'java'
+repositories { mavenCentral() }
+dependencies { implementation "org.maplibre.compose:compose:0.4.1" }

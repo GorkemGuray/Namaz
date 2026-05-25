@@ -6,6 +6,7 @@ sealed class QiblaUiState {
     data object Loading : QiblaUiState()
     data class CompassActive(
         val qiblaDirection: QiblaDirection,
+        val userLocation: co.gorkem.namaz.domain.model.LocationInfo,
         val deviceAzimuth: Double,
         val pitch: Double,
         val roll: Double,
@@ -16,7 +17,8 @@ sealed class QiblaUiState {
         val needsCalibration: Boolean
     ) : QiblaUiState()
     data class StaticDirection(
-        val qiblaDirection: QiblaDirection
+        val qiblaDirection: QiblaDirection,
+        val userLocation: co.gorkem.namaz.domain.model.LocationInfo
     ) : QiblaUiState()
     data class Error(val message: String) : QiblaUiState()
     data object LocationRequired : QiblaUiState()

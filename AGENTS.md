@@ -343,7 +343,7 @@ wear/
    - Aladhan API / Lokal Hesaplama için: Nominatim API ile dünya genelinde koordinat arama
    - İmsakiyem API için: İmsakiyem API ile ilçe arama (büyük/küçük harf ve Türkçe karakter desteğiyle)
    - Son seçilenler (max 5, JSON olarak DataStore'da)
-6. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi
+6. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi. Ayrıca MapLibre entegrasyonu ile Kabe'ye giden çizgiyi haritada (sokak seviyesi detayında) görselleştiren harita desteği.
 7. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
 8. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
 
@@ -427,6 +427,7 @@ wear/
 - **QiblaCompass**: Referans pusula tasarımı. İç yüz (derece çizgileri, K/D/G/B etiketleri) cihaz yönüne göre döner, dış yüz sabit kalır. Kaaba simgesi `qiblaBearing - deviceAzimuth` açısında halka çevresinde döner. **En kısa yol rotasyonu**: `accumulatedAzimuth`/`accumulatedKaaba` değişkenleri ile açı farkı >180° durumunda ters yönde dönüş (shortest path). Spring animasyon: low stiffness (azimut) / medium bouncy (Kaaba). **Hizalama glow**: `alignedAlpha` interpolasyonu ile sürekli glow ring + radial gradient parlaması. Kaaba simgesi hizalıyken `1.0 + 0.2 * alignedAlpha` ile scale olur. Merkezde crosshair + seviye göstergesi. Canvas-only implementasyon.
 - **QiblaDegreeDisplay**: Bearing + kardinal yön + sapma kartı. **Hizalı durumda arka plan overlay animasyonları**: Canvas tabanlı radial gradient sweep (2 trail beam), dönen arc çizgileri, orbital partikül dot'lar, breathing glow efekti. `AnimatedContent` ile durum metni (hizalı/sapma) geçişleri. **Sensör doğruluk göstergesi**: renkli dot + metin (İyi/Orta/Düşük/Kötü). Kalibrasyon/manyetik bozulma uyarıları inline error banner.
 - **QiblaScreen**: Tam ekran, TopAppBar yok. 5 UI state: Loading/CompassActive/StaticDirection/Error/LocationRequired. **Histerezisli hizalama algılama**: ≤4° içinde aligned olur, ≤6.5° üstünde aligned'dan çıkar (flicker önler). 200ms gecikme ile state değişimi. ±5° hizalıyken titreşim.
+- **Harita Görünümü**: MapLibre altyapısıyla (Raster tile) API anahtarı gerektirmeyen çevrimdışı Kabe haritası. `GreatCircleUtil` ile hesaplanan gerçek doğrusal hat `LineLayer` olarak zümrüt yeşili renkle çizilir. Kullanıcı "Konumuma Git" (17.0 zoom) butonuyla bina/sokak seviyesinde kıble yönünü fiziksel referanslarla eşleştirebilir.
 - **Hybrid yaklaşım**: Manyetometre varsa tam pusula, yoksa statik yön + derece gösterimi.
 - **Test**: `QiblaUseCaseTest` - 6 birim testi passing (Istanbul, NYC, Sydney, Kaabe, kardinal yönler).
 

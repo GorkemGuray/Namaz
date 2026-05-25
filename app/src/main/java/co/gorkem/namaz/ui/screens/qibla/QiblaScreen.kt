@@ -21,20 +21,27 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import kotlinx.coroutines.delay
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,6 +72,7 @@ import co.gorkem.namaz.ui.theme.prayerAmbientColor
 import kotlin.math.cos
 import kotlin.math.sin
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QiblaScreen(
     modifier: Modifier = Modifier,
@@ -75,6 +83,8 @@ fun QiblaScreen(
     val context = LocalContext.current
     val prayerContext = LocalPrayerContext.current
     val ambientTint = prayerAmbientColor(prayerContext)
+    
+    var showMapBottomSheet by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -418,6 +428,47 @@ fun QiblaScreen(
                                 Text(text = stringResource(R.string.qibla_set_location))
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        if (uiState is QiblaUiState.CompassActive || uiState is QiblaUiState.StaticDirection) {
+            val userLocation = when (val state = uiState) {
+                is QiblaUiState.CompassActive -> state.userLocation
+                is QiblaUiState.StaticDirection -> state.userLocation
+                else -> null
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .padding(top = 16.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                IconButton(onClick = { showMapBottomSheet = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Map,
+                        contentDescription = "Haritada Gör",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (showMapBottomSheet && userLocation != null) {
+                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                ModalBottomSheet(
+                    onDismissRequest = { showMapBottomSheet = false },
+                    sheetState = sheetState,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize().padding(bottom = 16.dp)) {
+                        QiblaMap(
+                            userLocation = userLocation,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                 }
             }

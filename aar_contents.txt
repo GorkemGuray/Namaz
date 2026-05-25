@@ -1,0 +1,9 @@
+Archive:  /Users/gorkem/.gradle/caches/modules-2/files-2.1/org.maplibre.compose/maplibre-compose-android/0.12.1/2329984c1a1bc7e57639896a46aa0da0ee6c61/maplibre-compose.aar
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  02-01-1980 00:00   R.txt
+      202  02-01-1980 00:00   AndroidManifest.xml
+   757597  02-01-1980 00:00   classes.jar
+      156  02-01-1980 00:00   META-INF/com/android/build/gradle/aar-metadata.properties
+---------                     -------
+   757955                     4 files
