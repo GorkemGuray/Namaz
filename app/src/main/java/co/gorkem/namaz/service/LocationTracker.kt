@@ -53,8 +53,8 @@ class LocationTracker @Inject constructor(
 
     fun registerPassiveLocationListener() {
         if (hasLocationPermission()) {
-            val request = com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 3600000L) // 1 hour max
-                .setMinUpdateDistanceMeters(2000f) // 2km displacement
+            val request = com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_LOW_POWER, 3600000L) // 1 hour max
+                .setMinUpdateDistanceMeters(10000f) // 10km displacement for battery optimization
                 .build()
             
             val intent = android.content.Intent(context, LocationPassiveReceiver::class.java)

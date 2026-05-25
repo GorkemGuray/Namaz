@@ -16,6 +16,7 @@ import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.service.GeocoderHelper
 import co.gorkem.namaz.service.LocationTracker
 import co.gorkem.namaz.service.PrayerNotificationScheduler
+import co.gorkem.namaz.service.LocationSyncWorker
 import co.gorkem.namaz.service.WearKerahatInfo
 import co.gorkem.namaz.service.WearNextPrayer
 import co.gorkem.namaz.service.WearPrayerData
@@ -115,7 +116,13 @@ class HomeViewModel @Inject constructor(
                         _needsLocationPermission.value = false
                         loadPrayerTimes(prefs.getLocationInfo())
                     } else if (locationTracker.hasLocationPermission()) {
-                        loadWithCurrentLocation()
+                        val info = prefs.getLocationInfo()
+                        if (info.cityName.isEmpty()) {
+                            loadWithCurrentLocation()
+                        } else {
+                            loadPrayerTimes(info)
+                            LocationSyncWorker.executeNow(context)
+                        }
                     } else {
                         _needsLocationPermission.value = true
                         loadPrayerTimes(LocationInfo.DEFAULT)

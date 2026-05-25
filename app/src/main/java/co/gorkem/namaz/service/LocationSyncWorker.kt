@@ -70,7 +70,7 @@ class LocationSyncWorker @AssistedInject constructor(
                     }
 
                     val distance = freshLocation.distanceTo(savedLocation)
-                    if (distance > 2000f || currentLocationInfo.latitude == 0.0) {
+                    if (distance > 10000f || currentLocationInfo.latitude == 0.0) {
                         locationChanged = true
                         
                         val reverseGeocoded = geocoderHelper.getLocationInfo(freshLocation.latitude, freshLocation.longitude)
@@ -145,7 +145,7 @@ class LocationSyncWorker @AssistedInject constructor(
 
         fun schedulePeriodic(context: Context) {
             val constraints = Constraints.Builder()
-                .setRequiresBatteryNotLow(false)
+                .setRequiresBatteryNotLow(true)
                 .build()
 
             val request = PeriodicWorkRequestBuilder<LocationSyncWorker>(
