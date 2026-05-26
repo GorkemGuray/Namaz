@@ -10,7 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "co.gorkem.namaz.wear"
+        applicationId = "co.gorkem.namaz"
         minSdk = 30
         targetSdk = 36
         versionCode = 1

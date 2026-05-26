@@ -24,9 +24,11 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
 
     override fun getPreviewData(type: ComplicationType): ComplicationData {
         return ShortTextComplicationData.Builder(
-            text = PlainComplicationText.Builder(text = getString(R.string.wear_prayer)).build(),
+            text = PlainComplicationText.Builder(text = "20:28").build(),
             contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
-        ).build()
+        )
+        .setTitle(PlainComplicationText.Builder(text = getString(R.string.prayer_aksam)).build())
+        .build()
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
@@ -59,14 +61,20 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
 
         val builder = ShortTextComplicationData.Builder(
             text = PlainComplicationText.Builder(
-                text = if (nextPrayer != null)
-                    "${prayerNameFromEnum(this, nextPrayer.name)} ${nextPrayer.time}"
-                else "--:--"
+                text = nextPrayer?.time ?: "--:--"
             ).build(),
             contentDescription = PlainComplicationText.Builder(
                 text = getString(R.string.wear_prayer_time)
             ).build()
         )
+
+        if (nextPrayer != null) {
+            builder.setTitle(
+                PlainComplicationText.Builder(
+                    text = prayerNameFromEnum(this, nextPrayer.name)
+                ).build()
+            )
+        }
 
         return builder
             .setTapAction(tapAction)

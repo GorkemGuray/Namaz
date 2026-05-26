@@ -70,8 +70,11 @@ class WearViewModel @Inject constructor(
                 kotlinx.coroutines.delay(60_000L)
             }
         }
-        
-        loadFromStandalone()
+        viewModelScope.launch {
+            // Wait 2 seconds to allow DataLayer to fetch existing items from phone
+            kotlinx.coroutines.delay(2000L)
+            loadFromStandalone()
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -111,6 +114,8 @@ class WearViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Location fetch failed, fallback to default
             }
+
+            if (_isPhoneSource.value) return@launch
 
             prayerRepository.getPrayerTimesFromApi(latitude = lat, longitude = lon).collect { result ->
                 result.onSuccess { prayers ->

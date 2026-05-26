@@ -396,7 +396,11 @@ wear/
 
 ### Wear
 - Hem Data Layer (telefon bağlıyken) hem standalone API (telefon yokken) çalışır.
-- **Complication**: `PrayerComplicationService`, ShortText tipinde.
+- **Application ID Eşleşmesi**: Veri senkronizasyonu (Data Layer API) için mobil ve wear modüllerinin `applicationId` değeri `"co.gorkem.namaz"` olarak eşitlendi.
+- **Senkronizasyon İyileştirmesi**: `WearDataLayerService` başlangıçta `dataItems` sorgulayarak telefondan gelen son verileri anında çeker. Böylece telefon bağlıyken standalone moda düşme sorunu giderildi. Standalone yüklemesi başlamadan önce 2 saniyelik DataLayer bekleme süresi eklendi ve standalone verisinin senkronize veriyi ezmesi engellendi.
+- **Dil Desteği**: Telefondan (`HomeViewModel`) saate gönderilen veriler `LocaleManager` kullanılarak kullanıcının seçtiği dilde gönderilir.
+- **Complication**: `PrayerComplicationService` ShortText formatındadır. Taşıma ve kırpılma ("AKŞAM 2...") sorununu önlemek için vakit adı `title` alanına, saati ise `text` alanına ayrıldı.
+- **Complication Tetikleme**: Telefondan saate yeni veri ulaştığında `ComplicationDataSourceUpdateRequester` aracılığıyla komplikasyonun kadran üzerinde anında güncellenmesi sağlandı.
 - **Tile**: `PrayerTileService`, next prayer + remaining minutes.
 - **Kerahat**: Telefon'dan Wear'a kerahat bilgisi sync edilir. `WearKerahatBanner` aktif/yaklaşıyor durumlarını gösterir.
 - **⚠️ Duplicate**: `PrayerNameHelper.kt` hem root package'ta (`Context`-based) hem `ui/`'da (`@Composable`). Birini kaldırmak gerekir.

@@ -30,6 +30,24 @@ class WearDataLayerService @Inject constructor(
 
     fun startListening() {
         dataClient.addListener(dataListener)
+        
+        // Fetch existing data so we don't start in standalone mode if phone already sent data
+        dataClient.dataItems.addOnSuccessListener { items ->
+            for (item in items) {
+                if (item.uri.path == "/namaz_prayer_data") {
+                    val dataMap = com.google.android.gms.wearable.DataMapItem.fromDataItem(item).dataMap
+                    val json = dataMap.getString("prayer_json") ?: continue
+                    try {
+                        val data = WearPrayerData.fromJson(json)
+                        _prayerData.value = data
+                        _isPhoneConnected.value = true
+                        requestComplicationUpdate()
+                    } catch (e: Exception) {
+                        // Invalid data
+                    }
+                }
+            }
+        }
     }
 
     fun stopListening() {
@@ -48,6 +66,7 @@ class WearDataLayerService @Inject constructor(
                         val data = WearPrayerData.fromJson(json)
                         _prayerData.value = data
                         _isPhoneConnected.value = true
+                        requestComplicationUpdate()
                     } catch (e: Exception) {
                         // Invalid data
                     }
@@ -55,5 +74,17 @@ class WearDataLayerService @Inject constructor(
             }
         }
         events.release()
+    }
+
+    private fun requestComplicationUpdate() {
+        try {
+            val requester = androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester.create(
+                context = context,
+                complicationDataSourceComponent = android.content.ComponentName(context, co.gorkem.namaz.wear.complication.PrayerComplicationService::class.java)
+            )
+            requester.requestUpdateAll()
+        } catch (e: Exception) {
+            // Ignore
+        }
     }
 }

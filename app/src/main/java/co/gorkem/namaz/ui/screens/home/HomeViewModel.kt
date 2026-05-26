@@ -290,10 +290,12 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             val kerahatInfo = dashboardData.value?.kerahatInfo
+            val localizedContext = co.gorkem.namaz.LocaleManager.applyLocale(context)
+            
             val wearKerahat = kerahatInfo?.let { k ->
                 WearKerahatInfo(
                     isCurrentlyKerahat = k.isCurrentlyKerahat,
-                    prayerName = k.prayerName.name,
+                    prayerName = localizedContext.getString(k.prayerName.nameRes),
                     remainingMinutes = if (k.isCurrentlyKerahat) k.remainingToEndMinutes else k.remainingToStartMinutes
                 )
             }
@@ -302,13 +304,13 @@ class HomeViewModel @Inject constructor(
                 cityName = location.cityName,
                 prayers = todayData.getAllPrayers().map { (name, time) ->
                     WearPrayerItem(
-                        name = name.name,
+                        name = localizedContext.getString(name.nameRes),
                         time = time
                     )
                 },
                 nextPrayer = _nextPrayer.value?.let {
                     WearNextPrayer(
-                        name = it.prayerName.name,
+                        name = localizedContext.getString(it.prayerName.nameRes),
                         time = it.prayerTime,
                         remainingMinutes = it.remainingMinutes
                     )
