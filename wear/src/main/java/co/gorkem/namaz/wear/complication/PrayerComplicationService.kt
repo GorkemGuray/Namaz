@@ -30,8 +30,12 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
-        val data = runBlocking {
-            entryPoint.dataLayerService.prayerData.first()
+        val data = kotlinx.coroutines.withTimeoutOrNull(2000L) {
+            entryPoint.dataLayerService.prayerData.value
+        }
+
+        if (data == null) {
+            return androidx.wear.watchface.complications.data.NoDataComplicationData()
         }
 
         val tapIntent = PendingIntent.getActivity(

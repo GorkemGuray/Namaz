@@ -38,11 +38,16 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.compose.ui.res.stringResource
 import co.gorkem.namaz.wear.R
 import co.gorkem.namaz.wear.data.WearKerahatInfo
@@ -67,38 +72,29 @@ fun WearHomeScreen(
     val kerahat by viewModel.kerahatInfo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isPhoneSource by viewModel.isPhoneSource.collectAsState()
-    val listState = rememberScalingLazyListState()
+    val listState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        ScalingLazyColumn(
+    ScreenScaffold(
+        scrollState = listState,
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+    ) { contentPadding ->
+        TransformingLazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = listState,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            contentPadding = PaddingValues(
-                top = 32.dp,
-                bottom = 16.dp
-            )
+            contentPadding = contentPadding,
+            flingBehavior = TransformingLazyColumnDefaults.snapFlingBehavior(listState),
+            rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(listState)
         ) {
             if (isLoading && prayerItems.isEmpty()) {
                 item {
                     LoadingState()
                 }
             } else {
-                // City chip
+                // Compact Header (City + Source)
                 if (cityName.isNotEmpty()) {
                     item {
-                        CityChip(cityName = cityName)
-                    }
-                }
-
-                // Next prayer countdown hero
-                if (nextPrayer != null) {
-                    item {
-                        WearCountdownHero(nextPrayer = nextPrayer!!)
+                        CompactHeader(cityName = cityName, isPhoneSource = isPhoneSource)
                     }
                 }
 
@@ -109,20 +105,23 @@ fun WearHomeScreen(
                     }
                 }
 
-                // Source indicator
-                item {
-                    SourceIndicator(isPhoneSource = isPhoneSource)
-                }
-
                 // Prayer rows
-                items(
-                    items = prayerItems,
-                    key = { it.name }
-                ) { prayer ->
-                    val isNext = nextPrayer?.name == prayer.name
+                val nextPrayerIndex = prayerItems.indexOfFirst { it.name == nextPrayer?.name }
+                val currentPrayerIndex = if (nextPrayerIndex > 0) nextPrayerIndex - 1 else if (nextPrayerIndex == 0) prayerItems.lastIndex else -1
+
+                items(prayerItems.size) { index ->
+                    val prayer = prayerItems[index]
+                    val isNext = index == nextPrayerIndex
+                    val isCurrent = index == currentPrayerIndex
+                    val isPassed = currentPrayerIndex != -1 && index < currentPrayerIndex && nextPrayerIndex != 0
+
                     WearPrayerRow(
                         prayer = prayer,
-                        isNext = isNext
+                        isNext = isNext,
+                        isCurrent = isCurrent,
+                        isPassed = isPassed,
+                        nextPrayerInfo = if (isNext) nextPrayer else null,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -204,27 +203,34 @@ private fun LoadingState() {
 }
 
 @Composable
-private fun CityChip(
+private fun CompactHeader(
     cityName: String,
+    isPhoneSource: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 12.dp, vertical = 4.dp)
+    val sourceIconColor = if (isPhoneSource) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
+    Row(
+        modifier = modifier.fillMaxWidth().padding(bottom = 2.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(sourceIconColor)
+        )
+        Spacer(modifier = Modifier.size(6.dp))
         Text(
             text = cityName,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
 @Composable
-private fun WearCountdownHero(
+private fun CompactCountdown(
     nextPrayer: WearNextPrayer,
     modifier: Modifier = Modifier
 ) {
@@ -256,163 +262,71 @@ private fun WearCountdownHero(
     val secs = remaining % 60
 
     val countdownText = when {
-        hrs > 0 -> String.format("%02d:%02d:%02d", hrs, mins, secs)
-        mins > 0 -> String.format("%02d:%02d", mins, secs)
-        else -> String.format("%02ds", secs)
+        hrs > 0 -> String.format("-%02d:%02d:%02d", hrs, mins, secs)
+        else -> String.format("-%02d:%02d", mins, secs)
     }
 
-    Card(
+    Text(
+        text = countdownText,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = prayerNameFromEnum(nextPrayer.name),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                textAlign = TextAlign.Center
-            )
-
-            Text(
-                text = nextPrayer.time,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                textAlign = TextAlign.Center
-            )
-
-            AnimatedContent(
-                targetState = countdownText,
-                transitionSpec = {
-                    scaleIn(
-                        initialScale = 0.9f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-                    ) + fadeIn() togetherWith
-                    scaleOut(
-                        targetScale = 1.1f,
-                        animationSpec = spring()
-                    ) + fadeOut()
-                },
-                label = "wear_countdown"
-            ) { text ->
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SourceIndicator(
-    isPhoneSource: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val label = if (isPhoneSource) stringResource(R.string.wear_synced_from_phone) else stringResource(R.string.wear_standalone_mode)
-    val color = if (isPhoneSource) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.tertiary
-    }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
-        Spacer(modifier = Modifier.size(6.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+    )
 }
 
 @Composable
 private fun WearPrayerRow(
     prayer: WearPrayerItem,
     isNext: Boolean,
+    isCurrent: Boolean,
+    isPassed: Boolean,
+    nextPrayerInfo: WearNextPrayer?,
     modifier: Modifier = Modifier
 ) {
-    val scale by animateFloatAsState(
-        targetValue = if (isNext) 1.03f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "wear_row_scale"
-    )
-
     val containerColor = if (isNext) {
-        MaterialTheme.colorScheme.primaryContainer
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
     } else {
-        MaterialTheme.colorScheme.surfaceVariant
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.0f)
     }
 
-    val nameColor = if (isNext) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
+    val nameColor = when {
+        isCurrent -> MaterialTheme.colorScheme.primary
+        isNext -> MaterialTheme.colorScheme.onPrimaryContainer
+        isPassed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.onSurface
     }
 
-    val timeColor = if (isNext) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+    val timeColor = when {
+        isCurrent -> MaterialTheme.colorScheme.primary
+        isNext -> MaterialTheme.colorScheme.onPrimaryContainer
+        isPassed -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Card(
+    Row(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 2.dp)
-            .scale(scale),
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor
-        ),
-        shape = MaterialTheme.shapes.medium
+            .padding(vertical = 1.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(containerColor)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Text(
+            text = prayerNameFromEnum(prayer.name),
+            style = MaterialTheme.typography.labelMedium,
+            color = nameColor
+        )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(
-                text = prayerNameFromEnum(prayer.name),
-                style = if (isNext) {
-                    MaterialTheme.typography.titleMedium
-                } else {
-                    MaterialTheme.typography.bodyMedium
-                },
-                color = nameColor
-            )
+            if (isNext && nextPrayerInfo != null) {
+                CompactCountdown(nextPrayer = nextPrayerInfo)
+            }
             Text(
                 text = prayer.time,
-                style = if (isNext) {
-                    MaterialTheme.typography.titleMedium
-                } else {
-                    MaterialTheme.typography.bodyMedium
-                },
+                style = MaterialTheme.typography.labelMedium,
                 color = timeColor
             )
         }
