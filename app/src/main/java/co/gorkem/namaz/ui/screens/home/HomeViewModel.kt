@@ -82,6 +82,7 @@ class HomeViewModel @Inject constructor(
             var lastCityKey: String? = null
             var lastMethod: Int = -1
             var lastSchool: Int = -1
+            var lastTheme: Int = -1
             var lastNotificationsEnabled: Boolean? = null
             var lastNotificationMinutesBefore: Int? = null
             preferencesRepository.preferences.collect { prefs ->
@@ -94,10 +95,12 @@ class HomeViewModel @Inject constructor(
 
                 val notificationsEnabledChanged = lastNotificationsEnabled != null && prefs.notificationsEnabled != lastNotificationsEnabled
                 val notificationMinutesBeforeChanged = lastNotificationMinutesBefore != null && prefs.notificationMinutesBefore != lastNotificationMinutesBefore
+                val themeChanged = lastTheme != -1 && prefs.appTheme != lastTheme
 
                 currentPreferences = prefs
                 lastNotificationsEnabled = prefs.notificationsEnabled
                 lastNotificationMinutesBefore = prefs.notificationMinutesBefore
+                lastTheme = prefs.appTheme
 
                 val cityKey = if (prefs.manualCityName.isNotEmpty()) {
                     "manual:${prefs.manualDistrictId},${prefs.manualCityName}"
@@ -126,6 +129,10 @@ class HomeViewModel @Inject constructor(
                     } else {
                         _needsLocationPermission.value = true
                         loadPrayerTimes(LocationInfo.DEFAULT)
+                    }
+                } else if (themeChanged) {
+                    if (_prayerTimes.value.isNotEmpty()) {
+                        syncToWear(_prayerTimes.value, _locationInfo.value)
                     }
                 } else if (notificationsEnabledChanged || notificationMinutesBeforeChanged) {
                     if (_prayerTimes.value.isNotEmpty()) {
@@ -316,7 +323,8 @@ class HomeViewModel @Inject constructor(
                         targetTimeMillis = nextPrayer.targetPrayerTimeInMillis
                     )
                 },
-                kerahat = wearKerahat
+                kerahat = wearKerahat,
+                themeId = currentPreferences?.appTheme ?: 0
             )
             wearSyncManager.syncPrayerData(wearData)
         }
