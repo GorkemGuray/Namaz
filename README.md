@@ -1,58 +1,71 @@
-# Namaz Vakitleri
+<div align="center">
+  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" width="128" height="128" alt="Namaz Vakitleri Logo"/>
+  <h1>Namaz Vakitleri</h1>
+  <p><b>Android ve Wear OS için Konum Bazlı Premium Namaz Vakitleri Uygulaması</b></p>
+</div>
 
-Android ve Wear OS için konum bazlı namaz vakitleri uygulaması.
+---
 
-## Özellikler
+Namaz Vakitleri, modern Android (Jetpack Compose) mimarisiyle geliştirilmiş, son derece şık, şarj dostu ve kapsamlı bir namaz ve ezan vakti takip uygulamasıdır. Hem telefonunuzda hem de akıllı saatinizde (Wear OS) kusursuz bir senkronizasyon ile çalışır.
 
-- **Dört Premium Tema**:
-  - **Emerald Oasis** (Varsayılan): Modern İslami adaçayı yeşili estetiği
-  - **Sapphire Night**: Derin ruhani gece mavisi paleti
-  - **Amber Sands**: Sıcak miras ve Kabe ışıltıları tonları
-  - **Monochrome Platinum**: Ultra-minimalist yönetici teması
-  - Tüm temalar sistem dinamik renklerini (Monet) bypass eder, DataStore üzerinden kalıcıdır
-  - Jetpack Compose Glance Widget ile tam renk senkronizasyonu
-- **Ana Ekran Widget (Glance)**: Detaylı (6 vakit + geri sayım) veya sade (sadece sıradaki vakit) layout seçenekli. Native Android `Chronometer` ile pil dostu geri sayım (%0 CPU, Doze geçirmez). Kerahat vakti uyarısı (kırmızı kart + "(Kerahat)" etiketi). AlarmManager dakikalık tick ile güncel kalır.
-- **Üçlü Veri Kaynağı Seçeneği**:
-  - **Aladhan API (Varsayılan)**: Dünya genelinde konum koordinatları ile çevrimiçi namaz vakitleri
-  - **İmsakiyem API (Diyanet Resmi)**: Türkiye genelinde resmi ilçe bazlı namaz vakitleri
-  - **Lokal Hesaplama (Çevrimdışı mod)**: İnternet bağlantısı yokken veya tercih edildiğinde cihazda matematiksel formüllerle Diyanet uyumlu hesaplama
-- **Aylık Namaz Takvimi**: Alt bar üzerinden erişilebilen, 5 günlük vakit + güneş sütunlarını tüm ay boyunca listeleyen, ay bazında ileri/geri geçiş ve bulunulan günü belirginleştirme (highlight) özelliğine sahip responsive tablo ekranı.
-- **Harf/Karakter Duyarsız Konum Arama**: Türkçe karakterler (kırklareli, üsküdar vb.) ve büyük/küçük harf hassasiyeti giderilmiş ilçe arama desteği
-- **Sadeleştirilmiş Konum ve Responsive Arayüz**: Çok uzun konum adlarında dahi kaymayan HeroCard tasarımı ve sadeleştirilmiş konum bilgisi
-- **Gelişmiş Kıble Pusulası**: Sin/cos tabanlı yumuşatılmış azimut takibi (360° sarmalama sorunsuz), en kısa yol rotasyonu, histerezisli hizalama algılama (±4°/±6.5°), animasyonlu hizalama glowsweep efektleri, sensör doğruluk seviyesi göstergesi. Ayrıca MapLibre entegrasyonu ile sokak/bina seviyesinde görsel Qibla yönü hizalaması sunan interaktif harita desteği.
-- Kerahat vakitleri gösterimi (aktif/yaklaşıyor)
-- Bildirimler (her vakit için ayrı WorkManager Worker'ı)
-- Wear OS desteği (aktif senkronizasyon + Aladhan API ile standalone çalışabilme)
-- Türkçe/İngilizce dil desteği
-- Çevrimdışı önbellek (Room veri tabanı v4 ile veri kaynağı uyumlu cache)
+## ✨ Öne Çıkan Özellikler
 
-## Build
+### 🎨 4 Farklı Premium Tema
+Telefonunuzdan seçtiğiniz tema, anında akıllı saatinize ve ana ekran widget'ınıza senkronize edilir:
+* 🌿 **Emerald Oasis (Varsayılan):** Modern İslami adaçayı yeşili estetiği.
+* 🌌 **Sapphire Night:** Derin ruhani gece mavisi paleti.
+* 🏜️ **Amber Sands:** Sıcak miras ve altın sarısı parıltılar.
+* ⚪ **Monochrome Platinum:** Ultra-minimalist yönetici (executive) tasarımı.
+
+### ⌚ Wear OS (Akıllı Saat) Desteği
+* **Senkronize Tasarım:** Telefondan seçtiğiniz temanın OLED (tam siyah) uyumlu harika bir versiyonu saatinizde anında belirir.
+* **Kompakt Arayüz:** Wear OS'e özel 3 boyutlu kavisli liste kaydırma efekti (`TransformingLazyColumn`).
+* **Saat Kadranı (Complication):** Saatinizin ana ekranında sıradaki vakti veya işletim sistemi tabanlı (Native) **geri sayımı** (Örn: `İkindi -01:30`) saniye saniye görebilirsiniz.
+* **Bağımsız (Standalone) Mod:** Telefonunuz yanınızda olmasa bile saat kendi GPS'i üzerinden vakitleri çekmeye devam eder.
+
+### 🧭 Gelişmiş 3D Kıble Pusulası ve Harita
+* **Manyetik Hassasiyet:** Cihaz sensörlerindeki parazitleri filtreleyen sin/cos tabanlı yumuşatılmış pürüzsüz azimut takibi. (Manyetik sapmalara ve kılıflara karşı uyarı sistemi)
+* **Premium Animasyonlar:** Kabe'ye doğru hizalandığınızda cihazınız titrer, pusula yayı parlar (glow) ve özel parçacık efektleri devreye girer.
+* **MapLibre Offline Harita:** Manyetometrenin zayıf olduğu yerlerde veya emin olmak istediğinizde, sokak ve bina seviyesindeki harita üzerinden doğrudan Kabe'ye çekilen çizgiyi (Great Circle) görebilirsiniz.
+
+### 📡 3 Farklı Veri Kaynağı Seçeneği
+Nasıl veri alacağınıza siz karar verin:
+1. **Diyanet (İmsakiyem API):** Türkiye geneli resmi ilçe bazlı vakitler. Harf/Karakter duyarsız (Örn: *kırklareli*, *üsküdar* yazsanız dahi anlar) gelişmiş arama sistemi.
+2. **Dünya Geneli (Aladhan API):** Varsayılan olarak tüm dünyada çalışır. Nominatim (OpenStreetMap) entegrasyonuyla sınırsız konum desteği.
+3. **Çevrimdışı Mod (Lokal Hesaplama):** İnternet yoksa veya tercih ederseniz uygulama arka planda matematiksel formüllerle cihaz içinde çevrimdışı vakit hesabı yapar.
+
+### 📱 Gelişmiş Glance Widget'ları
+* Pilinizi asla tüketmeyen, doğrudan işletim sisteminin `Chronometer` yapısına entegre edilmiş yerel (Native) geri sayım sistemi (%0 CPU kullanımı).
+* **Kerahat Uyarısı:** Kerahat vakitlerinde Widget kızarır ve sizi uyarır.
+
+### 📅 Aylık Takvim Görünümü
+* Alt menüden ulaşılabilen 5 günlük vakit ve güneş sütunlarıyla donatılmış akıllı tablo. Ay içinde gezinebilirsiniz ve içinde bulunulan gün otomatik olarak fosforlu (highlight) şekilde işaretlenir.
+
+## 🛠️ Kurulum (Build & Run)
+
+Uygulama tamamen güncel modern Android araçlarıyla yazılmıştır (Kotlin 2.2+, Gradle 9.4+, AGP 9.2+).
 
 ```bash
-./gradlew assembleDebug          # app + wear
-./gradlew :app:assembleDebug     # sadece mobil
-./gradlew :wear:assembleDebug    # sadece wear
+# Tüm projeyi (Mobil + Wear) derle
+./gradlew assembleDebug
+
+# Sadece Mobil Uygulamayı (Phone) derle
+./gradlew :app:assembleDebug
+
+# Sadece Saat Uygulamasını (Wear OS) derle
+./gradlew :wear:assembleDebug
 ```
 
-## Kerahat Vakitleri
+## 📐 Mimari ve Teknolojiler
 
-| Periyot | Aralık |
-|---------|--------|
-| Güneş | Güneş → Güneş +45dk |
-| Öğle | Öğle -45dk → Öğle |
-| İkindi-Akşam | İkindi → Akşam -45dk |
+Projede **Clean Architecture**, **MVVM** tasarım kalıpları ve Hilt ile Bağımlılık Enjeksiyonu (DI) kullanılmıştır. 
 
-Detay: `kerahat.jpg`
-
-## Mimari
-
-Clean Architecture + MVVM + Hilt DI
-
-## Teknolojiler
-
-- Kotlin 2.2.10, Compose BOM 2026.02.01
-- Hilt 2.59.2, Retrofit 2.11.0, Room 2.8.4
-- WorkManager 2.11.2, DataStore 1.1.1
-- Glance 1.1.1 (Widget)
-- Wear OS Compose Material3 1.6.1
-- MapLibre Compose 0.12.1
+- **UI:** Jetpack Compose, Wear Compose Material 3, Glance (Widget)
+- **Veritabanı ve Yerel Saklama:** Room (Offline Cache), DataStore
+- **Ağ ve Concurrency:** Coroutines, Retrofit, OkHttp, Gson
+- **Arka Plan İşlemleri:** WorkManager (Her vakit bildirimi için özelleştirilmiş arka plan görevleri)
+- **Konum ve Harita:** FusedLocationProviderClient, MapLibre Compose
+- **Kerahat Hesaplamaları:** 
+  - *Güneş:* Güneş → Güneş +45dk (Namaz Kılınmaz)
+  - *Öğle:* Öğle -45dk → Öğle (Namaz Kılınmaz)
+  - *Akşam:* İkindi → Akşam -45dk (Sadece Farz-ı İkindi kılınabilir)

@@ -7,7 +7,8 @@ data class WearPrayerData(
     val prayers: List<WearPrayerItem>,
     val nextPrayer: WearNextPrayer?,
     val kerahat: WearKerahatInfo?,
-    val timestamp: Long = 0L
+    val themeId: Int = 0,
+    val timestamp: Long = System.currentTimeMillis()
 ) {
     companion object {
         private val gson = Gson()

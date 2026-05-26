@@ -7,6 +7,7 @@ data class WearPrayerData(
     val prayers: List<WearPrayerItem>,
     val nextPrayer: WearNextPrayer?,
     val kerahat: WearKerahatInfo?,
+    val themeId: Int = 0,
     val timestamp: Long = System.currentTimeMillis()
 ) {
     companion object {

@@ -1,19 +1,9 @@
 package co.gorkem.namaz.wear.ui.screens
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,8 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,17 +24,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnDefaults
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
-import androidx.wear.compose.material3.Card
-import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
@@ -88,20 +76,35 @@ fun WearHomeScreen(
         ) {
             if (isLoading && prayerItems.isEmpty()) {
                 item {
-                    LoadingState()
+                    LoadingState(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec)
+                    )
                 }
             } else {
-                // Compact Header (City + Source)
+                // Header: Location
                 if (cityName.isNotEmpty()) {
                     item {
-                        CompactHeader(cityName = cityName, isPhoneSource = isPhoneSource)
+                        CompactHeader(
+                            cityName = cityName,
+                            isPhoneSource = isPhoneSource,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec)
+                        )
                     }
                 }
 
-                // Kerahat banner
+                // Kerahat Alert
                 if (kerahat != null) {
                     item {
-                        WearKerahatBanner(kerahat = kerahat!!)
+                        WearKerahatBanner(
+                            kerahat = kerahat!!,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec)
+                        )
                     }
                 }
 
@@ -121,7 +124,10 @@ fun WearHomeScreen(
                         isCurrent = isCurrent,
                         isPassed = isPassed,
                         nextPrayerInfo = if (isNext) nextPrayer else null,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec)
+                            .padding(horizontal = 16.dp, vertical = 2.dp)
                     )
                 }
             }
@@ -130,7 +136,7 @@ fun WearHomeScreen(
 }
 
 @Composable
-private fun WearKerahatBanner(
+private fun TransformingLazyColumnItemScope.WearKerahatBanner(
     kerahat: WearKerahatInfo,
     modifier: Modifier = Modifier
 ) {
@@ -150,20 +156,15 @@ private fun WearKerahatBanner(
         stringResource(R.string.wear_kerahat_approaching)
     }
 
-    Card(
+    Box(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = MaterialTheme.shapes.small
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(containerColor)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
@@ -171,8 +172,8 @@ private fun WearKerahatBanner(
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "${kerahat.remainingMinutes} ${stringResource(R.string.wear_kerahat_remaining)}",
-                style = MaterialTheme.typography.labelSmall,
+                text = "-${kerahat.remainingMinutes}dk",
+                style = MaterialTheme.typography.bodySmall,
                 color = contentColor.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
             )
@@ -181,50 +182,48 @@ private fun WearKerahatBanner(
 }
 
 @Composable
-private fun LoadingState() {
+private fun TransformingLazyColumnItemScope.LoadingState(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 48.dp),
+        modifier = modifier.padding(vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         CircularProgressIndicator(
-            modifier = Modifier.size(36.dp),
+            modifier = Modifier.size(24.dp),
             color = MaterialTheme.colorScheme.primary,
-            strokeWidth = 3.dp
+            strokeWidth = 2.dp
         )
         Text(
             text = stringResource(R.string.wear_loading),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
 @Composable
-private fun CompactHeader(
+private fun TransformingLazyColumnItemScope.CompactHeader(
     cityName: String,
     isPhoneSource: Boolean,
     modifier: Modifier = Modifier
 ) {
     val sourceIconColor = if (isPhoneSource) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
     Row(
-        modifier = modifier.fillMaxWidth().padding(bottom = 2.dp),
+        modifier = modifier.padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(6.dp)
+                .size(4.dp)
                 .clip(CircleShape)
                 .background(sourceIconColor)
         )
         Spacer(modifier = Modifier.size(6.dp))
         Text(
             text = cityName,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -268,14 +267,14 @@ private fun CompactCountdown(
 
     Text(
         text = countdownText,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
         modifier = modifier
     )
 }
 
 @Composable
-private fun WearPrayerRow(
+private fun TransformingLazyColumnItemScope.WearPrayerRow(
     prayer: WearPrayerItem,
     isNext: Boolean,
     isCurrent: Boolean,
@@ -283,50 +282,54 @@ private fun WearPrayerRow(
     nextPrayerInfo: WearNextPrayer?,
     modifier: Modifier = Modifier
 ) {
-    val containerColor = if (isNext) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-    } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.0f)
+    // Current prayer is highlighted prominently
+    // Next prayer shows countdown
+    // Passed prayers are muted
+
+    val containerColor = when {
+        isCurrent -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+        else -> androidx.compose.ui.graphics.Color.Transparent
     }
 
     val nameColor = when {
         isCurrent -> MaterialTheme.colorScheme.primary
-        isNext -> MaterialTheme.colorScheme.onPrimaryContainer
-        isPassed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-        else -> MaterialTheme.colorScheme.onSurface
+        isNext -> MaterialTheme.colorScheme.onSurface
+        isPassed -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val timeColor = when {
         isCurrent -> MaterialTheme.colorScheme.primary
-        isNext -> MaterialTheme.colorScheme.onPrimaryContainer
-        isPassed -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        isNext -> MaterialTheme.colorScheme.onSurface
+        isPassed -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
+    
+    val textStyle = if (isCurrent || isNext) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall
 
     Row(
         modifier = modifier
-            .padding(vertical = 1.dp)
             .clip(MaterialTheme.shapes.small)
             .background(containerColor)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = if (isCurrent) 8.dp else 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = prayerNameFromEnum(prayer.name),
-            style = MaterialTheme.typography.labelMedium,
+            style = textStyle,
             color = nameColor
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             if (isNext && nextPrayerInfo != null) {
                 CompactCountdown(nextPrayer = nextPrayerInfo)
             }
             Text(
                 text = prayer.time,
-                style = MaterialTheme.typography.labelMedium,
+                style = textStyle,
                 color = timeColor
             )
         }

@@ -397,12 +397,15 @@ wear/
 ### Wear
 - Hem Data Layer (telefon bağlıyken) hem standalone API (telefon yokken) çalışır.
 - **Application ID Eşleşmesi**: Veri senkronizasyonu (Data Layer API) için mobil ve wear modüllerinin `applicationId` değeri `"co.gorkem.namaz"` olarak eşitlendi.
-- **Senkronizasyon İyileştirmesi**: `WearDataLayerService` başlangıçta `dataItems` sorgulayarak telefondan gelen son verileri anında çeker. Böylece telefon bağlıyken standalone moda düşme sorunu giderildi. Standalone yüklemesi başlamadan önce 2 saniyelik DataLayer bekleme süresi eklendi ve standalone verisinin senkronize veriyi ezmesi engellendi.
+- **Senkronizasyon İyileştirmesi**: `WearDataLayerService` başlangıçta `dataItems` sorgulayarak telefondan gelen son verileri anında çeker. Standalone yüklemesi başlamadan önce 2 saniyelik DataLayer bekleme süresi eklendi ve standalone verisinin senkronize veriyi ezmesi engellendi.
+- **Dinamik Tema (Premium OLED):** Telefon uygulamasında seçilen tema (Emerald, Sapphire, Amber, Monochrome), `themeId` aracılığıyla Wear OS uygulamasına anlık senkronize edilir. Wear OS tarafında siyah (OLED uyumlu) arka planlı özel `ColorScheme` paletleri bulunur.
+- **Kompakt Premium Arayüz:** Wear OS ana ekranında `TransformingLazyColumn` ve `SurfaceTransformation` kullanılarak üç boyutlu hissi veren, kompakt bir liste tasarımı kullanılmıştır. İçinde bulunulan vakit ana renkle vurgulanırken geçmiş vakitler soluk (dim) gösterilir.
 - **Dil Desteği**: Telefondan (`HomeViewModel`) saate gönderilen veriler `LocaleManager` kullanılarak kullanıcının seçtiği dilde gönderilir.
-- **Complication**: `PrayerComplicationService` ShortText formatındadır. Taşıma ve kırpılma ("AKŞAM 2...") sorununu önlemek için vakit adı `title` alanına, saati ise `text` alanına ayrıldı.
+- **Complication (Saat Formatı)**: `PrayerComplicationService` ShortText formatındadır. Vakit adı `title` alanına, saati ise `text` alanına ayrıldı.
+- **Complication (Geri Sayım)**: Yeni eklenen `PrayerCountdownComplicationService` ile işletim sistemi düzeyinde (Native) çalışan, pil dostu dinamik geri sayım komplikasyonu sunulur (Örn: "İkindi", "1sa 30dk").
 - **Complication Tetikleme**: Telefondan saate yeni veri ulaştığında `ComplicationDataSourceUpdateRequester` aracılığıyla komplikasyonun kadran üzerinde anında güncellenmesi sağlandı.
 - **Tile**: `PrayerTileService`, next prayer + remaining minutes.
-- **Kerahat**: Telefon'dan Wear'a kerahat bilgisi sync edilir. `WearKerahatBanner` aktif/yaklaşıyor durumlarını gösterir.
+- **Kerahat**: Telefon'dan Wear'a kerahat bilgisi sync edilir. `WearKerahatBanner` aktif/yaklaşıyor durumlarını kompakt bir tasarımla gösterir.
 - **⚠️ Duplicate**: `PrayerNameHelper.kt` hem root package'ta (`Context`-based) hem `ui/`'da (`@Composable`). Birini kaldırmak gerekir.
 - **⚠️ Hardcoded fallback**: `WearViewModel.loadFromStandalone()` İstanbul/Silivri districtId=9548 kullanır. GPS konum alınmalı.
 

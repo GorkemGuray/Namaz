@@ -47,6 +47,9 @@ class WearViewModel @Inject constructor(
     private val _isPhoneSource = MutableStateFlow(false)
     val isPhoneSource: StateFlow<Boolean> = _isPhoneSource.asStateFlow()
 
+    private val _themeId = MutableStateFlow(0)
+    val themeId: StateFlow<Int> = _themeId.asStateFlow()
+
     init {
         dataLayerService.startListening()
         viewModelScope.launch {
@@ -56,6 +59,7 @@ class WearViewModel @Inject constructor(
                     _cityName.value = data.cityName
                     _nextPrayerInfo.value = data.nextPrayer
                     _kerahatInfo.value = data.kerahat
+                    _themeId.value = data.themeId
                     _isPhoneSource.value = true
                     _isLoading.value = false
                 }
