@@ -1,15 +1,20 @@
 package co.gorkem.namaz.ui.screens.qibla
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,41 +56,64 @@ fun QiblaMap(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var mapInstance by remember { mutableStateOf<MapLibreMap?>(null) }
+    var isSatelliteMode by remember { mutableStateOf(true) } // Varsayılan olarak detaylı uydu
+    var initialCameraSet by remember { mutableStateOf(false) }
 
     val mapView = remember {
         MapLibre.getInstance(context)
         MapView(context).apply {
             getMapAsync { map ->
                 mapInstance = map
-                map.setStyle(Style.Builder().fromUri("asset://raster_osm_style.json")) { style ->
-                    val kaabaLat = 21.4225
-                    val kaabaLon = 39.8262
+            }
+        }
+    }
 
-                    val points = GreatCircleUtil.getGreatCirclePath(
-                        userLocation.latitude, userLocation.longitude,
-                        kaabaLat, kaabaLon
-                    ).map { Point.fromLngLat(it.first, it.second) }
+    LaunchedEffect(mapInstance, isSatelliteMode) {
+        val map = mapInstance ?: return@LaunchedEffect
+        val styleUri = if (isSatelliteMode) "asset://raster_satellite_style.json" else "asset://raster_osm_style.json"
 
-                    val lineString = LineString.fromLngLats(points)
-                    val feature = Feature.fromGeometry(lineString)
-                    val source = GeoJsonSource("qibla-line-source", FeatureCollection.fromFeature(feature))
-                    style.addSource(source)
+        map.setStyle(Style.Builder().fromUri(styleUri)) { style ->
+            val kaabaLat = 21.4225
+            val kaabaLon = 39.8262
 
-                    val lineLayer = LineLayer("qibla-line-layer", "qibla-line-source").apply {
-                        setProperties(
-                            lineColor("#10B981"), // Emerald green
-                            lineWidth(4f)
-                        )
-                    }
-                    style.addLayer(lineLayer)
+            val points = GreatCircleUtil.getGreatCirclePath(
+                userLocation.latitude, userLocation.longitude,
+                kaabaLat, kaabaLon
+            ).map { Point.fromLngLat(it.first, it.second) }
 
-                    val bounds = LatLngBounds.Builder()
-                        .include(LatLng(userLocation.latitude, userLocation.longitude))
-                        .include(LatLng(kaabaLat, kaabaLon))
-                        .build()
+            val lineString = LineString.fromLngLats(points)
+            val feature = Feature.fromGeometry(lineString)
+            val source = GeoJsonSource("qibla-line-source", FeatureCollection.fromFeature(feature))
+            style.addSource(source)
 
-                    map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150), 1000)
-                }
+            val casingLayer = LineLayer("qibla-line-casing-layer", "qibla-line-source").apply {
+                setProperties(
+                    lineColor("#FFFFFF"), // White outline for contrast
+                    lineWidth(8f),
+                    lineCap("round"),
+                    lineJoin("round")
+                )
+            }
+            style.addLayer(casingLayer)
+
+            val lineLayer = LineLayer("qibla-line-layer", "qibla-line-source").apply {
+                setProperties(
+                    lineColor("#10B981"), // Emerald green
+                    lineWidth(4f),
+                    lineCap("round"),
+                    lineJoin("round")
+                )
+            }
+            style.addLayer(lineLayer)
+
+            if (!initialCameraSet) {
+                val bounds = LatLngBounds.Builder()
+                    .include(LatLng(userLocation.latitude, userLocation.longitude))
+                    .include(LatLng(kaabaLat, kaabaLon))
+                    .build()
+
+                map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150), 1000)
+                initialCameraSet = true
             }
         }
     }
@@ -113,24 +141,40 @@ fun QiblaMap(
             modifier = Modifier.fillMaxSize()
         )
 
-        FloatingActionButton(
-            onClick = {
-                val position = CameraPosition.Builder()
-                    .target(LatLng(userLocation.latitude, userLocation.longitude))
-                    .zoom(17.0) // Sokak/Bina seviyesi zoom
-                    .build()
-                mapInstance?.animateCamera(CameraUpdateFactory.newCameraPosition(position), 1000)
-            },
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp),
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.MyLocation,
-                contentDescription = stringResource(R.string.qibla_set_location)
-            )
+            FloatingActionButton(
+                onClick = { isSatelliteMode = !isSatelliteMode },
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ) {
+                Icon(
+                    imageVector = if (isSatelliteMode) Icons.Default.Map else Icons.Default.Public,
+                    contentDescription = "Harita Türü Değiştir"
+                )
+            }
+
+            FloatingActionButton(
+                onClick = {
+                    val position = CameraPosition.Builder()
+                        .target(LatLng(userLocation.latitude, userLocation.longitude))
+                        .zoom(18.0) // Sokak/Bina seviyesi ekstra zoom
+                        .build()
+                    mapInstance?.animateCamera(CameraUpdateFactory.newCameraPosition(position), 1000)
+                },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MyLocation,
+                    contentDescription = stringResource(R.string.qibla_set_location)
+                )
+            }
         }
     }
 }
