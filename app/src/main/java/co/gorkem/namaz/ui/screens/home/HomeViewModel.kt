@@ -308,11 +308,12 @@ class HomeViewModel @Inject constructor(
                         time = time
                     )
                 },
-                nextPrayer = _nextPrayer.value?.let {
+                nextPrayer = _nextPrayer.value?.let { nextPrayer ->
                     WearNextPrayer(
-                        name = localizedContext.getString(it.prayerName.nameRes),
-                        time = it.prayerTime,
-                        remainingMinutes = it.remainingMinutes
+                        name = localizedContext.getString(nextPrayer.prayerName.nameRes),
+                        time = nextPrayer.prayerTime,
+                        remainingMinutes = nextPrayer.remainingMinutes,
+                        targetTimeMillis = nextPrayer.targetPrayerTimeInMillis
                     )
                 },
                 kerahat = wearKerahat

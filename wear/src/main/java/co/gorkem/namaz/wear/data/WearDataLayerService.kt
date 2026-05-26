@@ -78,11 +78,17 @@ class WearDataLayerService @Inject constructor(
 
     private fun requestComplicationUpdate() {
         try {
-            val requester = androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester.create(
+            val requester1 = androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester.create(
                 context = context,
                 complicationDataSourceComponent = android.content.ComponentName(context, co.gorkem.namaz.wear.complication.PrayerComplicationService::class.java)
             )
-            requester.requestUpdateAll()
+            requester1.requestUpdateAll()
+            
+            val requester2 = androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester.create(
+                context = context,
+                complicationDataSourceComponent = android.content.ComponentName(context, co.gorkem.namaz.wear.complication.PrayerCountdownComplicationService::class.java)
+            )
+            requester2.requestUpdateAll()
         } catch (e: Exception) {
             // Ignore
         }

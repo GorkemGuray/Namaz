@@ -165,7 +165,8 @@ class WearViewModel @Inject constructor(
         return WearNextPrayer(
             name = nextItem.name,
             time = nextItem.time,
-            remainingMinutes = remainingMinutes
+            remainingMinutes = remainingMinutes,
+            targetTimeMillis = targetDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
         )
     }
 }

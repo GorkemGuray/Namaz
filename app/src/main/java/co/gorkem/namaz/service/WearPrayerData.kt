@@ -24,7 +24,8 @@ data class WearPrayerItem(
 data class WearNextPrayer(
     val name: String,
     val time: String,
-    val remainingMinutes: Long
+    val remainingMinutes: Long,
+    val targetTimeMillis: Long = 0L
 )
 
 data class WearKerahatInfo(

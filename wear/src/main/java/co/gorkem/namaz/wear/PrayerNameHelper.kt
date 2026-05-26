@@ -14,3 +14,15 @@ fun prayerNameFromEnum(context: Context, name: String): String {
         else -> name
     }
 }
+
+fun getPreviousPrayer(name: String): String {
+    return when (name) {
+        "IMSAK" -> "YATSI"
+        "GUNES" -> "IMSAK"
+        "OGLE" -> "GUNES"
+        "IKINDI" -> "OGLE"
+        "AKSAM" -> "IKINDI"
+        "YATSI" -> "AKSAM"
+        else -> name
+    }
+}
