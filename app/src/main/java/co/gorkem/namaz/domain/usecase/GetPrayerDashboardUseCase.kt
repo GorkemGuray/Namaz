@@ -106,7 +106,7 @@ class GetPrayerDashboardUseCase @Inject constructor(
                     else -> tomorrowPrayers?.get(PrayerName.IMSAK) ?: LocalTime.MAX
                 }
                 PrayerPeriod(
-                    prayerName = PrayerName.YATSI,
+                    prayerName = if (isEarly) PrayerName.YATSI else PrayerName.IMSAK,
                     periodType = if (isEarly) PeriodType.YATSI else PeriodType.SABAH,
                     startTime = if (isEarly) yatsi else imsak,
                     endTime = endTime

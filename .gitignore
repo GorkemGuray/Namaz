@@ -1,30 +1,54 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.idea/migrations.xml
-.idea/gradle.xml
+# OS files
 .DS_Store
-/build
+Thumbs.db
+
+# Gradle
+.gradle/
+**/build/
+!gradle-wrapper.jar
+
+# IDE — IntelliJ / Android Studio (local-only)
+*.iml
+.idea/caches/
+.idea/libraries/
+.idea/deploymentTargetSelector.xml
+.idea/deviceManager.xml
+.idea/gradle.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/migrations.xml
+
+# Local config
+local.properties
+
+# Generated / output
 /captures
 .externalNativeBuild
 .cxx
-local.properties
-
-**/build/
 *.apk
 *.aab
+*.ap_
+*.aar
 *.dex
 *.class
+*.hprof
 *.log
 bin/
 gen/
+out/
 
+# Security (DO NOT COMMIT)
+*.jks
+*.keystore
+
+# NDK
+*.o
+*.so
+
+# Agent skills
 .agents/
 .eser/
 .opencode/
