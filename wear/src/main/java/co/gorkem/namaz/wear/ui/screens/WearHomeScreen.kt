@@ -149,12 +149,12 @@ fun WearHomeScreen(
         IconButton(
             onClick = onNavigateToQibla,
             colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 2.dp)
+                .padding(end = 8.dp)
                 .size(32.dp)
         ) {
             Icon(

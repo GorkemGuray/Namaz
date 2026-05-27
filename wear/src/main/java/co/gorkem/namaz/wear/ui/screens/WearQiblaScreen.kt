@@ -151,12 +151,12 @@ fun WearQiblaScreen(
         IconButton(
             onClick = onNavigateBack,
             colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = 2.dp)
+                .padding(start = 8.dp)
                 .size(32.dp)
         ) {
             Icon(
