@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.CompassCalibration
@@ -98,10 +99,46 @@ fun WearQiblaScreen(
                 )
             }
             is QiblaUiState.StaticDirection -> {
-                WearStaticQiblaCompass(
-                    qiblaDirection = state.qiblaDirection,
-                    modifier = Modifier.size(160.dp)
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    WearStaticQiblaCompass(
+                        qiblaDirection = state.qiblaDirection,
+                        modifier = Modifier.size(160.dp)
+                    )
+
+                    // City Name at the bottom
+                    Text(
+                        text = state.cityName,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 10.sp,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 12.dp)
+                    )
+
+                    // Header Static Badge
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 10.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
+                                shape = CircleShape
+                            )
+                            .padding(horizontal = 10.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "${state.qiblaDirection.bearing.toInt()}°",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
             is QiblaUiState.CompassActive -> {
                 val isAligned = state.alignmentDelta <= 5.0
@@ -118,6 +155,8 @@ fun WearQiblaScreen(
                     qiblaBearing = state.qiblaDirection.bearing,
                     alignmentDelta = state.alignmentDelta,
                     isAligned = isAligned,
+                    pitch = state.pitch,
+                    roll = state.roll,
                     modifier = Modifier.size(160.dp)
                 )
 
@@ -129,21 +168,41 @@ fun WearQiblaScreen(
                         tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f),
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = 24.dp)
                             .size(16.dp)
                     )
                 }
 
-                // Degree display at the top
+                // City Name at the bottom
                 Text(
-                    text = "${state.alignmentDelta.toInt()}°",
-                    color = if (isAligned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
+                    text = state.cityName,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 10.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 12.dp)
+                )
+
+                // Deviation Degree display at the top as a premium badge
+                Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 8.dp)
-                )
+                        .padding(top = 10.dp)
+                        .background(
+                            color = if (isAligned) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
+                            shape = CircleShape
+                        )
+                        .padding(horizontal = 10.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (isAligned) "KIBLE" else "${state.alignmentDelta.toInt()}°",
+                        color = if (isAligned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
 
@@ -174,12 +233,16 @@ fun WearActiveQiblaCompass(
     qiblaBearing: Double,
     alignmentDelta: Double,
     isAligned: Boolean,
+    pitch: Double = 0.0,
+    roll: Double = 0.0,
     modifier: Modifier = Modifier
 ) {
     val outlineVariant = MaterialTheme.colorScheme.outlineVariant
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val primary = MaterialTheme.colorScheme.primary
     val textMeasurer = rememberTextMeasurer()
+
+    val isLevel = abs(pitch) <= 8.0 && abs(roll) <= 8.0
 
     var accumulatedAzimuth by remember { mutableStateOf(deviceAzimuth) }
     LaunchedEffect(deviceAzimuth) {
@@ -216,6 +279,17 @@ fun WearActiveQiblaCompass(
         label = "kaaba"
     )
 
+    val animatedPitch by animateFloatAsState(
+        targetValue = pitch.toFloat(),
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "pitch"
+    )
+    val animatedRoll by animateFloatAsState(
+        targetValue = roll.toFloat(),
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "roll"
+    )
+
     val glowTransition = rememberInfiniteTransition(label = "glow")
     val glowAlpha by glowTransition.animateFloat(
         initialValue = 0.0f,
@@ -245,7 +319,7 @@ fun WearActiveQiblaCompass(
     Canvas(modifier = modifier) {
         val center = Offset(size.width / 2, size.height / 2)
         val outerRadius = size.minDimension / 2 - 8.dp.toPx()
-        val innerRadius = outerRadius * 0.75f
+        val innerRadius = outerRadius * 0.72f
 
         // Outer ring
         drawCircle(
@@ -264,9 +338,26 @@ fun WearActiveQiblaCompass(
         // Top pointer indicator
         drawTopPointer(center, outerRadius, primary)
 
-        // Rotate degree markings and cardinal points
+        // Crosshair for center reference
+        drawCrosshair(center, outlineVariant)
+
+        // Bubble level indicator (su terazisi)
+        val maxDisp = 10.dp.toPx()
+        val tiltScale = (maxDisp / 45.0).toFloat()
+        val bubbleX = center.x - (animatedRoll * tiltScale)
+        val bubbleY = center.y + (animatedPitch * tiltScale)
+        drawLevelBubble(
+            center = Offset(bubbleX, bubbleY),
+            targetCenter = center,
+            isLevel = isLevel,
+            primary = primary,
+            outline = outlineVariant
+        )
+
+        // Rotate degree markings, degree labels and cardinal points
         rotate(degrees = -animatedAzimuth, pivot = center) {
             drawDegreeTicks(center, outerRadius, onSurfaceVariant)
+            drawDegreeLabels(center, outerRadius, onSurfaceVariant, textMeasurer)
             drawCardinalLabels(center, innerRadius, onSurfaceVariant, textMeasurer)
         }
 
@@ -327,7 +418,7 @@ fun WearStaticQiblaCompass(
     Canvas(modifier = modifier) {
         val center = Offset(size.width / 2, size.height / 2)
         val outerRadius = size.minDimension / 2 - 8.dp.toPx()
-        val innerRadius = outerRadius * 0.75f
+        val innerRadius = outerRadius * 0.72f
 
         // Outer ring
         drawCircle(
@@ -343,9 +434,11 @@ fun WearStaticQiblaCompass(
             style = Stroke(width = 1.dp.toPx())
         )
 
+        // Crosshair for static center
+        drawCrosshair(center, outlineVariant)
+
         // Static arrow pointing to Qibla bearing (North is at 0 degrees, top)
         rotate(degrees = qiblaDirection.bearing.toFloat(), pivot = center) {
-            // Draw a pointer arrow pointing to the top of canvas (which represents the relative bearing)
             val arrowPath = Path().apply {
                 moveTo(center.x, center.y - outerRadius)
                 lineTo(center.x - 8.dp.toPx(), center.y - innerRadius)
@@ -379,13 +472,63 @@ private fun DrawScope.drawTopPointer(
     drawPath(path = path, color = color)
 }
 
+private fun DrawScope.drawCrosshair(
+    center: Offset,
+    color: Color
+) {
+    val len = 10.dp.toPx()
+    drawLine(
+        color = color.copy(alpha = 0.15f),
+        start = Offset(center.x - len, center.y),
+        end = Offset(center.x + len, center.y),
+        strokeWidth = 1.dp.toPx()
+    )
+    drawLine(
+        color = color.copy(alpha = 0.15f),
+        start = Offset(center.x, center.y - len),
+        end = Offset(center.x, center.y + len),
+        strokeWidth = 1.dp.toPx()
+    )
+}
+
+private fun DrawScope.drawLevelBubble(
+    center: Offset,
+    targetCenter: Offset,
+    isLevel: Boolean,
+    primary: Color,
+    outline: Color
+) {
+    val dotRadius = 4.dp.toPx()
+    val targetRadius = 9.dp.toPx()
+
+    drawCircle(
+        color = if (isLevel) primary.copy(alpha = 0.4f) else outline.copy(alpha = 0.25f),
+        radius = targetRadius,
+        center = targetCenter,
+        style = Stroke(width = 1.dp.toPx())
+    )
+
+    drawCircle(
+        color = if (isLevel) primary.copy(alpha = 0.1f) else outline.copy(alpha = 0.04f),
+        radius = targetRadius - 0.5.dp.toPx(),
+        center = targetCenter
+    )
+
+    val dotColor = if (isLevel) primary else outline.copy(alpha = 0.7f)
+    drawCircle(
+        color = dotColor,
+        radius = dotRadius,
+        center = center
+    )
+}
+
 private fun DrawScope.drawDegreeTicks(
     center: Offset,
     radius: Float,
     color: Color
 ) {
-    for (i in 0 until 24) {
-        val angle = i * 15f
+    for (i in 0 until 72) {
+        val angle = i * 5f
         val isMajor = i % 6 == 0
         val tickLength = if (isMajor) 8.dp.toPx() else 4.dp.toPx()
         val tickWidth = if (isMajor) 1.5.dp.toPx() else 1.dp.toPx()
@@ -400,6 +543,34 @@ private fun DrawScope.drawDegreeTicks(
                 cap = StrokeCap.Round
             )
         }
+    }
+}
+
+private fun DrawScope.drawDegreeLabels(
+    center: Offset,
+    radius: Float,
+    color: Color,
+    textMeasurer: TextMeasurer
+) {
+    val style = TextStyle(
+        fontSize = 8.sp,
+        color = color.copy(alpha = 0.4f),
+        fontWeight = FontWeight.Normal
+    )
+    val labelRadius = radius - 14.dp.toPx()
+
+    for (deg in listOf(30, 60, 120, 150, 210, 240, 300, 330)) {
+        val rad = Math.toRadians(deg.toDouble())
+        val x = center.x + labelRadius * sin(rad).toFloat()
+        val y = center.y - labelRadius * cos(rad).toFloat()
+        val text = deg.toString()
+        val measured = textMeasurer.measure(text, style)
+        drawText(
+            textMeasurer = textMeasurer,
+            text = text,
+            style = style,
+            topLeft = Offset(x - measured.size.width / 2, y - measured.size.height / 2)
+        )
     }
 }
 

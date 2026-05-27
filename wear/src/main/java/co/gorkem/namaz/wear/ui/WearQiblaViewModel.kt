@@ -52,14 +52,17 @@ class WearQiblaViewModel @Inject constructor(
             // 1. DataLayer'dan (telefondan) koordinat almayı dene
             var lat = 0.0
             var lon = 0.0
+            var cityName = ""
             val phoneData = dataLayerService.prayerData.value
-            if (phoneData != null && phoneData.latitude != 0.0 && phoneData.longitude != 0.0) {
+            if (phoneData != null) {
                 lat = phoneData.latitude
                 lon = phoneData.longitude
+                cityName = phoneData.cityName
             }
 
             // 2. Telefondan gelmediyse, saat üzerindeki GPS'i dene
             if (lat == 0.0 && lon == 0.0) {
+                cityName = "Konumunuz"
                 try {
                     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                     val cancellationTokenSource = CancellationTokenSource()
@@ -92,23 +95,25 @@ class WearQiblaViewModel @Inject constructor(
             if (lat == 0.0 && lon == 0.0) {
                 lat = 41.0082
                 lon = 28.9784
+                cityName = "İstanbul"
             }
 
             qiblaDirection = qiblaUseCase(lat, lon)
 
             if (sensorManager.hasMagnetometer()) {
-                startCompassMode(lat, lon)
+                startCompassMode(lat, lon, cityName)
             } else {
                 _uiState.value = QiblaUiState.StaticDirection(
                     qiblaDirection = qiblaDirection!!,
                     latitude = lat,
-                    longitude = lon
+                    longitude = lon,
+                    cityName = cityName
                 )
             }
         }
     }
 
-    private fun startCompassMode(latitude: Double, longitude: Double) {
+    private fun startCompassMode(latitude: Double, longitude: Double, cityName: String) {
         sensorManager.getOrientationEvents()
             .catch { e ->
                 _uiState.value = QiblaUiState.Error(
@@ -121,7 +126,8 @@ class WearQiblaViewModel @Inject constructor(
                         _uiState.value = QiblaUiState.StaticDirection(
                             qiblaDirection = qiblaDirection!!,
                             latitude = latitude,
-                            longitude = longitude
+                            longitude = longitude,
+                            cityName = cityName
                         )
                     }
                     is QiblaSensorManager.QiblaOrientation.Available -> {
@@ -138,7 +144,8 @@ class WearQiblaViewModel @Inject constructor(
                             sensorAccuracy = orientation.sensorAccuracy,
                             magneticFieldStrength = orientation.magneticFieldStrength,
                             isMagneticDistorted = orientation.isMagneticDistorted,
-                            needsCalibration = orientation.needsCalibration
+                            needsCalibration = orientation.needsCalibration,
+                            cityName = cityName
                         )
                     }
                 }
