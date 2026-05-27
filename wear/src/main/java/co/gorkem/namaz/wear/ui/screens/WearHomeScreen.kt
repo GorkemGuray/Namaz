@@ -50,8 +50,15 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.wear.compose.material3.IconButton
+import androidx.wear.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Icon
+
 @Composable
 fun WearHomeScreen(
+    onNavigateToQibla: () -> Unit,
     viewModel: WearViewModel = hiltViewModel()
 ) {
     val prayerItems by viewModel.prayerItems.collectAsState()
@@ -63,74 +70,98 @@ fun WearHomeScreen(
     val listState = rememberTransformingLazyColumnState()
     val transformationSpec = rememberTransformationSpec()
 
-    ScreenScaffold(
-        scrollState = listState,
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
-    ) { contentPadding ->
-        TransformingLazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = contentPadding,
-            flingBehavior = TransformingLazyColumnDefaults.snapFlingBehavior(listState),
-            rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(listState)
-        ) {
-            if (isLoading && prayerItems.isEmpty()) {
-                item {
-                    LoadingState(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .transformedHeight(this, transformationSpec)
-                    )
-                }
-            } else {
-                // Header: Location
-                if (cityName.isNotEmpty()) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        ScreenScaffold(
+            scrollState = listState,
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        ) { contentPadding ->
+            TransformingLazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = contentPadding,
+                flingBehavior = TransformingLazyColumnDefaults.snapFlingBehavior(listState),
+                rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(listState)
+            ) {
+                if (isLoading && prayerItems.isEmpty()) {
                     item {
-                        CompactHeader(
-                            cityName = cityName,
-                            isPhoneSource = isPhoneSource,
+                        LoadingState(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .transformedHeight(this, transformationSpec)
                         )
                     }
-                }
+                } else {
+                    // Header: Location
+                    if (cityName.isNotEmpty()) {
+                        item {
+                            CompactHeader(
+                                cityName = cityName,
+                                isPhoneSource = isPhoneSource,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                            )
+                        }
+                    }
 
-                // Kerahat Alert
-                if (kerahat != null) {
-                    item {
-                        WearKerahatBanner(
-                            kerahat = kerahat!!,
+                    // Kerahat Alert
+                    if (kerahat != null) {
+                        item {
+                            WearKerahatBanner(
+                                kerahat = kerahat!!,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                            )
+                        }
+                    }
+
+                    // Prayer rows
+                    val nextPrayerIndex = prayerItems.indexOfFirst { it.name == nextPrayer?.name }
+                    val currentPrayerIndex = if (nextPrayerIndex > 0) nextPrayerIndex - 1 else if (nextPrayerIndex == 0) prayerItems.lastIndex else -1
+
+                    items(prayerItems.size) { index ->
+                        val prayer = prayerItems[index]
+                        val isNext = index == nextPrayerIndex
+                        val isCurrent = index == currentPrayerIndex
+                        val isPassed = currentPrayerIndex != -1 && index < currentPrayerIndex && nextPrayerIndex != 0
+
+                        WearPrayerRow(
+                            prayer = prayer,
+                            isNext = isNext,
+                            isCurrent = isCurrent,
+                            isPassed = isPassed,
+                            nextPrayerInfo = if (isNext) nextPrayer else null,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .transformedHeight(this, transformationSpec)
+                                .padding(horizontal = 16.dp, vertical = 2.dp)
                         )
                     }
-                }
-
-                // Prayer rows
-                val nextPrayerIndex = prayerItems.indexOfFirst { it.name == nextPrayer?.name }
-                val currentPrayerIndex = if (nextPrayerIndex > 0) nextPrayerIndex - 1 else if (nextPrayerIndex == 0) prayerItems.lastIndex else -1
-
-                items(prayerItems.size) { index ->
-                    val prayer = prayerItems[index]
-                    val isNext = index == nextPrayerIndex
-                    val isCurrent = index == currentPrayerIndex
-                    val isPassed = currentPrayerIndex != -1 && index < currentPrayerIndex && nextPrayerIndex != 0
-
-                    WearPrayerRow(
-                        prayer = prayer,
-                        isNext = isNext,
-                        isCurrent = isCurrent,
-                        isPassed = isPassed,
-                        nextPrayerInfo = if (isNext) nextPrayer else null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .transformedHeight(this, transformationSpec)
-                            .padding(horizontal = 16.dp, vertical = 2.dp)
-                    )
                 }
             }
+        }
+
+        // Kıble ekranına git butonu (Sağ tarafta dairesel kenarda)
+        IconButton(
+            onClick = onNavigateToQibla,
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f),
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 2.dp)
+                .size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "Kıble Bulucu",
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

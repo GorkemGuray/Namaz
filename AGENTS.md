@@ -289,7 +289,7 @@ wear/
     │   Permissions: FINE_LOCATION, COARSE_LOCATION, INTERNET, WAKE_LOCK
     │   uses-feature: android.hardware.type.watch
     ├── java/co/gorkem/namaz/wear/
-    │   ├── WearApp.kt              # Root composable (WearTheme + WearHomeScreen)
+    │   ├── WearApp.kt              # Root composable (WearTheme + HorizontalPager: WearHomeScreen / WearQiblaScreen)
     │   ├── WearApplication.kt      # @HiltAndroidApp
     │   ├── MainActivity.kt         # @AndroidEntryPoint ComponentActivity
     │   ├── PrayerNameHelper.kt     # Context-based prayer name mapper (⚠️ duplicate with ui/PrayerNameHelper.kt)
@@ -302,15 +302,23 @@ wear/
     │   │   ├── WearDataLayerService.kt    # DataClient listener (/namaz_prayer_data)
     │   │   ├── WearPrayerRepository.kt    # Standalone Aladhan API call (phone yoksa)
     │   │   ├── WearPrayerModel.kt         # WearPrayerData, WearPrayerItem, WearNextPrayer, WearKerahatInfo
+    │   │   ├── QiblaDirection.kt          # QiblaDirection model copy
+    │   │   ├── QiblaUseCase.kt            # Qibla bearing calculation use case copy
+    │   │   ├── QiblaSensorManager.kt      # Magnetometer & Accelerometer flow copy
     │   │   └── remote/
     │   │       ├── api/AladhanApiService.kt      # Retrofit interface (method, school params)
     │   │       └── dto/PrayerTimeResponse.kt     # DTOs (simplified)
     │   │
     │   ├── ui/
     │   │   ├── WearViewModel.kt       # DataLayer listener + standalone API fallback (hardcoded Istanbul)
+    │   │   ├── WearQiblaViewModel.kt  # Qibla calculation, sensor, location management ViewModel
     │   │   ├── PrayerNameHelper.kt    # @Composable prayer name mapper (⚠️ duplicate with root PrayerNameHelper.kt)
+    │   │   ├── state/
+    │   │   │   └── QiblaUiState.kt    # Compass state enum (CompassActive, StaticDirection, etc.)
+    │   │   │
     │   │   ├── screens/
-    │   │   │   ── WearHomeScreen.kt  # ScalingLazyColumn: countdown hero, city, kerahat banner, prayer rows, source chip
+    │   │   │   ├── WearHomeScreen.kt  # TransformingLazyColumn list + side chevron to Qibla
+    │   │   │   └── WearQiblaScreen.kt # Canvas compass layout, haptic aligned feedback, back button
     │   │   └── theme/
     │   │       ├── Theme.kt           # WearTheme (OLED-black color scheme)
     │   │       ├── Color.kt           # High-contrast wear palette (cyan/blue/amber on black)
@@ -344,8 +352,9 @@ wear/
    - İmsakiyem API için: İmsakiyem API ile ilçe arama (büyük/küçük harf ve Türkçe karakter desteğiyle)
    - Son seçilenler (max 5, JSON olarak DataStore'da)
 6. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi. Ayrıca MapLibre entegrasyonu ile Kabe'ye giden çizgiyi haritada (sokak seviyesi detayında) görselleştiren harita desteği.
-7. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum + next prayer + kerahat bilgisi gönderir
-8. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
+7. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum koordinatları (enlem/boylam) + next prayer + kerahat + tema bilgisi gönderir.
+8. **Wear Kıble**: Vakitler ekranında sola kaydırarak ya da sağ kenardaki Chevron butonuna basarak ulaşılan, dairesel ekranlara optimize edilmiş canvas pusula. Hizalandığında (sapma ≤ 5°) haptik (titreşim) geri bildirim verir. Sensör yoksa statik kıble yönü ve açısını gösterir.
+9. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
 
 ---
 
@@ -400,6 +409,8 @@ wear/
 - **Senkronizasyon İyileştirmesi**: `WearDataLayerService` başlangıçta `dataItems` sorgulayarak telefondan gelen son verileri anında çeker. Standalone yüklemesi başlamadan önce 2 saniyelik DataLayer bekleme süresi eklendi ve standalone verisinin senkronize veriyi ezmesi engellendi.
 - **Dinamik Tema (Premium OLED):** Telefon uygulamasında seçilen tema (Emerald, Sapphire, Amber, Monochrome), `themeId` aracılığıyla Wear OS uygulamasına anlık senkronize edilir. Wear OS tarafında siyah (OLED uyumlu) arka planlı özel `ColorScheme` paletleri bulunur.
 - **Kompakt Premium Arayüz:** Wear OS ana ekranında `TransformingLazyColumn` ve `SurfaceTransformation` kullanılarak üç boyutlu hissi veren, kompakt bir liste tasarımı kullanılmıştır. İçinde bulunulan vakit ana renkle vurgulanırken geçmiş vakitler soluk (dim) gösterilir.
+- **Sayfalar Arası Yatay Kaydırma (Horizontal Pager):** Vakitler ekranı ve Kıble ekranı arasında yatay kaydırma navigasyonu sunulur. Ayrıca ekranların kenarlarına dairesel tasarıma uygun sol/sağ Chevron butonları yerleştirilmiştir.
+- **Wear OS Kıble Pusulası (Qibla Finder):** Canvas tabanlı, optimize edilmiş Kıble Pusulası ekranı. Manyetometre varsa animasyonlu pusula halkası ve sapma derecesi gösterilir; tam hizalandığında haptik (titreşimli) geri bildirim verir. Manyetometre yoksa statik Kabe oku ve sapma açısı ile çalışır.
 - **Dil Desteği**: Telefondan (`HomeViewModel`) saate gönderilen veriler `LocaleManager` kullanılarak kullanıcının seçtiği dilde gönderilir.
 - **Complication (Saat Formatı)**: `PrayerComplicationService` ShortText formatındadır. Vakit adı `title` alanına, saati ise `text` alanına ayrıldı.
 - **Complication (Geri Sayım)**: Yeni eklenen `PrayerCountdownComplicationService` ile işletim sistemi düzeyinde (Native) çalışan, pil dostu dinamik geri sayım komplikasyonu sunulur (Örn: "İkindi", "1sa 30dk").

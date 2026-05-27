@@ -159,7 +159,7 @@ class NamazWidget : GlanceAppWidget() {
                 val widgetColors = AppThemeUtils.getGlanceColors(appTheme)
 
                 GlanceTheme(colors = widgetColors) {
-                    WidgetContent(state, appWidgetId)
+                    WidgetContent(state, appWidgetId, appTheme)
                 }
             }
         }
@@ -321,7 +321,7 @@ private fun getLocalizedString(context: Context, resId: Int, language: String): 
 }
 
 @Composable
-private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
+private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int, appTheme: AppThemeSelection) {
     val context = LocalContext.current
     val size = LocalSize.current
 
@@ -374,7 +374,8 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 isKerahat = state.isKerahat,
                 kerahatPrayerName = state.kerahatPrayerName,
                 kerahatRemainingStr = kerahatRemainingStr,
-                remainingLabel = remainingLabel
+                remainingLabel = remainingLabel,
+                appTheme = appTheme
             )
         } else {
             ExpandedLayout(
@@ -390,7 +391,8 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int) {
                 isKerahat = state.isKerahat,
                 kerahatPrayerName = state.kerahatPrayerName,
                 kerahatRemainingStr = kerahatRemainingStr,
-                remainingLabel = remainingLabel
+                remainingLabel = remainingLabel,
+                appTheme = appTheme
             )
         }
     }
@@ -410,7 +412,8 @@ private fun CompactLayout(
     isKerahat: Boolean = false,
     kerahatPrayerName: String? = null,
     kerahatRemainingStr: String = "",
-    remainingLabel: String = ""
+    remainingLabel: String = "",
+    appTheme: AppThemeSelection
 ) {
     val context = LocalContext.current
     val size = LocalSize.current
@@ -420,8 +423,10 @@ private fun CompactLayout(
     val cardBg = if (isKerahatActive) GlanceTheme.colors.errorContainer else GlanceTheme.colors.secondaryContainer
     val cardOnBg = if (isKerahatActive) GlanceTheme.colors.onErrorContainer else GlanceTheme.colors.onSecondaryContainer
     val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
-    val badgeOnBgColor = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
     val stackVertically = size.height >= 120.dp || size.width < 220.dp
+
+    val isDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    val badgeTextColor = getBadgeTextColor(appTheme, isDark, isKerahatActive)
 
     val kerahatLabel = if (isKerahatActive) {
         mapKerahatPrayerName(context, kerahatPrayerName!!, language)
@@ -435,7 +440,7 @@ private fun CompactLayout(
         if (language == "en") "%s left" else "%s kaldı"
     }
 
-    val chronometerRemoteViews = remember(targetEpochMillis, badgeOnBgColor, chronometerFormat) {
+    val chronometerRemoteViews = remember(targetEpochMillis, badgeTextColor, chronometerFormat) {
         val rv = RemoteViews(context.packageName, R.layout.widget_chronometer)
         val nowElapsed = SystemClock.elapsedRealtime()
         val nowWall = System.currentTimeMillis()
@@ -443,7 +448,7 @@ private fun CompactLayout(
         val targetElapsed = nowElapsed + remainingWall
         rv.setChronometer(R.id.widget_chronometer, targetElapsed, chronometerFormat, true)
         rv.setChronometerCountDown(R.id.widget_chronometer, true)
-        rv.setTextColor(R.id.widget_chronometer, badgeOnBgColor.getColor(context).toArgb())
+        rv.setTextColor(R.id.widget_chronometer, badgeTextColor.toArgb())
         rv
     }
 
@@ -586,7 +591,8 @@ private fun ExpandedLayout(
     isKerahat: Boolean = false,
     kerahatPrayerName: String? = null,
     kerahatRemainingStr: String = "",
-    remainingLabel: String = ""
+    remainingLabel: String = "",
+    appTheme: AppThemeSelection
 ) {
     val context = LocalContext.current
     val localizedPrayerName = getLocalizedString(context, nextPrayerName.nameRes, language)
@@ -601,7 +607,9 @@ private fun ExpandedLayout(
     val cardBg = if (isKerahatActive) GlanceTheme.colors.errorContainer else GlanceTheme.colors.secondaryContainer
     val cardOnBg = if (isKerahatActive) GlanceTheme.colors.onErrorContainer else GlanceTheme.colors.onSecondaryContainer
     val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
-    val badgeOnBgColor = if (isKerahatActive) GlanceTheme.colors.onError else GlanceTheme.colors.onPrimary
+
+    val isDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    val badgeTextColor = getBadgeTextColor(appTheme, isDark, isKerahatActive)
 
     val chronometerFormat = if (isKerahatActive) {
         if (language == "en") "%s $kerahatLabel ends" else "%s $kerahatLabel bitiyor"
@@ -609,7 +617,7 @@ private fun ExpandedLayout(
         if (language == "en") "%s left" else "%s kaldı"
     }
 
-    val chronometerRemoteViews = remember(targetEpochMillis, badgeOnBgColor, chronometerFormat) {
+    val chronometerRemoteViews = remember(targetEpochMillis, badgeTextColor, chronometerFormat) {
         val rv = RemoteViews(context.packageName, R.layout.widget_chronometer)
         val nowElapsed = SystemClock.elapsedRealtime()
         val nowWall = System.currentTimeMillis()
@@ -617,7 +625,7 @@ private fun ExpandedLayout(
         val targetElapsed = nowElapsed + remainingWall
         rv.setChronometer(R.id.widget_chronometer, targetElapsed, chronometerFormat, true)
         rv.setChronometerCountDown(R.id.widget_chronometer, true)
-        rv.setTextColor(R.id.widget_chronometer, badgeOnBgColor.getColor(context).toArgb())
+        rv.setTextColor(R.id.widget_chronometer, badgeTextColor.toArgb())
         rv
     }
 
@@ -914,5 +922,26 @@ private fun schedulePrayerTransitionAlarm(context: Context, targetEpochMillis: L
         }
     } catch (e: Exception) {
         Log.e("NamazWidget", "Failed to schedule transition alarm", e)
+    }
+}
+
+private fun getBadgeTextColor(
+    theme: AppThemeSelection,
+    isDark: Boolean,
+    isKerahat: Boolean
+): Color {
+    return if (isKerahat) {
+        if (isDark) Color(0xFF690005) else Color(0xFFFFFFFF)
+    } else {
+        if (isDark) {
+            when (theme) {
+                AppThemeSelection.EMERALD_OASIS -> Color(0xFFFFFFFF)
+                AppThemeSelection.SAPPHIRE_NIGHT -> Color(0xFF001A33)
+                AppThemeSelection.AMBER_SANDS -> Color(0xFF3A2410)
+                AppThemeSelection.MONOCHROME_PLATINUM -> Color(0xFF1A1A1A)
+            }
+        } else {
+            Color(0xFFFFFFFF)
+        }
     }
 }
