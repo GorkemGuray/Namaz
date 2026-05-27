@@ -151,8 +151,8 @@ fun WearQiblaScreen(
         IconButton(
             onClick = onNavigateBack,
             colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f),
-                contentColor = MaterialTheme.colorScheme.onSurface
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ),
             modifier = Modifier
                 .align(Alignment.CenterStart)
