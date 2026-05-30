@@ -123,11 +123,20 @@
     <!-- Prayer List -->
     <string name="prayer_next_badge">Next</string>
 
+    <!-- Notification Prayer Names -->
+    <string name="notification_prayer_imsak">Fajr Prayer</string>
+    <string name="notification_prayer_gunes">Sunrise</string>
+    <string name="notification_prayer_ogle">Dhuhr Prayer</string>
+    <string name="notification_prayer_ikindi">Asr Prayer</string>
+    <string name="notification_prayer_aksam">Maghrib Prayer</string>
+    <string name="notification_prayer_yatsi">Isha Prayer</string>
+
     <!-- Notifications -->
     <string name="notification_channel_name">Prayer Times</string>
     <string name="notification_channel_desc">Prayer time notifications</string>
-    <string name="notification_prayer_time"> Time</string>
-    <string name="notification_separator"> - </string>
+    <string name="notification_title_format">%1$s Time</string>
+    <string name="notification_text_format">%1$s - %2$s</string>
+    <string name="notification_big_text_format">It is time for %1$s. %2$s - %3$s</string>
 
     <!-- Wear -->
     <string name="wear_loading">Loading…</string>

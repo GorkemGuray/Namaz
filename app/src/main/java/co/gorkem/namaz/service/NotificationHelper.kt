@@ -61,10 +61,22 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val localizedPrayerName = getNotificationPrayerName(context, prayerName)
+        val title = context.getString(R.string.notification_title_format, localizedPrayerName)
+        val text = context.getString(R.string.notification_text_format, prayerTime, cityName)
+        val bigText = context.getString(R.string.notification_big_text_format, localizedPrayerName, prayerTime, cityName)
+
+        val largeIconBitmap = getBitmapFromVectorDrawable(context, getIconResId(prayerName))
+        val notificationColor = android.graphics.Color.parseColor("#1E3A34") // Emerald Primary
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(context.getString(prayerName.nameRes) + context.getString(R.string.notification_prayer_time))
-            .setContentText(prayerTime + context.getString(R.string.notification_separator) + cityName)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setLargeIcon(largeIconBitmap)
+            .setColor(notificationColor)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+            .setShowWhen(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
@@ -72,5 +84,41 @@ object NotificationHelper {
             .build()
 
         NotificationManagerCompat.from(context).notify(notificationId, notification)
+    }
+
+    private fun getNotificationPrayerName(context: Context, prayerName: PrayerName): String {
+        val resId = when (prayerName) {
+            PrayerName.IMSAK -> R.string.notification_prayer_imsak
+            PrayerName.GUNES -> R.string.notification_prayer_gunes
+            PrayerName.OGLE -> R.string.notification_prayer_ogle
+            PrayerName.IKINDI -> R.string.notification_prayer_ikindi
+            PrayerName.AKSAM -> R.string.notification_prayer_aksam
+            PrayerName.YATSI -> R.string.notification_prayer_yatsi
+        }
+        return context.getString(resId)
+    }
+
+    private fun getIconResId(prayerName: PrayerName): Int {
+        return when (prayerName) {
+            PrayerName.IMSAK -> R.drawable.ic_prayer_imsak
+            PrayerName.GUNES -> R.drawable.ic_prayer_gunes
+            PrayerName.OGLE -> R.drawable.ic_prayer_ogle
+            PrayerName.IKINDI -> R.drawable.ic_prayer_ikindi
+            PrayerName.AKSAM -> R.drawable.ic_prayer_aksam
+            PrayerName.YATSI -> R.drawable.ic_prayer_yatsi
+        }
+    }
+
+    private fun getBitmapFromVectorDrawable(context: Context, drawableId: Int): android.graphics.Bitmap? {
+        val drawable = ContextCompat.getDrawable(context, drawableId) ?: return null
+        val bitmap = android.graphics.Bitmap.createBitmap(
+            drawable.intrinsicWidth,
+            drawable.intrinsicHeight,
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        val canvas = android.graphics.Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
     }
 }

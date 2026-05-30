@@ -123,11 +123,20 @@
     <!-- Prayer List -->
     <string name="prayer_next_badge">Sıradaki</string>
 
+    <!-- Notification Prayer Names -->
+    <string name="notification_prayer_imsak">İmsak</string>
+    <string name="notification_prayer_gunes">Güneş</string>
+    <string name="notification_prayer_ogle">Öğle Namazı</string>
+    <string name="notification_prayer_ikindi">İkindi Namazı</string>
+    <string name="notification_prayer_aksam">Akşam Namazı</string>
+    <string name="notification_prayer_yatsi">Yatsı Namazı</string>
+
     <!-- Notifications -->
     <string name="notification_channel_name">Namaz Vakitleri</string>
     <string name="notification_channel_desc">Namaz vakti bildirimleri</string>
-    <string name="notification_prayer_time"> Vakti</string>
-    <string name="notification_separator"> - </string>
+    <string name="notification_title_format">%1$s Vakti</string>
+    <string name="notification_text_format">%1$s - %2$s</string>
+    <string name="notification_big_text_format">%1$s için namaz vakti geldi. %2$s - %3$s</string>
 
     <!-- Wear -->
     <string name="wear_loading">Yükleniyor…</string>
