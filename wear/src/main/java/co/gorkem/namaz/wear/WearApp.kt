@@ -1,61 +1,54 @@
 package co.gorkem.namaz.wear
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.navigation.SwipeDismissableNavHost
+import androidx.wear.compose.navigation.composable
 import co.gorkem.namaz.wear.ui.WearViewModel
 import co.gorkem.namaz.wear.ui.screens.WearHomeScreen
 import co.gorkem.namaz.wear.ui.screens.WearQiblaScreen
+import co.gorkem.namaz.wear.ui.screens.WearZikirmatikScreen
 import co.gorkem.namaz.wear.ui.theme.WearTheme
-import kotlinx.coroutines.launch
 
 @Composable
 fun WearApp(
     viewModel: WearViewModel = hiltViewModel()
 ) {
     val themeId by viewModel.themeId.collectAsState()
-    val pagerState = rememberPagerState(initialPage = 1) { 3 }
-    val coroutineScope = rememberCoroutineScope()
+    val navController = androidx.wear.compose.navigation.rememberSwipeDismissableNavController()
     
     WearTheme(themeId = themeId) {
         AppScaffold {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-                when (page) {
-                    0 -> co.gorkem.namaz.wear.ui.screens.WearZikirmatikScreen(
-                        onNavigateBack = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(1)
-                            }
-                        }
-                    )
-                    1 -> WearHomeScreen(
+            SwipeDismissableNavHost(
+                navController = navController,
+                startDestination = "home"
+            ) {
+                composable("home") {
+                    WearHomeScreen(
                         viewModel = viewModel,
                         onNavigateToQibla = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(2)
-                            }
+                            navController.navigate("qibla")
                         },
                         onNavigateToZikirmatik = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(0)
-                            }
+                            navController.navigate("zikirmatik")
                         }
                     )
-                    2 -> WearQiblaScreen(
+                }
+                composable("qibla") {
+                    WearQiblaScreen(
                         onNavigateBack = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(1)
-                            }
+                            navController.popBackStack()
+                        }
+                    )
+                }
+                composable("zikirmatik") {
+                    WearZikirmatikScreen(
+                        onNavigateBack = {
+                            navController.popBackStack()
                         }
                     )
                 }

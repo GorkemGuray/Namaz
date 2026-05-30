@@ -1,6 +1,10 @@
 package co.gorkem.namaz.wear.ui.screens
 
 import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.animation.core.InfiniteRepeatableSpec
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -17,12 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.CompassCalibration
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,9 +43,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -67,7 +66,7 @@ fun WearQiblaScreen(
     viewModel: WearQiblaViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     var lastAlignedState by remember { mutableStateOf(false) }
 
     Box(
@@ -105,7 +104,7 @@ fun WearQiblaScreen(
                 ) {
                     WearStaticQiblaCompass(
                         qiblaDirection = state.qiblaDirection,
-                        modifier = Modifier.size(160.dp)
+                        modifier = Modifier.fillMaxSize()
                     )
 
                     // City Name at the bottom
@@ -141,23 +140,23 @@ fun WearQiblaScreen(
                 }
             }
             is QiblaUiState.CompassActive -> {
-                val isAligned = state.alignmentDelta <= 5.0
+                val targetAligned = state.alignmentDelta <= 5.0
                 
-                LaunchedEffect(isAligned) {
-                    if (isAligned && !lastAlignedState) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                LaunchedEffect(targetAligned) {
+                    if (targetAligned && !lastAlignedState) {
+                        vibrate(context, true)
                     }
-                    lastAlignedState = isAligned
+                    lastAlignedState = targetAligned
                 }
 
                 WearActiveQiblaCompass(
                     deviceAzimuth = state.deviceAzimuth,
                     qiblaBearing = state.qiblaDirection.bearing,
                     alignmentDelta = state.alignmentDelta,
-                    isAligned = isAligned,
+                    isAligned = targetAligned,
                     pitch = state.pitch,
                     roll = state.roll,
-                    modifier = Modifier.size(160.dp)
+                    modifier = Modifier.fillMaxSize()
                 )
 
                 // Calibration or Distorted Warning overlay
@@ -190,39 +189,20 @@ fun WearQiblaScreen(
                         .align(Alignment.TopCenter)
                         .padding(top = 10.dp)
                         .background(
-                            color = if (isAligned) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
+                            color = if (targetAligned) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
                             shape = CircleShape
                         )
                         .padding(horizontal = 10.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = if (isAligned) "KIBLE" else "${state.alignmentDelta.toInt()}°",
-                        color = if (isAligned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        text = if (targetAligned) "KIBLE" else "${state.alignmentDelta.toInt()}°",
+                        color = if (targetAligned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
                         textAlign = TextAlign.Center
                     )
                 }
             }
-        }
-
-        // Vakitlere dön butonu (Sol tarafta dairesel kenarda)
-        IconButton(
-            onClick = onNavigateBack,
-            colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 8.dp)
-                .size(32.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ChevronLeft,
-                contentDescription = "Geri Dön",
-                modifier = Modifier.size(20.dp)
-            )
         }
     }
 }
@@ -302,7 +282,7 @@ fun WearActiveQiblaCompass(
     )
     val glowRadius by glowTransition.animateFloat(
         initialValue = 10f,
-        targetValue = 16f,
+        targetValue = 18f,
         animationSpec = InfiniteRepeatableSpec(
             animation = tween(1200),
             repeatMode = RepeatMode.Reverse
@@ -316,9 +296,15 @@ fun WearActiveQiblaCompass(
         label = "alignedAlpha"
     )
 
+    val alignedRingAlpha by animateFloatAsState(
+        targetValue = if (isAligned) 0.35f else 0.0f,
+        animationSpec = tween(500),
+        label = "alignedRingAlpha"
+    )
+
     Canvas(modifier = modifier) {
         val center = Offset(size.width / 2, size.height / 2)
-        val outerRadius = size.minDimension / 2 - 8.dp.toPx()
+        val outerRadius = size.minDimension / 2 - 14.dp.toPx()
         val innerRadius = outerRadius * 0.72f
 
         // Outer ring
@@ -336,7 +322,7 @@ fun WearActiveQiblaCompass(
         )
 
         // Top pointer indicator
-        drawTopPointer(center, outerRadius, primary)
+        drawTopIndicator(center, outerRadius, primary)
 
         // Crosshair for center reference
         drawCrosshair(center, outlineVariant)
@@ -358,7 +344,7 @@ fun WearActiveQiblaCompass(
         rotate(degrees = -animatedAzimuth, pivot = center) {
             drawDegreeTicks(center, outerRadius, onSurfaceVariant)
             drawDegreeLabels(center, outerRadius, onSurfaceVariant, textMeasurer)
-            drawCardinalLabels(center, innerRadius, onSurfaceVariant, textMeasurer)
+            drawCardinalLabels(center, innerRadius, onSurfaceVariant, textMeasurer, primary)
         }
 
         // Draw Kaaba arc indicator if not aligned
@@ -382,6 +368,14 @@ fun WearActiveQiblaCompass(
         val kaabaX = center.x + outerRadius * sin(kaabaRad).toFloat()
         val kaabaY = center.y - outerRadius * cos(kaabaRad).toFloat()
 
+        if (alignedRingAlpha > 0f) {
+            drawCircle(
+                color = primary.copy(alpha = alignedRingAlpha),
+                radius = outerRadius,
+                style = Stroke(width = 4.dp.toPx())
+            )
+        }
+
         // Glow effect
         if (alignedAlpha > 0f) {
             drawCircle(
@@ -399,9 +393,9 @@ fun WearActiveQiblaCompass(
         }
 
         // Kaaba Cube drawing
-        drawWearKaabaIcon(
+        drawKaabaIcon(
             center = Offset(kaabaX, kaabaY),
-            scale = 0.7f + 0.15f * alignedAlpha
+            scale = 0.8f + 0.15f * alignedAlpha
         )
     }
 }
@@ -417,7 +411,7 @@ fun WearStaticQiblaCompass(
 
     Canvas(modifier = modifier) {
         val center = Offset(size.width / 2, size.height / 2)
-        val outerRadius = size.minDimension / 2 - 8.dp.toPx()
+        val outerRadius = size.minDimension / 2 - 14.dp.toPx()
         val innerRadius = outerRadius * 0.72f
 
         // Outer ring
@@ -449,20 +443,20 @@ fun WearStaticQiblaCompass(
         }
 
         // Draw compass labels (North at top)
-        drawCardinalLabels(center, innerRadius, outlineVariant, textMeasurer)
+        drawCardinalLabels(center, innerRadius, outlineVariant, textMeasurer, primary)
         
         // Show kaaba icon at center of the static compass
-        drawWearKaabaIcon(center, scale = 0.9f)
+        drawKaabaIcon(center, scale = 0.9f)
     }
 }
 
-private fun DrawScope.drawTopPointer(
+private fun DrawScope.drawTopIndicator(
     center: Offset,
     radius: Float,
     color: Color
 ) {
-    val size = 8.dp.toPx()
-    val topY = center.y - radius - 4.dp.toPx()
+    val size = 10.dp.toPx()
+    val topY = center.y - radius - 6.dp.toPx()
     val path = Path().apply {
         moveTo(center.x, topY + size)
         lineTo(center.x - size / 2, topY)
@@ -478,13 +472,13 @@ private fun DrawScope.drawCrosshair(
 ) {
     val len = 10.dp.toPx()
     drawLine(
-        color = color.copy(alpha = 0.15f),
+        color = color.copy(alpha = 0.2f),
         start = Offset(center.x - len, center.y),
         end = Offset(center.x + len, center.y),
         strokeWidth = 1.dp.toPx()
     )
     drawLine(
-        color = color.copy(alpha = 0.15f),
+        color = color.copy(alpha = 0.2f),
         start = Offset(center.x, center.y - len),
         end = Offset(center.x, center.y + len),
         strokeWidth = 1.dp.toPx()
@@ -578,7 +572,8 @@ private fun DrawScope.drawCardinalLabels(
     center: Offset,
     radius: Float,
     color: Color,
-    textMeasurer: TextMeasurer
+    textMeasurer: TextMeasurer,
+    primaryColor: Color
 ) {
     val labels = listOf("K" to 0, "D" to 90, "G" to 180, "B" to 270)
 
@@ -589,7 +584,7 @@ private fun DrawScope.drawCardinalLabels(
             color.copy(alpha = 0.7f)
         }
         val style = TextStyle(
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             color = labelColor,
             fontWeight = FontWeight.Bold
         )
@@ -606,11 +601,11 @@ private fun DrawScope.drawCardinalLabels(
     }
 }
 
-private fun DrawScope.drawWearKaabaIcon(
+private fun DrawScope.drawKaabaIcon(
     center: Offset,
     scale: Float
 ) {
-    val baseSize = 14.dp.toPx() * scale
+    val baseSize = 16.dp.toPx() * scale
     val half = baseSize / 2
 
     val goldColor = Color(0xFFFFD700)
@@ -646,7 +641,6 @@ private fun DrawScope.drawWearKaabaIcon(
     drawPath(path = rightFace, color = blackColor)
     drawPath(path = topFace, color = topColor)
 
-    // Gold band
     val bandHeight = 1.5.dp.toPx()
     val bandOffset = half * 0.15f
 
@@ -668,4 +662,39 @@ private fun DrawScope.drawWearKaabaIcon(
 
     drawPath(path = leftBand, color = goldColor)
     drawPath(path = rightBand, color = goldColor)
+
+    val doorWidth = half * 0.3f
+    val doorHeight = half * 0.45f
+    val doorX1 = center.x + half * 0.25f
+    val doorY1 = center.y + half * 0.1f
+    val doorX2 = center.x + half * 0.55f
+    val doorY2 = doorY1 - doorWidth * 0.4f
+
+    val doorPath = Path().apply {
+        moveTo(doorX1, doorY1)
+        lineTo(doorX2, doorY2)
+        lineTo(doorX2, doorY2 + doorHeight)
+        lineTo(doorX1, doorY1 + doorHeight)
+        close()
+    }
+    drawPath(path = doorPath, color = goldColor)
+}
+
+private fun vibrate(context: Context, isTargetReached: Boolean) {
+    val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        vibratorManager.defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val duration = if (isTargetReached) 100L else 30L
+        val amplitude = if (isTargetReached) 200 else 50
+        vibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude))
+    } else {
+        @Suppress("DEPRECATION")
+        vibrator.vibrate(if (isTargetReached) 100L else 30L)
+    }
 }

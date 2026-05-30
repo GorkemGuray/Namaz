@@ -51,11 +51,12 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.wear.compose.material3.IconButton
-import androidx.wear.compose.material3.IconButtonDefaults
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeaderDefaults
 
 @Composable
 fun WearHomeScreen(
@@ -105,6 +106,7 @@ fun WearHomeScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .transformedHeight(this, transformationSpec)
+                                    .minimumVerticalContentPadding(ListHeaderDefaults.minimumTopListContentPadding)
                             )
                         }
                     }
@@ -125,64 +127,112 @@ fun WearHomeScreen(
                     val nextPrayerIndex = prayerItems.indexOfFirst { it.name == nextPrayer?.name }
                     val currentPrayerIndex = if (nextPrayerIndex > 0) nextPrayerIndex - 1 else if (nextPrayerIndex == 0) prayerItems.lastIndex else -1
 
-                    items(prayerItems.size) { index ->
-                        val prayer = prayerItems[index]
-                        val isNext = index == nextPrayerIndex
-                        val isCurrent = index == currentPrayerIndex
-                        val isPassed = currentPrayerIndex != -1 && index < currentPrayerIndex && nextPrayerIndex != 0
+                    if (nextPrayer != null) {
+                        item {
+                            NextPrayerHeader(
+                                nextPrayerInfo = nextPrayer!!,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                            )
+                        }
+                    }
 
-                        WearPrayerRow(
-                            prayer = prayer,
-                            isNext = isNext,
-                            isCurrent = isCurrent,
-                            isPassed = isPassed,
-                            nextPrayerInfo = if (isNext) nextPrayer else null,
+                    if (prayerItems.isNotEmpty()) {
+                        val chunked = prayerItems.chunked(2)
+                        items(chunked.size) { rowIndex ->
+                            val rowItems = chunked[rowIndex]
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                rowItems.forEachIndexed { colIndex, prayer ->
+                                    val index = rowIndex * 2 + colIndex
+                                    val isNext = index == nextPrayerIndex
+                                    val isCurrent = index == currentPrayerIndex
+                                    val isPassed = currentPrayerIndex != -1 && index < currentPrayerIndex && nextPrayerIndex != 0
+
+                                    WearPrayerGridCell(
+                                        prayer = prayer,
+                                        isNext = isNext,
+                                        isCurrent = isCurrent,
+                                        isPassed = isPassed,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Button(
+                            onClick = onNavigateToQibla,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .transformedHeight(this, transformationSpec)
-                                .padding(horizontal = 16.dp, vertical = 2.dp)
-                        )
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Explore,
+                                    contentDescription = "Kıble Bulucu",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = "Kıble Bulucu",
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Button(
+                            onClick = onNavigateToZikirmatik,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec)
+                                .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.TouchApp,
+                                    contentDescription = "Zikirmatik",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = "Zikirmatik",
+                                    maxLines = 1
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Kıble ekranına git butonu (Sağ tarafta dairesel kenarda)
-        IconButton(
-            onClick = onNavigateToQibla,
-            colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 8.dp)
-                .size(32.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Kıble Bulucu",
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        // Zikirmatik ekranına git butonu (Sol tarafta dairesel kenarda)
-        IconButton(
-            onClick = onNavigateToZikirmatik,
-            colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 8.dp)
-                .size(32.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ChevronLeft,
-                contentDescription = "Zikirmatik",
-                modifier = Modifier.size(20.dp)
-            )
-        }
     }
 }
 
@@ -325,21 +375,38 @@ private fun CompactCountdown(
 }
 
 @Composable
-private fun TransformingLazyColumnItemScope.WearPrayerRow(
+private fun TransformingLazyColumnItemScope.NextPrayerHeader(
+    nextPrayerInfo: WearNextPrayer,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = prayerNameFromEnum(nextPrayerInfo.name) + " ",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        CompactCountdown(nextPrayer = nextPrayerInfo)
+    }
+}
+
+
+
+@Composable
+private fun WearPrayerGridCell(
     prayer: WearPrayerItem,
     isNext: Boolean,
     isCurrent: Boolean,
     isPassed: Boolean,
-    nextPrayerInfo: WearNextPrayer?,
     modifier: Modifier = Modifier
 ) {
-    // Current prayer is highlighted prominently
-    // Next prayer shows countdown
-    // Passed prayers are muted
-
     val containerColor = when {
         isCurrent -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-        else -> androidx.compose.ui.graphics.Color.Transparent
+        isNext -> MaterialTheme.colorScheme.surfaceContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerLow
     }
 
     val nameColor = when {
@@ -355,34 +422,24 @@ private fun TransformingLazyColumnItemScope.WearPrayerRow(
         isPassed -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    
-    val textStyle = if (isCurrent || isNext) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall
 
-    Row(
+    Column(
         modifier = modifier
             .clip(MaterialTheme.shapes.small)
             .background(containerColor)
-            .padding(horizontal = 8.dp, vertical = if (isCurrent) 8.dp else 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Text(
             text = prayerNameFromEnum(prayer.name),
-            style = textStyle,
+            style = MaterialTheme.typography.labelSmall,
             color = nameColor
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            if (isNext && nextPrayerInfo != null) {
-                CompactCountdown(nextPrayer = nextPrayerInfo)
-            }
-            Text(
-                text = prayer.time,
-                style = textStyle,
-                color = timeColor
-            )
-        }
+        Text(
+            text = prayer.time,
+            style = MaterialTheme.typography.titleMedium,
+            color = timeColor
+        )
     }
 }

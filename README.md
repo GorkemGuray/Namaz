@@ -19,9 +19,9 @@ Telefonunuzdan seçtiğiniz tema, anında akıllı saatinize ve ana ekran widget
 
 ### ⌚ Wear OS (Akıllı Saat) Desteği
 * **Senkronize Tasarım:** Telefondan seçtiğiniz temanın OLED (tam siyah) uyumlu harika bir versiyonu saatinizde anında belirir.
-* **Kompakt Arayüz:** Wear OS'e özel 3 boyutlu kavisli liste kaydırma efekti (`TransformingLazyColumn`).
-* **Yatay Kaydırma Navigasyonu (Swipe & Button):** Vakit listesi ile Kıble ekranı arasında parmağınızı kaydırarak veya dairesel kenar ok butonlarına basarak akıcı geçiş yapabilirsiniz.
-* **Kıble Bulucu (Qibla Finder):** Dairesel ekranlar için optimize edilmiş canvas pusula. Hizalanınca titreşim (haptic) geri bildirimi verir. Manyetometre yoksa statik modda çalışır.
+* **Kompakt Izgara Arayüzü:** 6 vakti alt alta kaydırmak yerine 2x3'lük grid (ızgara) yapısıyla tek ekranda görebilme. Wear OS'in yerleşik ekran kavislerine tam uyumlu (`TransformingLazyColumn`).
+* **Akıcı Navigasyon (SwipeDismissableNavHost):** Sayfalar arasında ekranın solundan sağa kaydırarak sezgisel ve standartlara uygun geri dönüş imkanı. "Kıble Bulucu" ve "Zikirmatik" ekranlarına liste sonundaki butonlarla erişim.
+* **Premium Kıble Bulucu (Qibla Finder):** Mobil uygulamadaki 3D hissiyatlı, animasyonlu, ışımalı (glow) ve titreşimli üst düzey pusula deneyimi birebir akıllı saate taşındı. Manyetometre yoksa statik modda çalışır.
 * **Saat Kadranı (Complication):** Saatinizin ana ekranında sıradaki vakti veya işletim sistemi tabanlı (Native) **geri sayımı** (Örn: `İkindi -01:30`) saniye saniye görebilirsiniz.
 * **Bağımsız (Standalone) Mod:** Telefonunuz yanınızda olmasa bile saat kendi GPS'i üzerinden vakitleri çekmeye devam eder.
 
