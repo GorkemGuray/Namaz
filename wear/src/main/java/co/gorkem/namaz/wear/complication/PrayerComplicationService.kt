@@ -33,7 +33,7 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
         val data = kotlinx.coroutines.withTimeoutOrNull(2000L) {
-            entryPoint.dataLayerService.prayerData.value
+            entryPoint.dataLayerService.getLatestPrayerData()
         }
 
         if (data == null) {

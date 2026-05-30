@@ -9,6 +9,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -91,6 +93,34 @@ class WearDataLayerService @Inject constructor(
             requester2.requestUpdateAll()
         } catch (e: Exception) {
             // Ignore
+        }
+    }
+
+    suspend fun getLatestPrayerData(): WearPrayerData? {
+        val current = _prayerData.value
+        if (current != null) return current
+
+        return suspendCancellableCoroutine { cont ->
+            dataClient.dataItems.addOnSuccessListener { items ->
+                for (item in items) {
+                    if (item.uri.path == "/namaz_prayer_data") {
+                        try {
+                            val dataMap = com.google.android.gms.wearable.DataMapItem.fromDataItem(item).dataMap
+                            val json = dataMap.getString("prayer_json") ?: continue
+                            val data = WearPrayerData.fromJson(json)
+                            _prayerData.value = data
+                            _isPhoneConnected.value = true
+                            if (cont.isActive) cont.resume(data)
+                            return@addOnSuccessListener
+                        } catch (e: Exception) {
+                            // ignore
+                        }
+                    }
+                }
+                if (cont.isActive) cont.resume(null)
+            }.addOnFailureListener {
+                if (cont.isActive) cont.resume(null)
+            }
         }
     }
 }

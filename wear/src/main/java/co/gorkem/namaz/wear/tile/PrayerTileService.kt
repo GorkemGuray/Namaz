@@ -29,7 +29,7 @@ class PrayerTileService : SuspendingTileService() {
     override suspend fun tileRequest(
         requestParams: RequestBuilders.TileRequest
     ): TileBuilders.Tile {
-        val data: WearPrayerData? = entryPoint.dataLayerService.prayerData.value
+        val data: WearPrayerData? = entryPoint.dataLayerService.getLatestPrayerData()
 
         val tile = TileBuilders.Tile.Builder()
             .setResourcesVersion("1")
