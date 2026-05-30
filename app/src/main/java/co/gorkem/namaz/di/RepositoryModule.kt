@@ -17,4 +17,10 @@ abstract class RepositoryModule {
     abstract fun bindPrayerTimeRepository(
         impl: PrayerTimeRepositoryImpl
     ): PrayerTimeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindZikirRepository(
+        impl: co.gorkem.namaz.data.repository.ZikirRepositoryImpl
+    ): co.gorkem.namaz.domain.repository.ZikirRepository
 }

@@ -30,4 +30,10 @@ object RoomModule {
     fun providePrayerTimeDao(database: NamazDatabase): PrayerTimeDao {
         return database.prayerTimeDao()
     }
+
+    @Provides
+    @Singleton
+    fun provideZikirDao(database: NamazDatabase): co.gorkem.namaz.data.local.room.ZikirDao {
+        return database.zikirDao()
+    }
 }

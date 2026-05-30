@@ -57,6 +57,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.launch
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -169,10 +170,27 @@ fun NamazApp() {
             label = "tab_switch"
         ) { tab ->
             when (tab) {
-                0 -> HomeScreen(
-                    modifier = Modifier.padding(paddingValues),
-                    onLocationClick = { showCitySheet = true }
-                )
+                0 -> {
+                    val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = 1) { 2 }
+                    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+                    androidx.compose.foundation.pager.HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        if (page == 0) {
+                            co.gorkem.namaz.ui.screens.zikirmatik.ZikirmatikScreen(
+                                modifier = Modifier.padding(paddingValues),
+                                onBackClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } }
+                            )
+                        } else {
+                            HomeScreen(
+                                modifier = Modifier.padding(paddingValues),
+                                onLocationClick = { showCitySheet = true },
+                                onZikirClick = { coroutineScope.launch { pagerState.animateScrollToPage(0) } }
+                            )
+                        }
+                    }
+                }
                 1 -> CalendarScreen(
                     modifier = Modifier.padding(paddingValues)
                 )

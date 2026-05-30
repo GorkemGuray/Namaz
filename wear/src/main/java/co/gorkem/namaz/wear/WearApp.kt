@@ -21,7 +21,7 @@ fun WearApp(
     viewModel: WearViewModel = hiltViewModel()
 ) {
     val themeId by viewModel.themeId.collectAsState()
-    val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val pagerState = rememberPagerState(initialPage = 1) { 3 }
     val coroutineScope = rememberCoroutineScope()
     
     WearTheme(themeId = themeId) {
@@ -31,18 +31,30 @@ fun WearApp(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 when (page) {
-                    0 -> WearHomeScreen(
-                        viewModel = viewModel,
-                        onNavigateToQibla = {
+                    0 -> co.gorkem.namaz.wear.ui.screens.WearZikirmatikScreen(
+                        onNavigateBack = {
                             coroutineScope.launch {
                                 pagerState.animateScrollToPage(1)
                             }
                         }
                     )
-                    1 -> WearQiblaScreen(
-                        onNavigateBack = {
+                    1 -> WearHomeScreen(
+                        viewModel = viewModel,
+                        onNavigateToQibla = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(2)
+                            }
+                        },
+                        onNavigateToZikirmatik = {
                             coroutineScope.launch {
                                 pagerState.animateScrollToPage(0)
+                            }
+                        }
+                    )
+                    2 -> WearQiblaScreen(
+                        onNavigateBack = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(1)
                             }
                         }
                     )

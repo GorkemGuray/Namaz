@@ -51,6 +51,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.wear.compose.material3.IconButton
 import androidx.wear.compose.material3.IconButtonDefaults
@@ -59,6 +60,7 @@ import androidx.compose.material3.Icon
 @Composable
 fun WearHomeScreen(
     onNavigateToQibla: () -> Unit,
+    onNavigateToZikirmatik: () -> Unit,
     viewModel: WearViewModel = hiltViewModel()
 ) {
     val prayerItems by viewModel.prayerItems.collectAsState()
@@ -160,6 +162,24 @@ fun WearHomeScreen(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = "Kıble Bulucu",
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        // Zikirmatik ekranına git butonu (Sol tarafta dairesel kenarda)
+        IconButton(
+            onClick = onNavigateToZikirmatik,
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 8.dp)
+                .size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ChevronLeft,
+                contentDescription = "Zikirmatik",
                 modifier = Modifier.size(20.dp)
             )
         }
