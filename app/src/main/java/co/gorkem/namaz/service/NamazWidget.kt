@@ -449,7 +449,7 @@ private fun CompactLayout(
     }
 
     val chronometerFormat = if (isKerahatActive) {
-        if (language == "en") "%s $kerahatLabel ends" else "%s $kerahatLabel bitiyor"
+        if (language == "en") "%s Kerahat ends" else "%s Kerahat bitiyor"
     } else {
         if (language == "en") "%s left" else "%s kaldı"
     }
@@ -515,7 +515,9 @@ private fun CompactLayout(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
+                    text = if (isKerahatActive) {
+                        if (language == "en") "$kerahatLabel Kerahat" else "$kerahatLabel Kerahatı"
+                    } else localizedPrayerName,
                     style = TextStyle(
                         color = cardOnBg,
                         fontSize = 16.sp,
@@ -565,7 +567,9 @@ private fun CompactLayout(
                         horizontalAlignment = Alignment.Start
                     ) {
                         Text(
-                            text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
+                            text = if (isKerahatActive) {
+                                if (language == "en") "$kerahatLabel Kerahat" else "$kerahatLabel Kerahatı"
+                            } else localizedPrayerName,
                             style = TextStyle(
                                 color = cardOnBg,
                                 fontSize = 14.sp,
@@ -632,7 +636,7 @@ private fun ExpandedLayout(
     val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
 
     val chronometerFormat = if (isKerahatActive) {
-        if (language == "en") "%s $kerahatLabel ends" else "%s $kerahatLabel bitiyor"
+        if (language == "en") "%s Kerahat ends" else "%s Kerahat bitiyor"
     } else {
         if (language == "en") "%s left" else "%s kaldı"
     }
@@ -696,7 +700,9 @@ private fun ExpandedLayout(
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = if (isKerahatActive) "$kerahatLabel (Kerahat)" else localizedPrayerName,
+                    text = if (isKerahatActive) {
+                        if (language == "en") "$kerahatLabel Kerahat" else "$kerahatLabel Kerahatı"
+                    } else localizedPrayerName,
                     style = TextStyle(
                         color = cardOnBg,
                         fontSize = 14.sp,
