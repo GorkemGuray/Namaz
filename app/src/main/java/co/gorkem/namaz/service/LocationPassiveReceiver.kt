@@ -9,9 +9,9 @@ class LocationPassiveReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (LocationResult.hasResult(intent)) {
             val locationResult = LocationResult.extractResult(intent)
-            locationResult?.lastLocation?.let {
+            locationResult?.lastLocation?.let { location ->
                 // If this is triggered, it means displacement > 2000m occurred.
-                LocationSyncWorker.executeNow(context)
+                LocationSyncWorker.executeNow(context, location.latitude, location.longitude)
             }
         }
     }

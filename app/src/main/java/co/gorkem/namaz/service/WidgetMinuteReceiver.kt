@@ -14,6 +14,9 @@ import co.gorkem.namaz.util.alarmManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 class WidgetMinuteReceiver : BroadcastReceiver() {
 
@@ -28,6 +31,7 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 NamazWidget().updateAll(context)
+                checkLocationChange(context)
             } catch (e: Exception) {
                 Log.e(TAG, "Widget update failed", e)
             } finally {
@@ -41,6 +45,39 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "WidgetMinuteReceiver"
         private const val ACTION_WIDGET_TICK = "co.gorkem.namaz.WIDGET_MINUTE_TICK"
+        
+        @android.annotation.SuppressLint("MissingPermission")
+        private suspend fun checkLocationChange(context: Context) {
+            try {
+                val prefsRepo = co.gorkem.namaz.data.local.datastore.UserPreferencesRepository(context.applicationContext)
+                val prefs = prefsRepo.preferences.first()
+                
+                if (prefs.manualCityName.isNotEmpty()) return
+
+                val fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(context)
+                val locationTracker = co.gorkem.namaz.service.LocationTracker(fusedLocationClient, context)
+                if (!locationTracker.hasLocationPermission()) return
+
+                val lastLocation = suspendCancellableCoroutine<android.location.Location?> { continuation ->
+                    fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                        continuation.resume(loc)
+                    }.addOnFailureListener {
+                        continuation.resume(null)
+                    }
+                } ?: return
+                
+                val savedLoc = android.location.Location("").apply {
+                    latitude = prefs.lastAutoLatitude
+                    longitude = prefs.lastAutoLongitude
+                }
+                
+                if (savedLoc.latitude == 0.0 || lastLocation.distanceTo(savedLoc) > 10000f) {
+                    co.gorkem.namaz.service.LocationSyncWorker.executeNow(context, lastLocation.latitude, lastLocation.longitude)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to check location change", e)
+            }
+        }
         private const val REQUEST_CODE = 9001
 
         fun scheduleNextMinute(context: Context) {

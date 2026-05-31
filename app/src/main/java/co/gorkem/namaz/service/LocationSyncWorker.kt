@@ -35,7 +35,10 @@ class LocationSyncWorker @AssistedInject constructor(
     private val prayerTimeRepository: PrayerTimeRepositoryImpl,
     private val prayerTimeDao: PrayerTimeDao,
     private val notificationScheduler: PrayerNotificationScheduler,
-    private val geocoderHelper: GeocoderHelper
+    private val geocoderHelper: GeocoderHelper,
+    private val getNextPrayerUseCase: co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase,
+    private val getPrayerDashboardUseCase: co.gorkem.namaz.domain.usecase.GetPrayerDashboardUseCase,
+    private val wearSyncManager: co.gorkem.namaz.service.WearSyncManager
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -46,21 +49,43 @@ class LocationSyncWorker @AssistedInject constructor(
 
             // Step 1: Location Check
             if (locationTracker.hasLocationPermission() && prefs.manualCityName.isEmpty()) {
-                val freshLocation: Location? = try {
-                    suspendCancellableCoroutine { continuation ->
-                        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
-                            .addOnSuccessListener { location ->
-                                continuation.resume(location)
-                            }
-                            .addOnFailureListener {
-                                continuation.resume(null)
-                            }
-                            .addOnCanceledListener {
-                                continuation.resume(null)
-                            }
+                val inputLat = inputData.getDouble("lat", Double.NaN)
+                val inputLon = inputData.getDouble("lon", Double.NaN)
+
+                var freshLocation: Location? = if (!inputLat.isNaN() && !inputLon.isNaN()) {
+                    Location("").apply {
+                        latitude = inputLat
+                        longitude = inputLon
                     }
-                } catch (e: Exception) {
-                    null
+                } else {
+                    try {
+                        suspendCancellableCoroutine { continuation ->
+                            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
+                                .addOnSuccessListener { location ->
+                                    continuation.resume(location)
+                                }
+                                .addOnFailureListener {
+                                    continuation.resume(null)
+                                }
+                                .addOnCanceledListener {
+                                    continuation.resume(null)
+                                }
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                if (freshLocation == null && inputLat.isNaN()) {
+                    try {
+                        freshLocation = suspendCancellableCoroutine { continuation ->
+                            fusedLocationClient.lastLocation
+                                .addOnSuccessListener { location -> continuation.resume(location) }
+                                .addOnFailureListener { continuation.resume(null) }
+                        }
+                    } catch (e: Exception) {
+                        // ignore
+                    }
                 }
 
                 if (freshLocation != null) {
@@ -121,9 +146,9 @@ class LocationSyncWorker @AssistedInject constructor(
 
             if (result.isSuccess) {
                 prayerTimeRepository.cleanupOldData(30)
+                val prayerTimes = result.getOrThrow()
 
                 if (prefs.notificationsEnabled) {
-                    val prayerTimes = result.getOrThrow()
                     notificationScheduler.cancelAllNotifications()
                     notificationScheduler.schedulePrayerNotifications(
                         prayerTimes = prayerTimes,
@@ -131,6 +156,16 @@ class LocationSyncWorker @AssistedInject constructor(
                         cityName = currentLocationInfo.cityName
                     )
                 }
+
+                co.gorkem.namaz.service.NamazWidgetUpdater.update(appContext)
+
+                wearSyncManager.syncData(
+                    prayerTimes = prayerTimes,
+                    location = currentLocationInfo,
+                    themeId = prefs.appTheme,
+                    getNextPrayerUseCase = getNextPrayerUseCase,
+                    getPrayerDashboardUseCase = getPrayerDashboardUseCase
+                )
             }
 
             Result.success()
@@ -162,8 +197,15 @@ class LocationSyncWorker @AssistedInject constructor(
             )
         }
 
-        fun executeNow(context: Context) {
-            val request = OneTimeWorkRequestBuilder<LocationSyncWorker>().build()
+        fun executeNow(context: Context, latitude: Double? = null, longitude: Double? = null) {
+            val dataBuilder = androidx.work.Data.Builder()
+            if (latitude != null && longitude != null) {
+                dataBuilder.putDouble("lat", latitude)
+                dataBuilder.putDouble("lon", longitude)
+            }
+            val request = OneTimeWorkRequestBuilder<LocationSyncWorker>()
+                .setInputData(dataBuilder.build())
+                .build()
             WorkManager.getInstance(context).enqueueUniqueWork(
                 ON_DEMAND_WORK_NAME,
                 ExistingWorkPolicy.REPLACE,
