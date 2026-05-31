@@ -99,6 +99,7 @@ data class NamazWidgetState(
     val isKerahat: Boolean = false,
     val kerahatPrayerName: String? = null,
     val kerahatRemainingMinutes: Long = 0,
+    val nextKerahatStartEpochMillis: Long? = null,
     val error: String? = null
 )
 
@@ -141,9 +142,15 @@ class NamazWidget : GlanceAppWidget() {
                     val loadedState = loadWidgetState(ctx, entryPoint, currentPrefs, layoutPreference)
                     android.util.Log.d("NamazWidget", "provideContent: loaded state layout=$layoutPreference: $loadedState")
                     value = loadedState
-                    // Schedule transition alarm on a background coroutine
-                    loadedState.targetEpochMillis?.let { targetEpoch ->
-                        schedulePrayerTransitionAlarm(ctx, targetEpoch)
+                    // En erken güncelleme zamanını bul: ya transition alarm (namaz vakti/kerahat bitişi) ya da kerahat başlangıcı
+                    val nextAlarmEpoch = when {
+                        loadedState.nextKerahatStartEpochMillis != null && loadedState.targetEpochMillis != null ->
+                            minOf(loadedState.nextKerahatStartEpochMillis, loadedState.targetEpochMillis)
+                        loadedState.nextKerahatStartEpochMillis != null -> loadedState.nextKerahatStartEpochMillis
+                        else -> loadedState.targetEpochMillis
+                    }
+                    nextAlarmEpoch?.let { epoch ->
+                        schedulePrayerTransitionAlarm(ctx, epoch)
                     }
                 }
             }
@@ -204,12 +211,21 @@ private suspend fun loadWidgetState(
                     val tomorrowPrayer = result.data.find { it.date == tomorrowKey }
                     val dashboard = getPrayerDashboardUseCase.execute(todayPrayer, tomorrowPrayer)
                     val kerahatInfo = dashboard?.kerahatInfo
+                    val nextKerahatInfo = dashboard?.nextKerahatInfo
 
                     val targetEpoch = if (kerahatInfo?.isCurrentlyKerahat == true) {
                         val targetDateTime = LocalDateTime.of(today, kerahatInfo.endTime)
                         targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                     } else {
                         nextInfo?.targetPrayerTimeInMillis
+                    }
+
+                    // Bir sonraki kerahat başlangıcını hesapla (kerahat aktif değilken)
+                    val nextKerahatStartEpoch = if (kerahatInfo?.isCurrentlyKerahat != true && nextKerahatInfo != null) {
+                        val kerahatStart = LocalDateTime.of(today, nextKerahatInfo.startTime)
+                        kerahatStart.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    } else {
+                        null
                     }
 
                     widgetState = NamazWidgetState(
@@ -224,7 +240,8 @@ private suspend fun loadWidgetState(
                         layoutPreference = layoutPreference,
                         isKerahat = kerahatInfo?.isCurrentlyKerahat == true,
                         kerahatPrayerName = kerahatInfo?.prayerName?.name,
-                        kerahatRemainingMinutes = kerahatInfo?.remainingToEndMinutes ?: 0
+                        kerahatRemainingMinutes = kerahatInfo?.remainingToEndMinutes ?: 0,
+                        nextKerahatStartEpochMillis = nextKerahatStartEpoch
                     )
                 } else {
                     widgetState = NamazWidgetState(

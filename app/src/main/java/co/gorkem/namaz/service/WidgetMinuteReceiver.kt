@@ -46,18 +46,6 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
         fun scheduleNextMinute(context: Context) {
             val alarmManager = context.alarmManager ?: return
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val canSchedule = try {
-                    alarmManager.canScheduleExactAlarms()
-                } catch (e: Exception) {
-                    false
-                }
-                if (!canSchedule) {
-                    Log.w(TAG, "Exact alarms not permitted, skipping schedule")
-                    return
-                }
-            }
-
             cancelMinuteUpdates(context)
 
             val triggerIntent = Intent(context, WidgetMinuteReceiver::class.java).apply {
@@ -72,22 +60,38 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
 
             val nextMinute = ((System.currentTimeMillis() / 60000) + 1) * 60000
 
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC,
-                        nextMinute,
-                        pendingIntent
-                    )
-                } else {
-                    alarmManager.setExact(
-                        AlarmManager.RTC,
-                        nextMinute,
-                        pendingIntent
-                    )
+            val canScheduleExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                try {
+                    alarmManager.canScheduleExactAlarms()
+                } catch (e: Exception) {
+                    false
                 }
-            } catch (e: SecurityException) {
-                Log.w(TAG, "Cannot schedule exact alarm, falling back to inexact", e)
+            } else {
+                true
+            }
+
+            if (canScheduleExact) {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC,
+                            nextMinute,
+                            pendingIntent
+                        )
+                    } else {
+                        alarmManager.setExact(
+                            AlarmManager.RTC,
+                            nextMinute,
+                            pendingIntent
+                        )
+                    }
+                } catch (e: SecurityException) {
+                    Log.w(TAG, "Cannot schedule exact alarm, falling back to inexact", e)
+                    alarmManager.set(AlarmManager.RTC, nextMinute, pendingIntent)
+                }
+            } else {
+                // Inexact alarm fallback — exact alarm izni yok
+                Log.w(TAG, "SCHEDULE_EXACT_ALARM not granted, using inexact alarm")
                 alarmManager.set(AlarmManager.RTC, nextMinute, pendingIntent)
             }
         }
