@@ -364,6 +364,14 @@ wear/
 - Dilde Türkçe değişken isimleri kullanılmıştır (imsak, gunes, ogle, ikindi, aksam, yatsi).
 - Code style: Yorum yok (AGENTS.md convention).
 
+### Test Kuralları ve TDD (Test-Driven Development) Yaklaşımı
+- **TDD İlkesi**: Herhangi bir iş mantığı (business logic), UseCase, ViewModel veya Repository geliştirmesine başlamadan önce **MUTLAKA** ilgili birim testleri (unit test) yazılmalı veya güncellenmelidir.
+- **Her Değişiklikten Sonra Test**: Yapılan her kod değişikliği veya yeni özellik ekleme adımından sonra `./gradlew test` komutu çalıştırılarak tüm birim testlerinin başarıyla geçtiği doğrulanmalıdır. Testlerin geçmediği durumlarda hata düzeltilmeden bir sonraki adıma geçilemez.
+- **Zamana Bağımlı Testler**: Vakit hesaplama, countdown veya zaman hassasiyetli iş mantığı içeren UseCase veya Helper fonksiyonlarında, test edilebilirliği sağlamak için clock bağımlılığı (System time/LocalDate/LocalTime) dışarıdan opsiyonel parametre olarak alınmalı ve testlerde deterministik girdilerle doğrulanmalıdır.
+- **Test Lokasyonları**: 
+  - Mobil modül iş mantığı testleri [app/src/test/](file:///Users/gorkem/Desktop/Android_Kurs/Namaz/app/src/test/) altında olmalıdır.
+  - Wear OS modülü iş mantığı testleri [wear/src/test/](file:///Users/gorkem/Desktop/Android_Kurs/Namaz/wear/src/test/) altında olmalıdır.
+
 ### Tema
 - 4 özel premium tema: Emerald Oasis (varsayılan), Sapphire Night, Amber Sands, Monochrome Platinum.
 - Sistem dinamik renkleri (Monet) tamamen bypass edilir — `dynamicColor = false` zorunlu.

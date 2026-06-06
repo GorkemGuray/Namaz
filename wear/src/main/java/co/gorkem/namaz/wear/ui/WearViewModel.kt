@@ -68,10 +68,10 @@ class WearViewModel @Inject constructor(
         
         viewModelScope.launch {
             while (true) {
-                if (!_isPhoneSource.value && _prayerItems.value.isNotEmpty()) {
-                    _nextPrayerInfo.value = calculateNextPrayerStandalone(_prayerItems.value)
+                if (_prayerItems.value.isNotEmpty()) {
+                    _nextPrayerInfo.value = co.gorkem.namaz.wear.calculateNextPrayer(_prayerItems.value)
                 }
-                kotlinx.coroutines.delay(60_000L)
+                kotlinx.coroutines.delay(10_000L)
             }
         }
         viewModelScope.launch {
@@ -126,7 +126,7 @@ class WearViewModel @Inject constructor(
                     _prayerItems.value = prayers
                     _cityName.value = city
                     _isLoading.value = false
-                    _nextPrayerInfo.value = calculateNextPrayerStandalone(prayers)
+                    _nextPrayerInfo.value = co.gorkem.namaz.wear.calculateNextPrayer(prayers)
                 }.onFailure {
                     _isLoading.value = false
                 }
@@ -134,43 +134,5 @@ class WearViewModel @Inject constructor(
         }
     }
 
-    private fun calculateNextPrayerStandalone(prayers: List<WearPrayerItem>): WearNextPrayer? {
-        if (prayers.isEmpty()) return null
-        val timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
-        val now = java.time.LocalTime.now()
-        
-        var nextItem: WearPrayerItem? = null
-        for (prayer in prayers) {
-            val prayerTime = java.time.LocalTime.parse(prayer.time, timeFormatter)
-            if (prayerTime.isAfter(now)) {
-                nextItem = prayer
-                break
-            }
-        }
-        
-        // If all prayers are passed, next is Fajr tomorrow
-        if (nextItem == null) {
-            nextItem = prayers.first()
-        }
-        
-        val nextTime = java.time.LocalTime.parse(nextItem.time, timeFormatter)
-        val today = java.time.LocalDate.now()
-        val targetDateTime = if (nextItem == prayers.first() && now.isAfter(java.time.LocalTime.of(12, 0))) {
-            java.time.LocalDateTime.of(today.plusDays(1), nextTime)
-        } else if (nextTime.isAfter(now)) {
-            java.time.LocalDateTime.of(today, nextTime)
-        } else {
-            java.time.LocalDateTime.of(today.plusDays(1), nextTime)
-        }
-        
-        val remainingSecs = java.time.Duration.between(java.time.LocalDateTime.now(), targetDateTime).seconds.coerceAtLeast(0)
-        val remainingMinutes = remainingSecs / 60
-        
-        return WearNextPrayer(
-            name = nextItem.name,
-            time = nextItem.time,
-            remainingMinutes = remainingMinutes,
-            targetTimeMillis = targetDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-        )
-    }
+
 }

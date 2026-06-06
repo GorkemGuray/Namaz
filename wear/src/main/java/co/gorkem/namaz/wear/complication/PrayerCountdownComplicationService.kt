@@ -82,7 +82,14 @@ class PrayerCountdownComplicationService : SuspendingComplicationDataSourceServi
         data: co.gorkem.namaz.wear.data.WearPrayerData?,
         tapAction: PendingIntent
     ): ComplicationData? {
-        val nextPrayer = data?.nextPrayer ?: return null
+        val prayers = data?.prayers ?: emptyList()
+        val nextPrayer = if (prayers.isNotEmpty()) {
+            co.gorkem.namaz.wear.calculateNextPrayer(prayers)
+        } else {
+            data?.nextPrayer
+        } ?: return null
+
+        co.gorkem.namaz.wear.scheduleComplicationUpdateAlarm(this, nextPrayer.targetTimeMillis)
 
         val targetInstant = Instant.ofEpochMilli(nextPrayer.targetTimeMillis)
         val timeDiffText = TimeDifferenceComplicationText.Builder(

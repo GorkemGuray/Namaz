@@ -58,6 +58,26 @@ Uygulama tamamen güncel modern Android araçlarıyla yazılmıştır (Kotlin 2.
 ./gradlew :wear:assembleDebug
 ```
 
+## 🧪 Testler (Birim Testleri)
+
+Uygulamanın hem mobil hem de Wear OS tarafındaki kritik iş mantığı (business logic) kapsamlı birim testleri ile güvence altına alınmıştır:
+* **Namaz Vakti Hesaplama Algoritması:** Çevrimdışı solar hesaplama motorunun Diyanet vakitleriyle (tolerans sınırları dahilinde) eşleştiği doğrulanır.
+* **Kıble Yönü Hesaplamaları:** Farklı koordinat girdileri üzerinden Kabe'ye olan yön açılarının (bearing) doğruluğu test edilir.
+* **Vakit Geçişleri ve Geri Sayım:** `GetNextPrayerUseCase` ve `GetPrayerDashboardUseCase` testleri ile günün her dilimindeki (imsak öncesi, gün ortası, yatsı sonrası) vakit geçişleri, kerahat süreleri ve kalan dakikalar doğrulanır.
+* **Wear OS Dinamik Hesaplama:** Saat kadranındaki komplikasyonların ve saat ana ekranının vakit geçişlerinde otomatik olarak bir sonraki vakti hesaplamasını sağlayan yardımcı fonksiyonlar test edilir.
+
+### Testleri Çalıştırma
+```bash
+# Tüm testleri (Mobil + Wear) çalıştır
+./gradlew test
+
+# Sadece mobil modül testlerini çalıştır
+./gradlew :app:test
+
+# Sadece wear modül testlerini çalıştır
+./gradlew :wear:test
+```
+
 ## 📐 Mimari ve Teknolojiler
 
 Projede **Clean Architecture**, **MVVM** tasarım kalıpları ve Hilt ile Bağımlılık Enjeksiyonu (DI) kullanılmıştır. 

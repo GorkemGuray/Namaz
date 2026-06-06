@@ -41,9 +41,9 @@ class GetPrayerDashboardUseCase @Inject constructor(
 
     fun execute(
         todayPrayerTimes: PrayerTime,
-        tomorrowPrayerTimes: PrayerTime? = null
+        tomorrowPrayerTimes: PrayerTime? = null,
+        now: LocalTime = LocalTime.now()
     ): PrayerDashboardData? {
-        val now = LocalTime.now()
 
         val prayers = todayPrayerTimes.getAllPrayers()
             .map { (name, timeStr) ->
@@ -57,7 +57,7 @@ class GetPrayerDashboardUseCase @Inject constructor(
             }
             ?.toMap()
 
-        val nextPrayerInfo = getNextPrayerUseCase(todayPrayerTimes) ?: return null
+        val nextPrayerInfo = getNextPrayerUseCase(todayPrayerTimes, now = now) ?: return null
 
         val currentPeriod = computeCurrentPeriod(now, prayers, tomorrowPrayers)
         val remainingToEnd = if (currentPeriod.endTime.isBefore(now)) {

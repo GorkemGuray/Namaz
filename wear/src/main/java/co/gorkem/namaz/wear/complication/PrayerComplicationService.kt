@@ -57,7 +57,16 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
         data: co.gorkem.namaz.wear.data.WearPrayerData?,
         tapAction: PendingIntent
     ): ComplicationData {
-        val nextPrayer = data?.nextPrayer
+        val prayers = data?.prayers ?: emptyList()
+        val nextPrayer = if (prayers.isNotEmpty()) {
+            co.gorkem.namaz.wear.calculateNextPrayer(prayers)
+        } else {
+            data?.nextPrayer
+        }
+
+        if (nextPrayer != null) {
+            co.gorkem.namaz.wear.scheduleComplicationUpdateAlarm(this, nextPrayer.targetTimeMillis)
+        }
 
         val builder = ShortTextComplicationData.Builder(
             text = PlainComplicationText.Builder(

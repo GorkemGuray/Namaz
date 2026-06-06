@@ -18,9 +18,11 @@ class GetNextPrayerUseCase @Inject constructor() {
         val targetPrayerTimeInMillis: Long
     )
 
-    operator fun invoke(todayPrayerTimes: PrayerTime): NextPrayerInfo? {
-        val now = LocalTime.now()
-        val today = LocalDate.now()
+    operator fun invoke(
+        todayPrayerTimes: PrayerTime,
+        now: LocalTime = LocalTime.now(),
+        today: LocalDate = LocalDate.now()
+    ): NextPrayerInfo? {
 
         val prayers = todayPrayerTimes.getAllPrayers()
             .map { (name, timeStr) ->
