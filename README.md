@@ -91,3 +91,12 @@ Projede **Clean Architecture**, **MVVM** tasarım kalıpları ve Hilt ile Bağı
   - *Güneş:* Güneş → Güneş +45dk (Namaz Kılınmaz)
   - *Öğle:* Öğle -45dk → Öğle (Namaz Kılınmaz)
   - *Akşam:* İkindi → Akşam -45dk (Sadece Farz-ı İkindi kılınabilir)
+
+## 🚀 CI/CD Pipeline (GitHub Actions)
+
+Uygulamanın sürekli entegrasyon ve dağıtım süreçleri GitHub Actions ile otomatikleştirilmiştir.
+
+* **Otomatik Derleme:** Her yeni sürüm etiketi (`v*` tag) push'landığında mobil (`:app`) ve saat (`:wear`) modülleri için otomatik debug APK derlenir.
+* **Dinamik Sürüm Yönetimi:** Sürüm numaraları ve kodları (`versionName` ve `versionCode`) push'lanan git tag'inden dinamik olarak çözümlenir.
+* **Otomatik GitHub Release:** Derlenen APK'lar sürüm adlarıyla yeniden adlandırılarak otomatik olarak yeni bir GitHub Release sayfasına eklenir.
+

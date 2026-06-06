@@ -1,0 +1,110 @@
+name: Namaz Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    name: Build & Release Debug APKs
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle/libs.versions.toml', '**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
+      - name: Extract version from git tag
+        id: version
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          echo "Tag: ${TAG_NAME}"
+          VERSION_NAME="${TAG_NAME#v}"
+          echo "Version name: ${VERSION_NAME}"
+          echo "versionName=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          TAG_COUNT=$(git tag --list | wc -l | xargs)
+          echo "Tag count: ${TAG_COUNT}"
+          echo "versionCode=${TAG_COUNT}" >> "$GITHUB_OUTPUT"
+
+      - name: Build debug APKs
+        run: |
+          ./gradlew :app:assembleDebug :wear:assembleDebug \
+            -PciVersionName=${{ steps.version.outputs.versionName }} \
+            -PciVersionCode=${{ steps.version.outputs.versionCode }} \
+            --no-daemon
+
+      - name: Rename APKs
+        id: artifacts
+        run: |
+          VERSION="${{ steps.version.outputs.versionName }}"
+          APP_APK="app/build/outputs/apk/debug/app-debug.apk"
+          APP_APK_RENAMED="Namaz-${VERSION}-app-debug.apk"
+          if [ -f "$APP_APK" ]; then
+            cp "$APP_APK" "$APP_APK_RENAMED"
+            echo "appApk=${APP_APK_RENAMED}" >> "$GITHUB_OUTPUT"
+            echo "App APK ready: ${APP_APK_RENAMED}"
+          else
+            echo "ERROR: App APK not found at ${APP_APK}"
+            exit 1
+          fi
+
+          WEAR_APK="wear/build/outputs/apk/debug/wear-debug.apk"
+          WEAR_APK_RENAMED="Namaz-${VERSION}-wear-debug.apk"
+          if [ -f "$WEAR_APK" ]; then
+            cp "$WEAR_APK" "$WEAR_APK_RENAMED"
+            echo "wearApk=${WEAR_APK_RENAMED}" >> "$GITHUB_OUTPUT"
+            echo "Wear APK ready: ${WEAR_APK_RENAMED}"
+          else
+            echo "ERROR: Wear APK not found at ${WEAR_APK}"
+            exit 1
+          fi
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          NOTES=$(git tag -l --format='%(contents)' "${TAG_NAME}" 2>/dev/null || echo "")
+          if [ -z "$NOTES" ]; then
+            NOTES="Namaz sürümü ${TAG_NAME#v} yayınlandı."
+          fi
+          DELIMITER="RELEASE_NOTES_EOF"
+          echo "notes<<${DELIMITER}" >> "$GITHUB_OUTPUT"
+          echo "$NOTES" >> "$GITHUB_OUTPUT"
+          echo "${DELIMITER}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Namaz ${{ steps.version.outputs.versionName }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          files: |
+            ${{ steps.artifacts.outputs.appApk }}
+            ${{ steps.artifacts.outputs.wearApk }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

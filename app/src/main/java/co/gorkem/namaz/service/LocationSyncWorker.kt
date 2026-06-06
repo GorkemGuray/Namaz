@@ -24,6 +24,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
+import co.gorkem.namaz.util.LocationMath
 
 @HiltWorker
 class LocationSyncWorker @AssistedInject constructor(
@@ -89,29 +90,29 @@ class LocationSyncWorker @AssistedInject constructor(
                 }
 
                 if (freshLocation != null) {
-                    val savedLocation = Location("").apply {
-                        latitude = currentLocationInfo.latitude
-                        longitude = currentLocationInfo.longitude
-                    }
+                    val isSignificant = LocationMath.isDistanceSignificant(
+                        lat1 = freshLocation.latitude,
+                        lon1 = freshLocation.longitude,
+                        lat2 = currentLocationInfo.latitude,
+                        lon2 = currentLocationInfo.longitude,
+                        thresholdMeters = 10000.0
+                    )
 
-                    val distance = freshLocation.distanceTo(savedLocation)
-                    if (distance > 10000f || currentLocationInfo.latitude == 0.0) {
+                    if (isSignificant) {
                         locationChanged = true
                         
                         val reverseGeocoded = geocoderHelper.getLocationInfo(freshLocation.latitude, freshLocation.longitude)
-                        if (reverseGeocoded != null) {
-                            val districtId = prayerTimeRepository.findDistrictId(reverseGeocoded.cityName, reverseGeocoded.districtName) ?: ""
-                            
-                            preferencesRepository.setLastAutoLocation(
-                                name = reverseGeocoded.cityName,
-                                districtName = reverseGeocoded.districtName,
-                                latitude = freshLocation.latitude,
-                                longitude = freshLocation.longitude,
-                                districtId = districtId,
-                                timezone = reverseGeocoded.timezone
-                            )
-                            currentLocationInfo = preferencesRepository.preferences.first().getLocationInfo()
-                        }
+                        val districtId = prayerTimeRepository.findDistrictId(reverseGeocoded.cityName, reverseGeocoded.districtName) ?: ""
+                        
+                        preferencesRepository.setLastAutoLocation(
+                            name = reverseGeocoded.cityName,
+                            districtName = reverseGeocoded.districtName,
+                            latitude = freshLocation.latitude,
+                            longitude = freshLocation.longitude,
+                            districtId = districtId,
+                            timezone = reverseGeocoded.timezone
+                        )
+                        currentLocationInfo = preferencesRepository.preferences.first().getLocationInfo()
                     }
                 }
             }

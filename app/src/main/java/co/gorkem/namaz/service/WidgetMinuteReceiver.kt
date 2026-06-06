@@ -11,6 +11,7 @@ import android.os.Build
 import android.util.Log
 import androidx.glance.appwidget.updateAll
 import co.gorkem.namaz.util.alarmManager
+import co.gorkem.namaz.util.LocationMath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,21 +59,32 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
                 val locationTracker = co.gorkem.namaz.service.LocationTracker(fusedLocationClient, context)
                 if (!locationTracker.hasLocationPermission()) return
 
+                // If saved auto location is uninitialized (0.0), fetch it immediately
+                if (prefs.lastAutoLatitude == 0.0 && prefs.lastAutoLongitude == 0.0) {
+                    co.gorkem.namaz.service.LocationSyncWorker.executeNow(context)
+                    return
+                }
+
                 val lastLocation = suspendCancellableCoroutine<android.location.Location?> { continuation ->
                     fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
                         continuation.resume(loc)
                     }.addOnFailureListener {
                         continuation.resume(null)
                     }
-                } ?: return
-                
-                val savedLoc = android.location.Location("").apply {
-                    latitude = prefs.lastAutoLatitude
-                    longitude = prefs.lastAutoLongitude
                 }
                 
-                if (savedLoc.latitude == 0.0 || lastLocation.distanceTo(savedLoc) > 10000f) {
-                    co.gorkem.namaz.service.LocationSyncWorker.executeNow(context, lastLocation.latitude, lastLocation.longitude)
+                if (lastLocation != null) {
+                    val isSignificant = LocationMath.isDistanceSignificant(
+                        lat1 = lastLocation.latitude,
+                        lon1 = lastLocation.longitude,
+                        lat2 = prefs.lastAutoLatitude,
+                        lon2 = prefs.lastAutoLongitude,
+                        thresholdMeters = 10000.0
+                    )
+                    
+                    if (isSignificant) {
+                        co.gorkem.namaz.service.LocationSyncWorker.executeNow(context, lastLocation.latitude, lastLocation.longitude)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to check location change", e)

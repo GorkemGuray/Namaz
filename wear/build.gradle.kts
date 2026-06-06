@@ -13,8 +13,17 @@ android {
         applicationId = "co.gorkem.namaz"
         minSdk = 30
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = getVersionCode()
+        versionName = getVersionName()
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("KEYSTORE_PATH") ?: "keystore.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+        }
     }
 
     buildTypes {
@@ -75,4 +84,12 @@ dependencies {
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
+}
+
+fun getVersionCode(): Int {
+    return (project.findProperty("ciVersionCode") as? String)?.toIntOrNull() ?: 1
+}
+
+fun getVersionName(): String {
+    return (project.findProperty("ciVersionName") as? String) ?: "1.0"
 }

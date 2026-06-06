@@ -475,3 +475,10 @@ wear/
 
 ### Navigate
 - `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)
+
+### CI/CD Pipeline (GitHub Actions)
+- **Git Tag Tetikleyici**: `v*` formatındaki tag'ler pushlandığında otomatik çalışır.
+- **Dynamic Versioning**: Tag adından `versionName` (`v1.2.3` -> `1.2.3`) ve tag sayısından `versionCode` türetilir, Gradle'a `-PciVersionName` ve `-PciVersionCode` parametreleri ile iletilir.
+- **Gradle Güncellemeleri**: `app/build.gradle.kts` ve `wear/build.gradle.kts` dosyalarına dinamik sürüm parametreleri eklenmiştir. İmzalama ayarları (`signingConfigs`) ileride kullanılmak üzere şablon olarak eklenmiştir.
+- **Artifacts & Releases**: Derlenen `Namaz-{versionName}-app-debug.apk` ve `Namaz-{versionName}-wear-debug.apk` dosyaları GitHub Release'e otomatik olarak yüklenir.
+

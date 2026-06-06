@@ -53,19 +53,29 @@ class LocationTracker @Inject constructor(
 
     fun registerPassiveLocationListener() {
         if (hasLocationPermission()) {
-            val request = com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_LOW_POWER, 3600000L) // 1 hour max
-                .setMinUpdateDistanceMeters(10000f) // 10km displacement for battery optimization
-                .build()
-            
-            val intent = android.content.Intent(context, LocationPassiveReceiver::class.java)
-            val pendingIntent = android.app.PendingIntent.getBroadcast(
-                context, 
-                0, 
-                intent, 
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
-            )
-            
-            fusedLocationClient.requestLocationUpdates(request, pendingIntent)
+            try {
+                val request = com.google.android.gms.location.LocationRequest.Builder(
+                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                    900000L // 15 minutes
+                )
+                    .setMinUpdateDistanceMeters(10000f) // 10km displacement for battery optimization
+                    .setMinUpdateIntervalMillis(300000L) // 5 minutes fastest interval
+                    .build()
+                
+                val intent = android.content.Intent(context, LocationPassiveReceiver::class.java)
+                val pendingIntent = android.app.PendingIntent.getBroadcast(
+                    context, 
+                    0, 
+                    intent, 
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+                )
+                
+                fusedLocationClient.requestLocationUpdates(request, pendingIntent)
+            } catch (e: SecurityException) {
+                android.util.Log.e("LocationTracker", "SecurityException registering passive location listener", e)
+            } catch (e: Exception) {
+                android.util.Log.e("LocationTracker", "Failed to register passive location listener", e)
+            }
         }
     }
 }
