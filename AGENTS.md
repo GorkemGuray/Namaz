@@ -67,10 +67,10 @@ Eğer görev yukarıdaki konulardan biriyle ilgiliyse (örneğin; Wear OS'te Mat
 
 ```
 Gradle:      9.4.1
-AGP:         9.2.0
+AGP:         9.2.1
 Kotlin:      2.2.10
-KSP:         2.2.10-2.0.2
-Compose BOM: 2026.02.01
+KSP:         2.3.2
+Compose BOM: 2026.05.00
 compileSdk:  36
 targetSdk:   36
 app minSdk:  24
@@ -83,18 +83,19 @@ Java target: 11
 
 ```
 DI:          Hilt 2.59.2, hilt-navigation-compose 1.3.0, hilt-work 1.3.0
-Network:     Retrofit 2.11.0, OkHttp 4.12.0, Gson 2.11.0
-Coroutines:  1.10.1
+Network:     Retrofit 2.11.0, OkHttp 4.12.0, Gson 2.14.0
+Coroutines:  1.11.0
 Navigation:  2.9.8
 Location:    play-services-location 21.3.0
-DataStore:   1.1.1 (Preferences)
+DataStore:   1.2.1 (Preferences)
 Room:        2.8.4
 WorkManager: 2.11.2
 Wear:        compose-material3 1.6.1, tiles-material 1.6.0, complications 1.3.0
 Wearable:    play-services-wearable 20.0.1
 Horologist:  0.7.15
 Desugar:     2.1.5
-Glance:       1.1.1 (Widget)
+Glance:      1.1.1 (Widget)
+MapLibre:    0.12.1 (MapLibre Compose)
 ```
 
 ---
@@ -155,7 +156,7 @@ GET https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdeta
 
 ## Proje Yapısı
 
-### app/ (Mobil Modül) — `co.gorkem.namaz` — 63 Kotlin dosyası
+### app/ (Mobil Modül) — `co.gorkem.namaz` — 88 Kotlin dosyası
 
 ```
 app/
@@ -163,11 +164,11 @@ app/
 ├── proguard-rules.pro
 └── src/main/
     ├── AndroidManifest.xml
-    │   Permissions: ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, POST_NOTIFICATIONS
+    │   Permissions: ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM
     │   @HiltAndroidApp NamazApplication, @AndroidEntryPoint MainActivity
     │   Widget: APPWIDGET_UPDATE receiver + configure activity + WorkManager init provider
     ├── java/co/gorkem/namaz/
-    │   ├── NamazApp.kt                    # Root composable, 4-tab bottom nav (Vakitler/Takvim/Kıble/Ayarlar) + AppThemeEntryPoint + rememberAppTheme()
+    │   ├── NamazApp.kt                    # Root composable, 4-tab bottom nav (Vakitler/Takvim/Kıble/Ayarlar) + AppThemeEntryPoint + rememberAppTheme() + HorizontalPager (Zikirmatik/Home)
     │   ├── NamazApplication.kt            # @HiltAndroidApp, Configuration.Provider (HiltWorkerFactory), notification channel + worker schedule
     │   ├── MainActivity.kt                # @AndroidEntryPoint, edge-to-edge, LocaleManager.attachBaseContext
     │   ├── LocaleManager.kt               # i18n: SharedPreferences-based locale, activity recreate
@@ -183,91 +184,112 @@ app/
     │   │   │   ├── LocationInfo.kt        # data class: lat, lon, city, district, timezone. DEFAULT=Istanbul
     │   │   │   └── QiblaDirection.kt      # data class: bearing (Double), cardinalDirection (TR: K/KD/D/GD/G/GB/B/KB)
     │   │   ├── repository/
-    │   │   │   └── PrayerTimeRepository.kt # interface: getPrayerTimes() → Flow<NetworkResult<List<PrayerTime>>>
+    │   │   │   ├── PrayerTimeRepository.kt # interface: getPrayerTimes() → Flow<NetworkResult<List<PrayerTime>>>, refreshPrayerTimes(), getActiveDataSource(), findDistrictId(), cleanupOldData()
+    │   │   │   └── ZikirRepository.kt      # interface: getZikirs(), addZikir(), updateZikir(), deleteZikir(), resetZikirCount(), getZikirById()
     │   │   └── usecase/
+    │   │       ├── GetNamazTesbihatiUseCase.kt # returns Namaz Tesbihati preset zikirs
     │   │       ├── GetNextPrayerUseCase.kt    # next prayer + remaining minutes
-    │   │       ├── GetPrayerTimesUseCase.kt   # repository delegasyonu
+    │   │       ├── GetPrayerTimesUseCase.kt   # repository wrapper
     │   │       ├── GetPrayerDashboardUseCase.kt # PeriodType + kerahat windows + current period logic
+    │   │       ├── GetZikirsUseCase.kt        # gets zikirs from repository
+    │   │       ├── ManageZikirUseCase.kt      # CRUD & count/reset operations for custom/preset zikirs
     │   │       └── QiblaUseCase.kt            # bearing calculation: lat/lon → Kaaba (21.4225, 39.8262)
     │   │
     │   ├── data/
     │   │   ├── remote/
     │   │   │   ├── NetworkResult.kt        # sealed: Success, Error, Loading
     │   │   │   ├── api/
+    │   │   │   │   ├── AladhanApiService.kt   # Retrofit: GET prayer times calendar by coordinates (with method/school)
     │   │   │   │   ├── ImsakiyemApiService.kt # Retrofit: GET monthly, search districts, states
     │   │   │   │   └── NominatimApiService.kt # Retrofit: GET search (OpenStreetMap geocoding)
     │   │   │   └── dto/
-    │   │   │       ├── ImsakiyemResponse.kt  # BaseResponse, DayPrayerDto, DistrictDto, HijriDateDto
+    │   │   │       ├── AladhanResponse.kt     # Aladhan prayer calendar DTOs
+    │   │   │       ├── ImsakiyemResponse.kt   # BaseResponse, DayPrayerDto, DistrictDto, HijriDateDto
     │   │   │       └── NominatimResponse.kt   # NominatimPlace, NominatimAddress
     │   │   ├── repository/
-    │   │   │   └── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache, method+school-aware cache key, widget updater
+    │   │   │   ├── PrayerTimeRepositoryImpl.kt # @Singleton, API + Room cache, method+school-aware cache key, widget updater
+    │   │   │   └── ZikirRepositoryImpl.kt      # @Singleton, Local Room DB implementation of ZikirRepository
     │   │   └── local/
     │   │       ├── room/
-    │   │       │   ├── NamazDatabase.kt        # Room v3, PrayerTimeEntity, fallbackToDestructiveMigration(true)
+    │   │       │   ├── NamazDatabase.kt        # Room v3, PrayerTimeEntity, ZikirEntity, fallbackToDestructiveMigration(true)
     │   │       │   ├── PrayerTimeDao.kt        # Queries by city+month+year+method+school, deleteOlderThan
-    │   │       │   └── PrayerTimeEntity.kt     # date (PK), cityName, 6 prayer times, hijri fields, cacheSchool
+    │   │       │   ├── PrayerTimeEntity.kt     # date (PK), cityName, 6 prayer times, hijri fields, cacheSchool, cacheDataSource
+    │   │       │   ├── ZikirDao.kt             # Queries for Zikir CRUD operations
+    │   │       │   └── ZikirEntity.kt          # Room Entity for Zikirs: id, title, arabicText, targetCount, currentCount, isNamazTesbihati, currentPhase
     │   │       └── datastore/
     │   │           ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, language, recentCities, appTheme → widget updater
     │   │           ├── UserPreferencesSerializer.kt # NO-OP stub (not actively used; standard Preferences keys used)
     │   │           └── UserPreferencesDataStore.kt  # preferencesDataStore extension
     │   │
     │   ├── di/
-    │   │   ├── NetworkModule.kt       # @Module: OkHttp (logging, 30s), Retrofit, AladhanApiService
-    │   │   ├── RepositoryModule.kt    # @Module: binds PrayerTimeRepository → Impl
+    │   │   ├── NetworkModule.kt       # @Module: OkHttp (logging, 30s), Retrofit instances for Aladhan, Imsakiyem, and Nominatim
+    │   │   ├── RepositoryModule.kt    # @Module: binds repository interfaces to implementation singletons
     │   │   ├── LocationModule.kt      # @Module: FusedLocationProviderClient
-    │   │   └── RoomModule.kt          # @Module: NamazDatabase + PrayerTimeDao singleton
+    │   │   └── RoomModule.kt          # @Module: NamazDatabase, PrayerTimeDao, and ZikirDao singletons
     │   │
     │   ├── service/
     │   │   ├── LocationTracker.kt           # FusedLocationProviderClient, hasLocationPermission()
-    │   │   ├── GeocoderHelper.kt            # Reverse geocode: lat/lon → il/ilçe (Turkish locale)
-    │   │   ├── NotificationHelper.kt        # Notification channel + bildirim gösterme (POST_NOTIFICATIONS check)
-    │   │   ├── PrayerNotificationWorker.kt  # @HiltWorker, tek vakit bildirimi + widget update
-    │   │   ├── PrayerNotificationScheduler.kt # 6 vakit bildirimi zamanlaması (WorkManager OneTimeWorkRequest)
-    │   │   ├── PrayerRefreshWorker.kt         # @HiltWorker, every 6h periodic refresh + notification reschedule
-    │   │   ├── WearSyncManager.kt             # Data Layer API ile Wear'a JSON sync (/namaz_prayer_data)
-    │   │   ├── WearPrayerData.kt              # WearPrayerData, WearPrayerItem, WearNextPrayer, WearKerahatInfo + Gson helpers
-    │   │   ├── QiblaSensorManager.kt          # SensorManager wrapper, magnetometer detection, Flow<QiblaOrientation>
-    │   │   ├── NamazWidget.kt                 # GlanceAppWidget: compact/expanded layout, themeToColorProviders sync, kerahat-aware, AndroidRemoteViews Chronometer
-    │   │   ├── NamazWidgetReceiver.kt         # AppWidgetProvider: APPWIDGET_UPDATE receiver, minute tick start/stop
-    │   │   ├── NamazWidgetConfigureActivity.kt # Widget layout seçimi (detailed/compact)
-    │   │   ├── NamazWidgetPrefs.kt            # Widget-specific SharedPreferences (layout)
-    │   │   ├── NamazWidgetUpdater.kt          # Widget güncelleme yardımcısı
-    │   │   ├── NamazWidgetWorker.kt           # @HiltWorker, periyodik widget refresh (15dk fallback)
-    │   │   └── WidgetMinuteReceiver.kt        # AlarmManager ile dakikalık tick BroadcastReceiver
+    │   │   ├── LocationPassiveReceiver.kt   # BroadcastReceiver for background geofence/passive displacement tracking (triggers LocationSyncWorker)
+    │   │   ├── LocationSyncWorker.kt        # @HiltWorker, runs periodic (12h) & on-demand location updates, significance checks (10km), data syncs
+    │   │   ├── GeocoderHelper.kt            # Reverse geocode: lat/lon → city/district name using Android Geocoder
+    │   │   ├── NotificationHelper.kt        # Notification channel + displaying single/reminder notifications
+    │   │   ├── PrayerNotificationWorker.kt  # @HiltWorker, displays single prayer time alert + updates widget
+    │   │   ├── PrayerNotificationScheduler.kt # Schedules WorkManager workers for the 6 prayer times
+    │   │   ├── WearSyncManager.kt             # Sends serialized prayer, location, theme & kerahat data to Wear OS via Data Client API
+    │   │   ├── WearPrayerData.kt              # DTO representation of synchronized wear data
+    │   │   ├── QiblaSensorManager.kt          # SensorManager wrapper, accelerometer & magnetometer listener, smooth azimuth flow (Sin/Cos filtering)
+    │   │   ├── NamazWidget.kt                 # GlanceAppWidget: compact/expanded layout, theme-aware, AndroidRemoteViews Chronometer countdown
+    │   │   ├── NamazWidgetReceiver.kt         # AppWidgetProvider: updates widget, registers WidgetMinuteReceiver
+    │   │   ├── NamazWidgetConfigureActivity.kt # Widget layout selection
+    │   │   ├── NamazWidgetPrefs.kt            # Widget-specific SharedPreferences (layout selection)
+    │   │   ├── NamazWidgetUpdater.kt          # Updates all active Glance widgets on demand
+    │   │   └── WidgetMinuteReceiver.kt        # Exact AlarmManager BroadcastReceiver triggering update every minute (:00) for native countdown sync
     │   │
-    │   └── ui/
-    │   ├── state/
-    │   │   ├── HomeUiState.kt  # sealed: Loading, Success, Error, PermissionRequired
-    │   │   └── QiblaUiState.kt # sealed: Loading, CompassActive, StaticDirection, Error, LocationRequired
-    │       ├── theme/
-    │       │   ├── Theme.kt       # NamazTheme(currentTheme: AppThemeSelection), prayer-tinted scheme, bypasses system dynamic colors
-    │       │   ├── Color.kt       # AppThemeSelection enum (EMERALD/SAPPHIRE/AMBER/MONOCHROME) + 4 tam M3 palet + Glance hex sabitleri + PrayerTints
-    │       │   ├── PrayerColors.kt # Atmospheric gradient brushes per prayer time
-    │       │   ├── Shape.kt       # ExpressiveShapes, HeroCardShape, PillShape
-    │       │   └── Type.kt        # ExpressiveTypography scale
-    │       ├── components/
-    │       │   ├── PrayerHeroCard.kt       # Hero card: countdown + location + period info + hijri date
-    │       │   ├── PrayerTimesList.kt      # 6 prayer rows: PrayerRowState enum (Passed/Active/Upcoming/Normal), period-aware
-    │       │   ├── PrayerIcon.kt           # PrayerName → ImageVector + tint mapping
-    │       │   ├── CountdownTimer.kt       # Standalone countdown composable
-    │       │   ├── QiblaCompass.kt         # Canvas compass: ring, tick marks, rotating Kaaba icon on circumference, cardinal labels at edge
-    │       │   └── QiblaDegreeDisplay.kt   # Bearing + cardinal direction + alignment delta display
-    │       └── screens/
-    │           ├── home/
-    │           │   ├── HomeScreen.kt      # Dashboard: permission → hero card → kerahat banner → prayer list
-    │           │   └── HomeViewModel.kt   # prayerTimesJob cancellation (race fix), prefs reactive reload
-    │           ├── calendar/
-    │           │   ├── CalendarScreen.kt  # Monthly calendar table view (M3, current day highlighted)
-    │           │   └── CalendarViewModel.kt # Observes current preferences & fetches monthly prayer times
-    │           ├── cityselection/
-    │           │   ├── CitySelectionScreen.kt    # Search (Nominatim), recent cities, use my location
-    │           │   └── CitySelectionViewModel.kt # Debounced search (400ms), save/clear preferences
-    │           ├── settings/
-    │           │   ├── SettingsScreen.kt    # Notifications, language (recreate), method, mezhep, tema (4 seçenek)
-    │           │   └── SettingsViewModel.kt # UserPreferences via DataStore + appTheme setter
-    │           └── qibla/
-    │               ├── QiblaScreen.kt      # Functional compass: sensor-driven + static fallback, all UI states
-    │               └── QiblaViewModel.kt   # Lifecycle-aware, Flow-based sensor + UseCase orchestration
+    │   ├── ui/
+    │   │   ├── state/
+    │   │   │   ├── HomeUiState.kt  # sealed: Loading, Success, Error, PermissionRequired
+    │   │   │   └── QiblaUiState.kt # sealed: Loading, CompassActive, StaticDirection, Error, LocationRequired
+    │   │   ├── theme/
+    │   │   │   ├── Theme.kt       # NamazTheme(currentTheme), custom schemes, bypasses dynamic color
+    │   │   │   ├── Color.kt       # AppThemeSelection enum + Color Palettes + Glance constants + PrayerTints
+    │   │   │   ├── PrayerColors.kt # Atmospheric gradient brushes per prayer time
+    │   │   │   ├── Shape.kt       # ExpressiveShapes, HeroCardShape, PillShape
+    │   │   │   └── Type.kt        # ExpressiveTypography scale
+    │   │   ├── theme/AppThemeUtils.kt # Helper for mapping theme selection to colors (e.g. for map view)
+    │   │   ├── components/
+    │   │   │   ├── PrayerHeroCard.kt       # Hero card: countdown + location + period info + hijri date
+    │   │   │   ├── PrayerTimesList.kt      # 6 prayer rows: period-aware coloring and highlights
+    │   │   │   ├── PrayerIcon.kt           # PrayerName → ImageVector mapping
+    │   │   │   ├── CountdownTimer.kt       # Realtime countdown calculations with System.currentTimeMillis()
+    │   │   │   ├── QiblaCompass.kt         # Canvas compass: rotating inner dial, shortest path rotation, glow Ring, rotating Kaaba
+    │   │   │   └── QiblaDegreeDisplay.kt   # Degree, cardinal indicators, calibration dots, alignment gradient overlay animations
+    │   │   └── screens/
+    │   │       ├── home/
+    │   │       │   ├── HomeScreen.kt      # Dashboard: hero card -> kerahat banner -> zikir button -> prayer list
+    │   │       │   └── HomeViewModel.kt   # prayerTimesJob cancellation, settings reactive reload
+    │   │       ├── calendar/
+    │   │       │   ├── CalendarScreen.kt  # Monthly table calendar view, current day highlighted
+    │   │       │   └── CalendarViewModel.kt # Observers preferences & loads monthly calendar times
+    │   │       ├── cityselection/
+    │   │       │   ├── CitySelectionScreen.kt    # Search (Nominatim / Imsakiyem), recent cities, GPS select
+    │   │       │   └── CitySelectionViewModel.kt # Debounced search (400ms), large-case Turkish convert, save/clear prefs
+    │   │       ├── settings/
+    │   │       │   ├── SettingsScreen.kt    # Notifications toggles, language recreate, method, theme select
+    │   │       │   └── SettingsViewModel.kt # UserPreferences repository interaction
+    │   │       ├── qibla/
+    │   │       │   ├── QiblaScreen.kt      # Functional compass: sensor or static fallback, map switch
+    │   │       │   ├── QiblaViewModel.kt   # Lifecycle-aware sensor/Compass flow controller
+    │   │       │   └── QiblaMap.kt         # MapLibre offline geocoded Kaaba route drawer (emerald great-circle line)
+    │   │       └── zikirmatik/
+    │   │           ├── ZikirmatikScreen.kt # Realtime Zikir tracking UI, progress arc, Namaz Tesbihati stages
+    │   │           └── ZikirmatikViewModel.kt # Manages current zikir, presets & custom zikirs, vibration triggers
+    │   │
+    │   └── util/
+    │       ├── ContextExtensions.kt            # Context extension properties (e.g. check permissions)
+    │       ├── DateTimeUtils.kt               # Time conversion helpers
+    │       ├── GreatCircleUtil.kt              # Computes path points on the globe along the shortest spherical distance (Great Circle)
+    │       ├── LocationMath.kt                # Geolocation maths, distance checks between coordinates
+    │       └── NotificationPermissionHelper.kt # Safe request & checker helpers for notifications
     │
     └── res/
         ├── values/strings.xml, values-en/strings.xml, themes.xml, colors.xml
@@ -277,7 +299,7 @@ app/
         └── xml/backup_rules.xml, data_extraction_rules.xml, namaz_widget_info.xml
 ```
 
-### wear/ (Wear OS Modül) — `co.gorkem.namaz.wear` — 19 Kotlin dosyası
+### wear/ (Wear OS Modül) — `co.gorkem.namaz.wear` — 31 Kotlin dosyası
 
 ```
 wear/
@@ -289,46 +311,57 @@ wear/
     │   Permissions: FINE_LOCATION, COARSE_LOCATION, INTERNET, WAKE_LOCK
     │   uses-feature: android.hardware.type.watch
     ├── java/co/gorkem/namaz/wear/
-    │   ├── WearApp.kt              # Root composable (WearTheme + HorizontalPager: WearHomeScreen / WearQiblaScreen)
+    │   ├── WearApp.kt              # Root composable (WearTheme + SwipeDismissableNavHost: Home / Qibla / Zikirmatik)
     │   ├── WearApplication.kt      # @HiltAndroidApp
     │   ├── MainActivity.kt         # @AndroidEntryPoint ComponentActivity
     │   ├── PrayerNameHelper.kt     # Context-based prayer name mapper (⚠️ duplicate with ui/PrayerNameHelper.kt)
     │   │
+    │   ├── complication/
+    │   │   ├── ComplicationUpdateReceiver.kt # BroadcastReceiver triggering watch-face complication updates
+    │   │   ├── PrayerComplicationService.kt # ShortTextComplication displaying next prayer time & name
+    │   │   └── PrayerCountdownComplicationService.kt # Dynamic ShortTextComplication displaying watch-face countdown
+    │   │
     │   ├── di/
-    │   │   ├── WearNetworkModule.kt    # @Module: OkHttp, Retrofit, AladhanApiService
-    │   │   └── WearDataEntryPoint.kt   # @EntryPoint: DataLayerService, PrayerRepository (for Tile/Complication)
+    │   │   ├── WearNetworkModule.kt    # @Module: OkHttp, Retrofit for Aladhan and Imsakiyem APIs
+    │   │   └── WearDataEntryPoint.kt   # @EntryPoint: DataLayerService, PrayerRepository (for Tile/Complications)
     │   │
     │   ├── data/
-    │   │   ├── WearDataLayerService.kt    # DataClient listener (/namaz_prayer_data)
-    │   │   ├── WearPrayerRepository.kt    # Standalone Aladhan API call (phone yoksa)
+    │   │   ├── WearDataLayerService.kt    # DataClient listener (/namaz_prayer_data) for background sync from phone
+    │   │   ├── WearPrayerRepository.kt    # Standalone Aladhan API fetch (if phone is disconnected)
     │   │   ├── WearPrayerModel.kt         # WearPrayerData, WearPrayerItem, WearNextPrayer, WearKerahatInfo
     │   │   ├── QiblaDirection.kt          # QiblaDirection model copy
     │   │   ├── QiblaUseCase.kt            # Qibla bearing calculation use case copy
     │   │   ├── QiblaSensorManager.kt      # Magnetometer & Accelerometer flow copy
     │   │   └── remote/
-    │   │       ├── api/AladhanApiService.kt      # Retrofit interface (method, school params)
-    │   │       └── dto/PrayerTimeResponse.kt     # DTOs (simplified)
+    │   │       ├── api/
+    │   │       │   ├── AladhanApiService.kt  # Retrofit interface (method, school params)
+    │   │       │   └── ImsakiyemApiService.kt # Retrofit interface for standalone Diyanet fetch on watch
+    │   │       └── dto/
+    │   │           ├── AladhanResponse.kt    # DTOs simplified
+    │   │           └── PrayerTimesResponse.kt # DTO representation of Diyanet monthly times
     │   │
     │   ├── ui/
-    │   │   ├── WearViewModel.kt       # DataLayer listener + standalone API fallback (hardcoded Istanbul)
-    │   │   ├── WearQiblaViewModel.kt  # Qibla calculation, sensor, location management ViewModel
+    │   │   ├── WearViewModel.kt       # DataLayer listener + standalone API fallback
+    │   │   ├── WearQiblaViewModel.kt  # Qibla calculation, sensor, and location management ViewModel
+    │   │   ├── WearZikirmatikViewModel.kt # ViewModel managing Watch Zikirmatik tracking & resets
     │   │   ├── PrayerNameHelper.kt    # @Composable prayer name mapper (⚠️ duplicate with root PrayerNameHelper.kt)
     │   │   ├── state/
     │   │   │   └── QiblaUiState.kt    # Compass state enum (CompassActive, StaticDirection, etc.)
     │   │   │
     │   │   ├── screens/
-    │   │   │   ├── WearHomeScreen.kt  # TransformingLazyColumn list + side chevron to Qibla
-    │   │   │   └── WearQiblaScreen.kt # Canvas compass layout, haptic aligned feedback, back button
+    │   │   │   ├── WearHomeScreen.kt  # TransformingLazyColumn grid (2x3 cells), status header, countdown & action buttons
+    │   │   │   ├── WearQiblaScreen.kt # Canvas compass layout, glow Ring, rotating Kaaba, haptic feedback when aligned
+    │   │   │   └── WearZikirmatikScreen.kt # Circular screen tapped tracking interface with progress circle & Namaz Tesbihati phases
     │   │   └── theme/
-    │   │       ├── Theme.kt           # WearTheme (OLED-black color scheme)
-    │   │       ├── Color.kt           # High-contrast wear palette (cyan/blue/amber on black)
+    │   │       ├── Theme.kt           # WearTheme (OLED-black color schemes synchronized with mobile theme ID)
+    │   │       ├── Color.kt           # OLED-optimized high-contrast wear palettes
     │   │       └── Type.kt            # WearTypography scale
     │   │
     │   ├── tile/
-    │   │   └── PrayerTileService.kt    # TileService: next prayer name, time, remaining minutes
+    │   │   └── PrayerTileService.kt    # TileService: next prayer name, time, and remaining minutes
     │   │
     │   └── complication/
-    │       └── PrayerComplicationService.kt  # ShortTextComplication: next prayer on watch face
+    │       └── (Services listed under complication/ package)
     │
     └── res/
         ├── values/strings.xml, values-en/strings.xml
@@ -344,17 +377,19 @@ wear/
 1. **İlk açılış** → Konum izni istenir
    - İzin verilirse: FusedLocationProviderClient → Geocoder → Konum Koordinatları → Aladhan API (Varsayılan) / Imsakiyem API (Diyanet) / Lokal Hesaplama
    - İzin verilmezse: CitySelectionScreen, varsayılan İstanbul/Silivri
-2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + 6 vakit listesi (uzun konum isimleri sadeleştirilmiş ve taşma sorunları giderilmiştir)
-3. **Aylık Takvim**: Sol/sağ oklar ile ay bazlı ileri/geri geçiş yapılabilen, 5 günlük vakit + güneş sütunlarını barındıran, bulunulan günü vurgulayan responsive tablo ekranı
-4. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı seçimi (Aladhan API / İmsakiyem API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), tema (4 seçenek: Emerald Oasis / Sapphire Night / Amber Sands / Monochrome Platinum), dil
-5. **Şehir seçimi**: Seçilen veri kaynağına göre arama yapılır:
+2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + zikir butonu + 6 vakit listesi (uzun konum isimleri sadeleştirilmiş ve taşma sorunları giderilmiştir)
+3. **Zikirmatik**: Ana ekranda (Times) sağa kaydırarak (veya HomeScreen'deki zikir butonuna tıklayarak) ulaşılan, Namaz Tesbihatı (33'lük turlar halinde Sübhanallah, Elhamdülillah, Allahuekber) ve özel zikirleri barındıran, ilerleme halkası, büyük dokunma alanı ve titreşimli/haptik geri bildirimli zikir takip ekranı.
+4. **Aylık Takvim**: Sol/sağ oklar ile ay bazlı ileri/geri geçiş yapılabilen, 5 günlük vakit + güneş sütunlarını barındıran, bulunulan günü vurgulayan responsive tablo ekranı
+5. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı seçimi (Aladhan API / İmsakiyem API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), tema (4 seçenek: Emerald Oasis / Sapphire Night / Amber Sands / Monochrome Platinum), dil
+6. **Şehir seçimi**: Seçilen veri kaynağına göre arama yapılır:
    - Aladhan API / Lokal Hesaplama için: Nominatim API ile dünya genelinde koordinat arama
    - İmsakiyem API için: İmsakiyem API ile ilçe arama (büyük/küçük harf ve Türkçe karakter desteğiyle)
    - Son seçilenler (max 5, JSON olarak DataStore'da)
-6. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi. Ayrıca MapLibre entegrasyonu ile Kabe'ye giden çizgiyi haritada (sokak seviyesi detayında) görselleştiren harita desteği.
-7. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum koordinatları (enlem/boylam) + next prayer + kerahat + tema bilgisi gönderir.
-8. **Wear Kıble**: Vakitler ekranında sola kaydırarak ya da sağ kenardaki Chevron butonuna basarak ulaşılan, dairesel ekranlara optimize edilmiş canvas pusula. Hizalandığında (sapma ≤ 5°) haptik (titreşim) geri bildirim verir. Sensör yoksa statik kıble yönü ve açısını gösterir.
-9. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
+7. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi. Ayrıca MapLibre entegrasyonu ile Kabe'ye giden çizgiyi haritada (zümrüt yeşili Great Circle hattıyla bina/sokak detayında) görselleştiren harita desteği.
+8. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum koordinatları (enlem/boylam) + next prayer + kerahat + tema bilgisi gönderir.
+9. **Wear Kıble**: Wear OS ana ekranındaki "Kıble Bulucu" butonuna basarak ulaşılan, dairesel ekranlara optimize edilmiş, hizalandığında haptik titreşim ve visual glow parlaması veren canvas pusula. Sensör yoksa statik kıble yönü ve açısını gösterir.
+10. **Wear Zikirmatik**: Wear OS ana ekranındaki "Zikirmatik" butonundan ulaşılan, Namaz Tesbihati turlarını dairesel ekranda takip etmeyi ve bitişte haptik titreşimle geri bildirim almayı sağlayan kompakt zikirmatik ekranı.
+11. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API / Imsakiyem API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
 
 ---
 
@@ -383,13 +418,13 @@ wear/
 - Expressive shapes, typography scale (Theme.kt'te `NamazTheme` içinde `MaterialTheme`'e verilir).
 
 ### Çevrimdışı (Room)
-- `PrayerTimeEntity` cache'lenir. Cache key: `cityName + month + year + method + school + cacheDataSource`.
+- `PrayerTimeEntity` ve `ZikirEntity` cache'lenir. PrayerTime cache key: `cityName + month + year + method + school + cacheDataSource`.
 - `NamazDatabase` version = 4. `fallbackToDestructiveMigration(true)` kullanılır (schema export disabled).
 - `cleanupOldData(30)` 30 günden eski veriyi siler.
 
 ### Bildirimler
 - WorkManager `OneTimeWorkRequest` ile her vakit için ayrı worker.
-- `PrayerRefreshWorker`: 6 saatte bir periyodik refresh (ağ kısıtı yok, lokal hesaplama çalışır).
+- `LocationSyncWorker`: 12 saatte bir periyodik ve konum değiştiğinde (displacement > 2000m tetikli passive receiver veya normal GPS) on-demand çalışır. 10km displacement limitiyle gereksiz ağ isteklerini keserek pil tasarrufu sağlar.
 
 ### i18n
 - `LocaleManager`: SharedPreferences tabanlı, `attachBaseContext` ile locale uygular.
@@ -422,7 +457,7 @@ wear/
 - **Dil Desteği**: Telefondan (`HomeViewModel`) saate gönderilen veriler `LocaleManager` kullanılarak kullanıcının seçtiği dilde gönderilir.
 - **Complication (Saat Formatı)**: `PrayerComplicationService` ShortText formatındadır. Vakit adı `title` alanına, saati ise `text` alanına ayrıldı.
 - **Complication (Geri Sayım)**: Yeni eklenen `PrayerCountdownComplicationService` ile işletim sistemi düzeyinde (Native) çalışan, pil dostu dinamik geri sayım komplikasyonu sunulur (Örn: "İkindi", "1sa 30dk").
-- **Complication Tetikleme**: Telefondan saate yeni veri ulaştığında `ComplicationDataSourceUpdateRequester` aracılığıyla komplikasyonun kadran üzerinde anında güncellenmesi sağlandı.
+- **Complication Tetikleme**: Telefondan saate veya WorkManager/Alarm altyapısından tetiklenen durumlarda `ComplicationUpdateReceiver` (`ComplicationDataSourceUpdateRequester` aracılığıyla) komplikasyonun kadran üzerinde anında güncellenmesini sağlar.
 - **Tile**: `PrayerTileService`, next prayer + remaining minutes.
 - **Kerahat**: Telefon'dan Wear'a kerahat bilgisi sync edilir. `WearKerahatBanner` aktif/yaklaşıyor durumlarını kompakt bir tasarımla gösterir.
 - **⚠️ Duplicate**: `PrayerNameHelper.kt` hem root package'ta (`Context`-based) hem `ui/`'da (`@Composable`). Birini kaldırmak gerekir.
@@ -453,7 +488,7 @@ wear/
 - **QiblaCompass**: Referans pusula tasarımı. İç yüz (derece çizgileri, K/D/G/B etiketleri) cihaz yönüne göre döner, dış yüz sabit kalır. Kaaba simgesi `qiblaBearing - deviceAzimuth` açısında halka çevresinde döner. **En kısa yol rotasyonu**: `accumulatedAzimuth`/`accumulatedKaaba` değişkenleri ile açı farkı >180° durumunda ters yönde dönüş (shortest path). Spring animasyon: low stiffness (azimut) / medium bouncy (Kaaba). **Hizalama glow**: `alignedAlpha` interpolasyonu ile sürekli glow ring + radial gradient parlaması. Kaaba simgesi hizalıyken `1.0 + 0.2 * alignedAlpha` ile scale olur. Merkezde crosshair + seviye göstergesi. Canvas-only implementasyon.
 - **QiblaDegreeDisplay**: Bearing + kardinal yön + sapma kartı. **Hizalı durumda arka plan overlay animasyonları**: Canvas tabanlı radial gradient sweep (2 trail beam), dönen arc çizgileri, orbital partikül dot'lar, breathing glow efekti. `AnimatedContent` ile durum metni (hizalı/sapma) geçişleri. **Sensör doğruluk göstergesi**: renkli dot + metin (İyi/Orta/Düşük/Kötü). Kalibrasyon/manyetik bozulma uyarıları inline error banner.
 - **QiblaScreen**: Tam ekran, TopAppBar yok. 5 UI state: Loading/CompassActive/StaticDirection/Error/LocationRequired. **Histerezisli hizalama algılama**: ≤4° içinde aligned olur, ≤6.5° üstünde aligned'dan çıkar (flicker önler). 200ms gecikme ile state değişimi. ±5° hizalıyken titreşim.
-- **Harita Görünümü**: MapLibre altyapısıyla (Raster tile) API anahtarı gerektirmeyen çevrimdışı Kabe haritası. `GreatCircleUtil` ile hesaplanan gerçek doğrusal hat `LineLayer` olarak zümrüt yeşili renkle çizilir. Kullanıcı "Konumuma Git" (17.0 zoom) butonuyla bina/sokak seviyesinde kıble yönünü fiziksel referanslarla eşleştirebilir.
+- **Harita Görünümü**: MapLibre altyapısıyla (Raster tile) çevrimdışı Kabe haritası. `GreatCircleUtil` ile hesaplanan gerçek doğrusal hat `LineLayer` olarak zümrüt yeşili renkle çizilir. Kullanıcı "Konumuma Git" (18.0 zoom) butonuyla bina/sokak seviyesinde kıble yönünü fiziksel referanslarla eşleştirebilir.
 - **Hybrid yaklaşım**: Manyetometre varsa tam pusula, yoksa statik yön + derece gösterimi.
 - **Test**: `QiblaUseCaseTest` - 6 birim testi passing (Istanbul, NYC, Sydney, Kaabe, kardinal yönler).
 
@@ -481,4 +516,3 @@ wear/
 - **Dynamic Versioning**: Tag adından `versionName` (`v1.2.3` -> `1.2.3`) ve tag sayısından `versionCode` türetilir, Gradle'a `-PciVersionName` ve `-PciVersionCode` parametreleri ile iletilir.
 - **Gradle Güncellemeleri**: `app/build.gradle.kts` ve `wear/build.gradle.kts` dosyalarına dinamik sürüm parametreleri eklenmiştir. İmzalama ayarları (`signingConfigs`) ileride kullanılmak üzere şablon olarak eklenmiştir.
 - **Artifacts & Releases**: Derlenen `Namaz-{versionName}-app-debug.apk` ve `Namaz-{versionName}-wear-debug.apk` dosyaları GitHub Release'e otomatik olarak yüklenir.
-
