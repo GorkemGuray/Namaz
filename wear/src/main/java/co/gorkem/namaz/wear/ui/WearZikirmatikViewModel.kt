@@ -13,7 +13,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,52 +23,132 @@ class WearZikirmatikViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val COUNT_KEY = intPreferencesKey("zikir_count")
-    private val PHASE_KEY = intPreferencesKey("zikir_phase")
+    private val MODE_KEY = intPreferencesKey("wear_mode")
+    private val INTERACTIVE_STEP_KEY = intPreferencesKey("wear_interactive_step")
+    private val INTERACTIVE_COUNT_KEY = intPreferencesKey("wear_interactive_count")
+    private val FREE_COUNT_KEY = intPreferencesKey("wear_free_count")
+    private val FREE_TARGET_KEY = intPreferencesKey("wear_free_target")
 
-    private val _currentCount = MutableStateFlow(0)
-    val currentCount: StateFlow<Int> = _currentCount.asStateFlow()
+    private val _currentMode = MutableStateFlow(0)
+    val currentMode: StateFlow<Int> = _currentMode.asStateFlow()
 
-    val namazTesbihatPhases = listOf("Sübhanallah", "Elhamdülillah", "Allahuekber")
+    private val _interactiveStepIndex = MutableStateFlow(0)
+    val interactiveStepIndex: StateFlow<Int> = _interactiveStepIndex.asStateFlow()
 
-    private val _currentPhase = MutableStateFlow(0)
-    val currentPhase: StateFlow<Int> = _currentPhase.asStateFlow()
+    private val _interactiveCount = MutableStateFlow(0)
+    val interactiveCount: StateFlow<Int> = _interactiveCount.asStateFlow()
+
+    private val _freeCount = MutableStateFlow(0)
+    val freeCount: StateFlow<Int> = _freeCount.asStateFlow()
+
+    private val _freeTarget = MutableStateFlow(0)
+    val freeTarget: StateFlow<Int> = _freeTarget.asStateFlow()
 
     init {
         viewModelScope.launch {
             context.wearZikirDataStore.data.collect { prefs ->
-                _currentCount.value = prefs[COUNT_KEY] ?: 0
-                _currentPhase.value = prefs[PHASE_KEY] ?: 0
+                _currentMode.value = prefs[MODE_KEY] ?: 0
+                _interactiveStepIndex.value = prefs[INTERACTIVE_STEP_KEY] ?: 0
+                _interactiveCount.value = prefs[INTERACTIVE_COUNT_KEY] ?: 0
+                _freeCount.value = prefs[FREE_COUNT_KEY] ?: 0
+                _freeTarget.value = prefs[FREE_TARGET_KEY] ?: 0
             }
         }
     }
 
-    fun increment() {
-        var newCount = _currentCount.value + 1
-        var newPhase = _currentPhase.value
-
-        if (newCount > 33) {
-            if (newPhase < 2) {
-                newPhase += 1
-                newCount = 1
-            } else {
-                newCount = 33
-            }
-        }
-        
+    fun setMode(mode: Int) {
         viewModelScope.launch {
             context.wearZikirDataStore.edit { prefs ->
-                prefs[COUNT_KEY] = newCount
-                prefs[PHASE_KEY] = newPhase
+                prefs[MODE_KEY] = mode
             }
         }
     }
 
-    fun reset() {
+    fun nextInteractiveStep() {
+        val nextIndex = _interactiveStepIndex.value + 1
+        if (nextIndex < co.gorkem.namaz.wear.ui.screens.WearNamazTesbihatiSteps.steps.size) {
+            viewModelScope.launch {
+                context.wearZikirDataStore.edit { prefs ->
+                    prefs[INTERACTIVE_STEP_KEY] = nextIndex
+                    prefs[INTERACTIVE_COUNT_KEY] = 0
+                }
+            }
+        }
+    }
+
+    fun previousInteractiveStep() {
+        val prevIndex = _interactiveStepIndex.value - 1
+        if (prevIndex >= 0) {
+            viewModelScope.launch {
+                context.wearZikirDataStore.edit { prefs ->
+                    prefs[INTERACTIVE_STEP_KEY] = prevIndex
+                    prefs[INTERACTIVE_COUNT_KEY] = 0
+                }
+            }
+        }
+    }
+
+    fun incrementInteractive(onTargetReached: () -> Unit) {
+        val currentStep = co.gorkem.namaz.wear.ui.screens.WearNamazTesbihatiSteps.steps.getOrNull(_interactiveStepIndex.value) ?: return
+        if (currentStep.type != co.gorkem.namaz.wear.ui.screens.WearStepType.COUNTER) return
+
+        val newCount = _interactiveCount.value + 1
+        if (newCount <= currentStep.targetCount) {
+            viewModelScope.launch {
+                context.wearZikirDataStore.edit { prefs ->
+                    prefs[INTERACTIVE_COUNT_KEY] = newCount
+                }
+                if (newCount == currentStep.targetCount) {
+                    onTargetReached()
+                    kotlinx.coroutines.delay(250)
+                    nextInteractiveStep()
+                }
+            }
+        }
+    }
+
+    fun resetInteractive() {
         viewModelScope.launch {
             context.wearZikirDataStore.edit { prefs ->
-                prefs[COUNT_KEY] = 0
-                prefs[PHASE_KEY] = 0
+                prefs[INTERACTIVE_STEP_KEY] = 0
+                prefs[INTERACTIVE_COUNT_KEY] = 0
+            }
+        }
+    }
+
+    fun resetCurrentInteractiveStep() {
+        viewModelScope.launch {
+            context.wearZikirDataStore.edit { prefs ->
+                prefs[INTERACTIVE_COUNT_KEY] = 0
+            }
+        }
+    }
+
+    fun incrementFree() {
+        val target = _freeTarget.value
+        val newCount = _freeCount.value + 1
+        if (target == 0 || newCount <= target) {
+            viewModelScope.launch {
+                context.wearZikirDataStore.edit { prefs ->
+                    prefs[FREE_COUNT_KEY] = newCount
+                }
+            }
+        }
+    }
+
+    fun resetFree() {
+        viewModelScope.launch {
+            context.wearZikirDataStore.edit { prefs ->
+                prefs[FREE_COUNT_KEY] = 0
+            }
+        }
+    }
+
+    fun setFreeTarget(target: Int) {
+        viewModelScope.launch {
+            context.wearZikirDataStore.edit { prefs ->
+                prefs[FREE_TARGET_KEY] = target
+                prefs[FREE_COUNT_KEY] = 0 // reset count when target changes
             }
         }
     }

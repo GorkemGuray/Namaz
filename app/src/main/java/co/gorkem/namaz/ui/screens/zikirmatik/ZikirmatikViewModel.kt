@@ -30,6 +30,12 @@ class ZikirmatikViewModel @Inject constructor(
 
     val namazTesbihatPhases = listOf("Sübhanallah", "Elhamdülillah", "Allahuekber")
 
+    private val _currentTesbihatStepIndex = MutableStateFlow(0)
+    val currentTesbihatStepIndex: StateFlow<Int> = _currentTesbihatStepIndex.asStateFlow()
+
+    private val _currentTesbihatCount = MutableStateFlow(0)
+    val currentTesbihatCount: StateFlow<Int> = _currentTesbihatCount.asStateFlow()
+
     init {
         viewModelScope.launch {
             getZikirsUseCase().collect { list ->
@@ -55,6 +61,13 @@ class ZikirmatikViewModel @Inject constructor(
                         targetCount = 33,
                         isNamazTesbihati = true
                     )
+                    // Pre-populate popular default zikirs
+                    manageZikirUseCase.addZikir(title = "Sübhanallah", targetCount = 33, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = "Elhamdülillah", targetCount = 33, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = "Allahu ekber", targetCount = 33, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = "Estağfirullah", targetCount = 99, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = "Kelime-i Tevhid", targetCount = 99, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = "Salavat", targetCount = 0, isNamazTesbihati = false)
                 }
             }
         }
@@ -108,5 +121,47 @@ class ZikirmatikViewModel @Inject constructor(
                 _currentZikir.value = _namazTesbihati.value
             }
         }
+    }
+
+    fun nextTesbihatStep() {
+        val nextIndex = _currentTesbihatStepIndex.value + 1
+        if (nextIndex < NamazTesbihatiSteps.steps.size) {
+            _currentTesbihatStepIndex.value = nextIndex
+            _currentTesbihatCount.value = 0
+        }
+    }
+
+    fun previousTesbihatStep() {
+        val prevIndex = _currentTesbihatStepIndex.value - 1
+        if (prevIndex >= 0) {
+            _currentTesbihatStepIndex.value = prevIndex
+            _currentTesbihatCount.value = 0
+        }
+    }
+
+    fun incrementTesbihat(onTargetReached: () -> Unit) {
+        val currentStep = NamazTesbihatiSteps.steps.getOrNull(_currentTesbihatStepIndex.value) ?: return
+        if (currentStep.type != StepType.COUNTER) return
+
+        val newCount = _currentTesbihatCount.value + 1
+        if (newCount <= currentStep.targetCount) {
+            _currentTesbihatCount.value = newCount
+            if (newCount == currentStep.targetCount) {
+                onTargetReached()
+                viewModelScope.launch {
+                    kotlinx.coroutines.delay(250)
+                    nextTesbihatStep()
+                }
+            }
+        }
+    }
+
+    fun resetTesbihat() {
+        _currentTesbihatStepIndex.value = 0
+        _currentTesbihatCount.value = 0
+    }
+
+    fun resetCurrentTesbihatStep() {
+        _currentTesbihatCount.value = 0
     }
 }

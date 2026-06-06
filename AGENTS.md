@@ -156,7 +156,7 @@ GET https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdeta
 
 ## Proje Yapısı
 
-### app/ (Mobil Modül) — `co.gorkem.namaz` — 88 Kotlin dosyası
+### app/ (Mobil Modül) — `co.gorkem.namaz` — 89 Kotlin dosyası
 
 ```
 app/
@@ -282,7 +282,8 @@ app/
     │   │       │   └── QiblaMap.kt         # MapLibre offline geocoded Kaaba route drawer (emerald great-circle line)
     │   │       └── zikirmatik/
     │   │           ├── ZikirmatikScreen.kt # Realtime Zikir tracking UI, progress arc, Namaz Tesbihati stages
-    │   │           └── ZikirmatikViewModel.kt # Manages current zikir, presets & custom zikirs, vibration triggers
+    │   │           ├── ZikirmatikViewModel.kt # Manages current zikir, presets & custom zikirs, vibration triggers
+    │   │           └── NamazTesbihatiStep.kt # Namaz Tesbihatı data class and list of steps
     │   │
     │   └── util/
     │       ├── ContextExtensions.kt            # Context extension properties (e.g. check permissions)
@@ -299,7 +300,7 @@ app/
         └── xml/backup_rules.xml, data_extraction_rules.xml, namaz_widget_info.xml
 ```
 
-### wear/ (Wear OS Modül) — `co.gorkem.namaz.wear` — 31 Kotlin dosyası
+### wear/ (Wear OS Modül) — `co.gorkem.namaz.wear` — 33 Kotlin dosyası
 
 ```
 wear/
@@ -351,7 +352,8 @@ wear/
     │   │   ├── screens/
     │   │   │   ├── WearHomeScreen.kt  # TransformingLazyColumn grid (2x3 cells), status header, countdown & action buttons
     │   │   │   ├── WearQiblaScreen.kt # Canvas compass layout, glow Ring, rotating Kaaba, haptic feedback when aligned
-    │   │   │   └── WearZikirmatikScreen.kt # Circular screen tapped tracking interface with progress circle & Namaz Tesbihati phases
+    │   │   │   ├── WearZikirmatikScreen.kt # Circular screen tapped tracking interface with progress circle & Namaz Tesbihati phases
+    │   │   │   └── WearNamazTesbihatiStep.kt # Wear Namaz Tesbihatı data models and steps
     │   │   └── theme/
     │   │       ├── Theme.kt           # WearTheme (OLED-black color schemes synchronized with mobile theme ID)
     │   │       ├── Color.kt           # OLED-optimized high-contrast wear palettes
@@ -378,7 +380,7 @@ wear/
    - İzin verilirse: FusedLocationProviderClient → Geocoder → Konum Koordinatları → Aladhan API (Varsayılan) / Imsakiyem API (Diyanet) / Lokal Hesaplama
    - İzin verilmezse: CitySelectionScreen, varsayılan İstanbul/Silivri
 2. **Ana ekran**: Hero card (geri sayım + sıradaki vakit + periyot) + kerahat banner + zikir butonu + 6 vakit listesi (uzun konum isimleri sadeleştirilmiş ve taşma sorunları giderilmiştir)
-3. **Zikirmatik**: Ana ekranda (Times) sağa kaydırarak (veya HomeScreen'deki zikir butonuna tıklayarak) ulaşılan, Namaz Tesbihatı (33'lük turlar halinde Sübhanallah, Elhamdülillah, Allahuekber) ve özel zikirleri barındıran, ilerleme halkası, büyük dokunma alanı ve titreşimli/haptik geri bildirimli zikir takip ekranı.
+3. **Zikirmatik (Gelişmiş)**: Ana ekranda (Times) sağa kaydırarak (veya HomeScreen'deki zikir butonuna tıklayarak) ulaşılan; (a) **Kısa Namaz Tesbihatı** (sırasıyla duaları, Türkçe anlamlarını ve Arapçalarını gösteren, 33'lük tesbih çekimlerini adım adım rehberlikle yaptıran interaktif akış) ve (b) **Serbest Sayaç** (sınırsız veya 33, 99, 100, 1000 gibi hedefleri olan, ilerleme halkası ve titreşimli geri bildirimli sayaç) seçeneklerini barındıran gelişmiş zikir takip ekranı.
 4. **Aylık Takvim**: Sol/sağ oklar ile ay bazlı ileri/geri geçiş yapılabilen, 5 günlük vakit + güneş sütunlarını barındıran, bulunulan günü vurgulayan responsive tablo ekranı
 5. **Ayarlar**: Bildirim toggle, dakika seçimi (15/30/45), veri kaynağı seçimi (Aladhan API / İmsakiyem API / Lokal Hesaplama), hesaplama yöntemi, mezhep (school), tema (4 seçenek: Emerald Oasis / Sapphire Night / Amber Sands / Monochrome Platinum), dil
 6. **Şehir seçimi**: Seçilen veri kaynağına göre arama yapılır:
@@ -388,7 +390,7 @@ wear/
 7. **Kıble**: Sensör tabanlı pusula (magnetometer + accelerometer), gerçek zamanlı iğne, Kıble yayı, ±5° hizalanma titreşimi. Manyetometre yoksa statik yön + derece gösterimi. Ayrıca MapLibre entegrasyonu ile Kabe'ye giden çizgiyi haritada (zümrüt yeşili Great Circle hattıyla bina/sokak detayında) görselleştiren harita desteği.
 8. **Wear senkronizasyonu**: Telefon Data Layer API ile wear'a vakit + konum koordinatları (enlem/boylam) + next prayer + kerahat + tema bilgisi gönderir.
 9. **Wear Kıble**: Wear OS ana ekranındaki "Kıble Bulucu" butonuna basarak ulaşılan, dairesel ekranlara optimize edilmiş, hizalandığında haptik titreşim ve visual glow parlaması veren canvas pusula. Sensör yoksa statik kıble yönü ve açısını gösterir.
-10. **Wear Zikirmatik**: Wear OS ana ekranındaki "Zikirmatik" butonundan ulaşılan, Namaz Tesbihati turlarını dairesel ekranda takip etmeyi ve bitişte haptik titreşimle geri bildirim almayı sağlayan kompakt zikirmatik ekranı.
+10. **Wear Zikirmatik (Gelişmiş)**: Wear OS ana ekranındaki "Zikirmatik" butonundan ulaşılan; dairesel ekran kavislerine tam uyumlu, üst ve alt çakışmaları (TimeText ve sistem butonları) önleyecek şekilde optimize edilmiş; hem **Serbest Sayaç** (hedefli/sınırsız) hem de **Kısa Namaz Tesbihatı** (adım adım rehberli) akışlarını barındıran, dairesel ilerleme halkalı ve haptik titreşim geri bildirimli saat zikirmatik ekranı.
 11. **Wear standalone**: Telefon yoksa saat standalone olarak Aladhan API / Imsakiyem API ile koordinat bazlı çalışır (GPS konumu alınamadığında İstanbul koordinatlarına düşer)
 
 ---

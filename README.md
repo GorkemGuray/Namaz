@@ -30,6 +30,13 @@ Telefonunuzdan seçtiğiniz tema, anında akıllı saatinize ve ana ekran widget
 * **Premium Animasyonlar:** Kabe'ye doğru hizalandığınızda cihazınız titrer, pusula yayı parlar (glow) ve özel parçacık efektleri devreye girer.
 * **MapLibre Offline Harita:** Manyetometrenin zayıf olduğu yerlerde veya emin olmak istediğinizde, sokak ve bina seviyesindeki harita üzerinden doğrudan Kabe'ye çekilen çizgiyi (Great Circle) görebilirsiniz.
 
+### 📿 Gelişmiş Zikirmatik ve İnteraktif Namaz Tesbihatı
+Hem mobilde hem de Wear OS (akıllı saat) tarafında çalışan yeni zikirmatik deneyimi:
+* **İnteraktif Kısa Namaz Tesbihatı:** Diyanet rehberine uygun olarak, duaların Türkçe okunuşunu, Arapçasını ve anlamlarını sırayla gösteren, tesbih kısımlarında otomatik 33'lük sayaç çektiren ve bittiğinde bitirme ekranı sunan interaktif akış.
+* **Serbest Sayaç:** Sınırsız veya hedefe göre (33, 99, 100, 1000) zikir çekebilmeyi sağlayan serbest mod.
+* **Hizalanmış ve Dairesel Ekran Uyumlu Tasarım (Wear OS):** Yuvarlak saat kadranında çakışmaları ve taşmaları önleyen, butonları orta hatta toplayan ve dial boyutunu dairesel yapıya göre ölçeklendiren kullanıcı dostu Wear OS tasarımı.
+* **Titreşimli Geri Bildirim:** Her tıklamada kısa, hedefe ulaşıldığında ise uzun haptik geri bildirim (titreşim) ile ekrana bakmadan zikir çekebilme imkanı.
+
 ### 📡 3 Farklı Veri Kaynağı Seçeneği
 Nasıl veri alacağınıza siz karar verin:
 1. **Diyanet (İmsakiyem API):** Türkiye geneli resmi ilçe bazlı vakitler. Harf/Karakter duyarsız (Örn: *kırklareli*, *üsküdar* yazsanız dahi anlar) gelişmiş arama sistemi.
