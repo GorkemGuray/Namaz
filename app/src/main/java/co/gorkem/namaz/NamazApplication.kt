@@ -33,5 +33,9 @@ class NamazApplication : Application(), Configuration.Provider {
         NotificationHelper.createNotificationChannel(this)
         LocationSyncWorker.schedulePeriodic(this)
         locationTracker.registerPassiveLocationListener()
+
+        if (co.gorkem.namaz.service.WidgetMinuteReceiver.hasActiveWidgets(this)) {
+            co.gorkem.namaz.service.WidgetMinuteReceiver.scheduleNextMinute(this)
+        }
     }
 }

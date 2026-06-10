@@ -46,6 +46,8 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "WidgetMinuteReceiver"
         private const val ACTION_WIDGET_TICK = "co.gorkem.namaz.WIDGET_MINUTE_TICK"
+        private const val GET_CURRENT_LOCATION_BACKOFF_MS = 5 * 60 * 1000L
+        @Volatile private var lastGetCurrentLocationFailMs: Long = 0
         
         @android.annotation.SuppressLint("MissingPermission")
         private suspend fun checkLocationChange(context: Context) {
@@ -53,38 +55,78 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
                 val prefsRepo = co.gorkem.namaz.data.local.datastore.UserPreferencesRepository(context.applicationContext)
                 val prefs = prefsRepo.preferences.first()
                 
-                if (prefs.manualCityName.isNotEmpty()) return
+                if (prefs.manualCityName.isNotEmpty()) {
+                    Log.d(TAG, "Manual city set, skipping location check")
+                    return
+                }
 
                 val fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(context)
                 val locationTracker = co.gorkem.namaz.service.LocationTracker(fusedLocationClient, context)
-                if (!locationTracker.hasLocationPermission()) return
+                if (!locationTracker.hasLocationPermission()) {
+                    Log.d(TAG, "No location permission, skipping location check")
+                    return
+                }
 
-                // If saved auto location is uninitialized (0.0), fetch it immediately
                 if (prefs.lastAutoLatitude == 0.0 && prefs.lastAutoLongitude == 0.0) {
+                    Log.d(TAG, "Saved auto-location uninitialized, triggering worker")
                     co.gorkem.namaz.service.LocationSyncWorker.executeNow(context)
                     return
                 }
 
-                val lastLocation = suspendCancellableCoroutine<android.location.Location?> { continuation ->
+                var currentLocation: android.location.Location? = suspendCancellableCoroutine { continuation ->
                     fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
                         continuation.resume(loc)
                     }.addOnFailureListener {
                         continuation.resume(null)
                     }
                 }
+
+                if (currentLocation == null) {
+                    val nowMs = System.currentTimeMillis()
+                    if (nowMs - lastGetCurrentLocationFailMs >= GET_CURRENT_LOCATION_BACKOFF_MS) {
+                        Log.d(TAG, "lastLocation is null, falling back to getCurrentLocation")
+                        currentLocation = try {
+                            kotlinx.coroutines.withTimeout(25_000L) {
+                                suspendCancellableCoroutine<android.location.Location?> { cont ->
+                                    fusedLocationClient.getCurrentLocation(
+                                        com.google.android.gms.location.Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                                        null
+                                    ).addOnSuccessListener { loc -> cont.resume(loc) }
+                                     .addOnFailureListener { cont.resume(null) }
+                                     .addOnCanceledListener { cont.resume(null) }
+                                }
+                            }
+                        } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+                            Log.w(TAG, "getCurrentLocation timed out after 25s")
+                            null
+                        }
+
+                        if (currentLocation == null) {
+                            lastGetCurrentLocationFailMs = nowMs
+                            Log.w(TAG, "getCurrentLocation failed, backing off for 5 minutes")
+                        }
+                    } else {
+                        Log.d(TAG, "Still in getCurrentLocation backoff (${(GET_CURRENT_LOCATION_BACKOFF_MS - (nowMs - lastGetCurrentLocationFailMs)) / 1000}s remaining), skipping")
+                    }
+                }
                 
-                if (lastLocation != null) {
+                if (currentLocation != null) {
                     val isSignificant = LocationMath.isDistanceSignificant(
-                        lat1 = lastLocation.latitude,
-                        lon1 = lastLocation.longitude,
+                        lat1 = currentLocation.latitude,
+                        lon1 = currentLocation.longitude,
                         lat2 = prefs.lastAutoLatitude,
                         lon2 = prefs.lastAutoLongitude,
                         thresholdMeters = 10000.0
                     )
                     
                     if (isSignificant) {
-                        co.gorkem.namaz.service.LocationSyncWorker.executeNow(context, lastLocation.latitude, lastLocation.longitude)
+                        Log.i(TAG, "Location changed >10km: (${prefs.lastAutoLatitude},${prefs.lastAutoLongitude}) → (${currentLocation.latitude},${currentLocation.longitude}), triggering worker")
+                        co.gorkem.namaz.service.LocationSyncWorker.executeNow(context, currentLocation.latitude, currentLocation.longitude)
+                    } else {
+                        Log.d(TAG, "Location within 10km, skipping")
                     }
+                } else {
+                    Log.w(TAG, "Could not obtain location (both lastLocation and getCurrentLocation failed), skipping")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to check location change", e)
@@ -162,7 +204,7 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
             }
         }
 
-        private fun hasActiveWidgets(context: Context): Boolean {
+        internal fun hasActiveWidgets(context: Context): Boolean {
             val manager = AppWidgetManager.getInstance(context)
             val componentName = ComponentName(context, NamazWidgetReceiver::class.java)
             return manager.getAppWidgetIds(componentName).isNotEmpty()

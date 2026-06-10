@@ -1,12 +1,15 @@
 package co.gorkem.namaz.service
 
 import android.content.Context
+import android.util.Log
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 object NamazWidgetUpdater {
+    private const val TAG = "NamazWidgetUpdater"
+
     fun update(context: Context) {
         CoroutineScope(Dispatchers.Default).launch {
             try {
@@ -17,9 +20,12 @@ object NamazWidgetUpdater {
                     glanceIds.forEach { glanceId ->
                         widget.update(context, glanceId)
                     }
+                    Log.d(TAG, "Widget updated successfully for ${glanceIds.size} instance(s)")
+                } else {
+                    Log.d(TAG, "No active widget instances found, skipping update")
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Failed to update widget", e)
             }
         }
     }

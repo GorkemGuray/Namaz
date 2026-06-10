@@ -164,12 +164,12 @@ app/
 ├── proguard-rules.pro
 └── src/main/
     ├── AndroidManifest.xml
-    │   Permissions: ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM
+    │   Permissions: ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, ACCESS_BACKGROUND_LOCATION, INTERNET, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM
     │   @HiltAndroidApp NamazApplication, @AndroidEntryPoint MainActivity
     │   Widget: APPWIDGET_UPDATE receiver + configure activity + WorkManager init provider
     ├── java/co/gorkem/namaz/
     │   ├── NamazApp.kt                    # Root composable, 4-tab bottom nav (Vakitler/Takvim/Kıble/Ayarlar) + AppThemeEntryPoint + rememberAppTheme() + HorizontalPager (Zikirmatik/Home)
-    │   ├── NamazApplication.kt            # @HiltAndroidApp, Configuration.Provider (HiltWorkerFactory), notification channel + worker schedule
+    │   ├── NamazApplication.kt            # @HiltAndroidApp, Configuration.Provider (HiltWorkerFactory), notification channel + worker schedule + passive location listener + WidgetMinuteReceiver reboot reschedule
     │   ├── MainActivity.kt                # @AndroidEntryPoint, edge-to-edge, LocaleManager.attachBaseContext
     │   ├── LocaleManager.kt               # i18n: SharedPreferences-based locale, activity recreate
     │   │
@@ -217,7 +217,7 @@ app/
     │   │       │   ├── ZikirDao.kt             # Queries for Zikir CRUD operations
     │   │       │   └── ZikirEntity.kt          # Room Entity for Zikirs: id, title, arabicText, targetCount, currentCount, isNamazTesbihati, currentPhase
     │   │       └── datastore/
-    │   │           ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, language, recentCities, appTheme → widget updater
+    │   │           ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, language, recentCities, appTheme → widget updater. setLastAutoLocation() does NOT update widget (waits for data load).
     │   │           ├── UserPreferencesSerializer.kt # NO-OP stub (not actively used; standard Preferences keys used)
     │   │           └── UserPreferencesDataStore.kt  # preferencesDataStore extension
     │   │
@@ -228,9 +228,9 @@ app/
     │   │   └── RoomModule.kt          # @Module: NamazDatabase, PrayerTimeDao, and ZikirDao singletons
     │   │
     │   ├── service/
-    │   │   ├── LocationTracker.kt           # FusedLocationProviderClient, hasLocationPermission()
-    │   │   ├── LocationPassiveReceiver.kt   # BroadcastReceiver for background geofence/passive displacement tracking (triggers LocationSyncWorker)
-    │   │   ├── LocationSyncWorker.kt        # @HiltWorker, runs periodic (12h) & on-demand location updates, significance checks (10km), data syncs
+    │   │   ├── LocationTracker.kt           # FusedLocationProviderClient, hasLocationPermission(), registerPassiveLocationListener()
+    │   │   ├── LocationPassiveReceiver.kt   # BroadcastReceiver: PendingIntent-based displacement listener (10km), triggers LocationSyncWorker
+    │   │   ├── LocationSyncWorker.kt        # @HiltWorker, periodic (12h) & on-demand (expedited) location sync, 10km significance check, API+widget+wear chain. Widget update always called (even on API failure).
     │   │   ├── GeocoderHelper.kt            # Reverse geocode: lat/lon → city/district name using Android Geocoder
     │   │   ├── NotificationHelper.kt        # Notification channel + displaying single/reminder notifications
     │   │   ├── PrayerNotificationWorker.kt  # @HiltWorker, displays single prayer time alert + updates widget
@@ -238,12 +238,12 @@ app/
     │   │   ├── WearSyncManager.kt             # Sends serialized prayer, location, theme & kerahat data to Wear OS via Data Client API
     │   │   ├── WearPrayerData.kt              # DTO representation of synchronized wear data
     │   │   ├── QiblaSensorManager.kt          # SensorManager wrapper, accelerometer & magnetometer listener, smooth azimuth flow (Sin/Cos filtering)
-    │   │   ├── NamazWidget.kt                 # GlanceAppWidget: compact/expanded layout, theme-aware, AndroidRemoteViews Chronometer countdown
-    │   │   ├── NamazWidgetReceiver.kt         # AppWidgetProvider: updates widget, registers WidgetMinuteReceiver
+    │   │   ├── NamazWidget.kt                 # GlanceAppWidget: compact/expanded layout, theme-aware, AndroidRemoteViews Chronometer countdown, prayer transition alarm
+    │   │   ├── NamazWidgetReceiver.kt         # GlanceAppWidgetReceiver: ACTION_PRAYER_TIME_TRANSITION handling, WidgetMinuteReceiver lifecycle
     │   │   ├── NamazWidgetConfigureActivity.kt # Widget layout selection
     │   │   ├── NamazWidgetPrefs.kt            # Widget-specific SharedPreferences (layout selection)
-    │   │   ├── NamazWidgetUpdater.kt          # Updates all active Glance widgets on demand
-    │   │   └── WidgetMinuteReceiver.kt        # Exact AlarmManager BroadcastReceiver triggering update every minute (:00) for native countdown sync
+    │   │   ├── NamazWidgetUpdater.kt          # Updates all active Glance widgets on demand with Log.d/e error reporting
+    │   │   └── WidgetMinuteReceiver.kt        # AlarmManager exact-minute tick: widget update + location change detection (lastLocation → getCurrentLocation with 5min backoff) → LocationSyncWorker trigger
     │   │
     │   ├── ui/
     │   │   ├── state/
@@ -426,7 +426,11 @@ wear/
 
 ### Bildirimler
 - WorkManager `OneTimeWorkRequest` ile her vakit için ayrı worker.
-- `LocationSyncWorker`: 12 saatte bir periyodik ve konum değiştiğinde (displacement > 2000m tetikli passive receiver veya normal GPS) on-demand çalışır. 10km displacement limitiyle gereksiz ağ isteklerini keserek pil tasarrufu sağlar.
+- `LocationSyncWorker`: 12 saatte bir periyodik ve konum değiştiğinde on-demand çalışır.
+  - **On-demand işler `setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)` ile önceliklendirilir** — Doze modunda bile hemen çalışır.
+  - 10km displacement limitiyle gereksiz ağ isteklerini keserek pil tasarrufu sağlar.
+  - **Widget güncellemesi her zaman çağrılır** — API başarılı veya başarısız fark etmez, `NamazWidgetUpdater.update()` `isSuccess` bloğu dışındadır.
+  - Wear senkronizasyonu sadece başarılı API sonucunda yapılır (`isSuccess` içinde).
 
 ### i18n
 - `LocaleManager`: SharedPreferences tabanlı, `attachBaseContext` ile locale uygular.
@@ -441,6 +445,7 @@ wear/
 - `dataSource`: Int. Hangi veri kaynağının aktif olduğunu belirtir (0: Aladhan API, 1: Imsakiyem API, 2: Lokal Hesaplama).
 - `useLocalCalculation`: Boolean. Geriye uyumluluk için tutulur. Açıksa API kullanılmaz, lokal hesaplama yapılır.
 - `appTheme`: Int. Aktif temayı belirtir (0: Emerald Oasis, 1: Sapphire Night, 2: Amber Sands, 3: Monochrome Platinum). Her preference değişikliğinde widget otomatik güncellenir.
+- **`setLastAutoLocation()` widget güncellemez** — konum değişikliğinde widget'ın yeni veri yüklenmeden boş/hatalı state'e geçmesini engellemek için `updateWidget()` çağrısı kaldırılmıştır. Widget güncellemesi sadece `refreshPrayerTimes()` başarıyla tamamlandıktan sonra `LocationSyncWorker` tarafından tetiklenir.
 
 ### HomeViewModel Race Condition
 - `prayerTimesJob` takip edilir, yeni yükleme önceki job'ı iptal eder.
@@ -506,12 +511,77 @@ wear/
 ### Geri Sayım ve Widget Senkronizasyonu
 - **Gerçek Zamanlı Sayım**: App composable'ları (`CountdownTimer`, `CountdownDisplay`, `WearCountdownHero`) lokal decrement yerine `System.currentTimeMillis()` ile her tick'te hedef epoch millis'ten kalan saniyeyi yeniden hesaplar. Arka plana alınıp geri dönüldüğünde sayaç donma sorunu tamamen çözüldü.
 - **Widget Native Chronometer**: Geri sayım, Glance `Text` yerine Android `Chronometer` widget'ı ile `AndroidRemoteViews` üzerinden render edilir. `SystemClock.elapsedRealtime()` tabanlı countdown mode (`setChronometerCountDown(true)`). Launcher/SystemUI süreci tarafından işletilir — uygulama uyurken %0 CPU, %0 wake lock, Doze/AppStandby geçirmez.
-- **Widget Dakikalık Tick**: `WidgetMinuteReceiver` BroadcastReceiver, `AlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, ...)` ile her dakika başı `:00`'da `NamazWidget().updateAll()` tetikler. `SCHEDULE_EXACT_ALARM` izni manifest'te tanımlı. API 33+ `canScheduleExactAlarms()` kontrolü, SecurityException fallback. Mevcut 15dk WorkManager `NamazWidgetWorker` yedek katman olarak korunur.
+- **Widget Dakikalık Tick**: `WidgetMinuteReceiver` BroadcastReceiver, `AlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, ...)` ile her dakika başı `:00`'da tetiklenir. Her tick'te iki iş yapar:
+  1. `NamazWidget().updateAll(context)` — widget geri sayımını günceller.
+  2. `checkLocationChange(context)` — `FusedLocationClient.lastLocation` ile kaydedilen son konumu karşılaştırır.
+     - `lastLocation` null ise `getCurrentLocation()` fallback (25sn timeout).
+     - `getCurrentLocation()` başarısız olursa **5 dakika backoff** — pil koruması için GPS tekrar tekrar uyandırılmaz.
+     - 10 km aşıldıysa `LocationSyncWorker.executeNow()` çağrılır.
+  - `SCHEDULE_EXACT_ALARM` izni manifest'te tanımlı. API 33+ `canScheduleExactAlarms()` kontrolü, SecurityException fallback.
+  - **Reboot sonrası**: `NamazApplication.onCreate()` aktif widget varsa `scheduleNextMinute()` ile yeniden zamanlar.
+  - **Wear etkilenmez**: Tüm bu mekanizma sadece mobil modüldedir, wear Data Layer sync ile güncel veriyi alır.
 - **Widget Kerahat Senkronizasyonu**: `NamazWidgetState` içinde `isKerahat`, `kerahatPrayerName`, `kerahatRemainingMinutes` alanları. `GetPrayerDashboardUseCase.execute()` ile mevcut domain mantığı widget state'e taşınır. Kerahat aktifken widget kartı `errorContainer` arka plan, `error` badge ile uyarı moduna geçer. Başlık "Kerahat Vakti • Şehir", kart içi "(Kerahat)" etiketi, Chronometer hedefi kerahat bitiş zamanına ayarlanır.
-- **Glance Anlık Güncelleme**: DataStore veya veri değişikliklerinde `NamazWidgetUpdater` tüm aktif widget'ları `NamazWidget().updateAll(context)` ile anında günceller.
+- **Glance Anlık Güncelleme**: DataStore veya veri değişikliklerinde `NamazWidgetUpdater` tüm aktif widget'ları `NamazWidget().update(context, glanceId)` ile anında günceller. Hatalar `Log.e(TAG, ...)` ile logcat'e yazılır (önceden sessiz `e.printStackTrace()` idi).
+
+### Arka Plan Konum ve Widget Güncelleme Mimarisi
+
+Konum değişikliği → veri yenileme → widget güncelleme zinciri üç bağımsız yedekli yolla çalışır:
+
+#### Yol 1: `LocationPassiveReceiver` (PendingIntent tabanlı)
+- `LocationTracker.registerPassiveLocationListener()`: 10km displacement, 15dk interval.
+- `LocationPassiveReceiver.onReceive()` → `LocationSyncWorker.executeNow(lat, lon)`.
+- **Kısıt**: `ACCESS_BACKGROUND_LOCATION` izni gerektirir. "Yalnızca uygulamayı kullanırken" seçildiğinde çalışmaz.
+
+#### Yol 2: `LocationSyncWorker` (12 saatte bir periyodik)
+- `NamazApplication.onCreate()` → `schedulePeriodic()`.
+- `doWork()`: `getCurrentLocation()` → 10km kontrolü → `refreshPrayerTimes()` → widget + wear sync.
+- **Pil**: `BATTERY_NOT_LOW` kısıtı. Sadece eksik veri varsa API çağrısı yapar.
+
+#### Yol 3: `WidgetMinuteReceiver` (dakikada bir — en güvenilir)
+- Her dakika `lastLocation` okur (bedava, önbellekten).
+- 10 km aşılınca `LocationSyncWorker.executeNow(lat, lon)`.
+- `lastLocation` null ise `getCurrentLocation()` fallback, 5dk backoff korumalı.
+- **"Yalnızca uygulamayı kullanırken" izniyle de çalışır** — hiçbir özel arka plan izni gerektirmez.
+
+#### Widget güncelleme zinciri (Worker sonrası)
+```
+setLastAutoLocation()           ← widget GÜNCELLEMEZ (erken güncelleme önlendi)
+         ↓
+refreshPrayerTimes() → API/local
+         ↓
+NamazWidgetUpdater.update()     ← her zaman çağrılır (isSuccess içinde değil)
+         ↓
+NamazWidget.provideGlance()     ← DB'den okur, widget'ı render eder
+         ↓
+schedulePrayerTransitionAlarm() ← sonraki vakit için alarm kurar
+```
+
+#### Batarya etki özeti
+| Bileşen | Sıklık | Pil maliyeti |
+|---------|--------|-------------|
+| `lastLocation` okuma | Her dakika | ~0 (önbellek) |
+| `getCurrentLocation()` | Sadece null + 5dk backoff | Düşük (nadiren) |
+| `LocationSyncWorker` | Sadece 10km aşılınca | ~2-3 sn CPU + 1 HTTP |
+| Dakikalık `AlarmManager` | Her dakika | İhmal edilebilir (RTC) |
+| Widget `provideGlance()` | Dakikada bir + vakit geçişi | ~50ms CPU |
 
 ### Navigate
 - `./gradlew :app:assembleDebug` (mobil), `./gradlew :wear:assembleDebug` (wear)
+
+### Emülatörde Konum Testi
+- **API 36 emülatörde `adb emu geo fix` çalışmaz** (OK döner ama konum güncellenmez).
+- Alternatif — Mock Location Provider:
+  ```bash
+  adb shell appops set com.android.shell android:mock_location allow
+  adb shell cmd location providers add-test-provider gps --requiresSatellite
+  adb shell cmd location providers set-test-provider-enabled gps true
+  adb shell cmd location providers set-test-provider-location gps --location 41.0082,28.9784
+  ```
+- Widget dakikalık tick'i manuel tetikleme (test için):
+  ```bash
+  adb shell am broadcast -a co.gorkem.namaz.WIDGET_MINUTE_TICK -n co.gorkem.namaz/.service.WidgetMinuteReceiver -f 0x10
+  ```
+- Logcat filtreleme: `adb logcat -d | grep -E "WidgetMinuteReceiver|NamazWidgetUpdater|LocationSyncWorker"`
 
 ### CI/CD Pipeline (GitHub Actions)
 - **Git Tag Tetikleyici**: `v*` formatındaki tag'ler pushlandığında otomatik çalışır.

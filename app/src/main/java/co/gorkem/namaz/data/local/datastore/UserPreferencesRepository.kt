@@ -260,7 +260,6 @@ class UserPreferencesRepository @Inject constructor(
             prefs[LAST_AUTO_DISTRICT_ID] = districtId
             prefs[LAST_AUTO_TIMEZONE] = timezone
         }
-        updateWidget()
     }
 
     suspend fun updateManualTimezone(timezone: String) {

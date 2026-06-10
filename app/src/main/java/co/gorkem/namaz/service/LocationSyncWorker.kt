@@ -8,6 +8,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -158,8 +159,6 @@ class LocationSyncWorker @AssistedInject constructor(
                     )
                 }
 
-                co.gorkem.namaz.service.NamazWidgetUpdater.update(appContext)
-
                 wearSyncManager.syncData(
                     prayerTimes = prayerTimes,
                     location = currentLocationInfo,
@@ -168,6 +167,8 @@ class LocationSyncWorker @AssistedInject constructor(
                     getPrayerDashboardUseCase = getPrayerDashboardUseCase
                 )
             }
+
+            co.gorkem.namaz.service.NamazWidgetUpdater.update(appContext)
 
             Result.success()
         } catch (e: Exception) {
@@ -206,6 +207,7 @@ class LocationSyncWorker @AssistedInject constructor(
             }
             val request = OneTimeWorkRequestBuilder<LocationSyncWorker>()
                 .setInputData(dataBuilder.build())
+                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .build()
             WorkManager.getInstance(context).enqueueUniqueWork(
                 ON_DEMAND_WORK_NAME,
