@@ -46,7 +46,8 @@ data class UserPreferences(
     val lastAutoDistrictName: String = "",
     val lastAutoDistrictId: String = "",
     val lastAutoTimezone: String = "Europe/Istanbul",
-    val manualTimezone: String = "Europe/Istanbul"
+    val manualTimezone: String = "Europe/Istanbul",
+    val lastUpdateCheckMs: Long = 0L
 )
 
 fun UserPreferences.getLocationInfo(): LocationInfo {
@@ -103,6 +104,7 @@ class UserPreferencesRepository @Inject constructor(
         val LAST_AUTO_TIMEZONE = stringPreferencesKey("last_auto_timezone")
         val MANUAL_TIMEZONE = stringPreferencesKey("manual_timezone")
         val APP_THEME = intPreferencesKey("app_theme")
+        val LAST_UPDATE_CHECK_MS = stringPreferencesKey("last_update_check_ms")
     }
 
     val preferences: Flow<UserPreferences> = dataStore.data.map { prefs ->
@@ -137,7 +139,8 @@ class UserPreferencesRepository @Inject constructor(
             lastAutoDistrictName = prefs[LAST_AUTO_DISTRICT_NAME] ?: "",
             lastAutoDistrictId = prefs[LAST_AUTO_DISTRICT_ID] ?: "",
             lastAutoTimezone = prefs[LAST_AUTO_TIMEZONE] ?: "Europe/Istanbul",
-            manualTimezone = prefs[MANUAL_TIMEZONE] ?: "Europe/Istanbul"
+            manualTimezone = prefs[MANUAL_TIMEZONE] ?: "Europe/Istanbul",
+            lastUpdateCheckMs = (prefs[LAST_UPDATE_CHECK_MS] ?: "0").toLongOrNull() ?: 0L
         )
     }
 
@@ -267,6 +270,12 @@ class UserPreferencesRepository @Inject constructor(
             prefs[MANUAL_TIMEZONE] = timezone
         }
         updateWidget()
+    }
+
+    suspend fun setLastUpdateCheck() {
+        dataStore.edit { prefs ->
+            prefs[LAST_UPDATE_CHECK_MS] = System.currentTimeMillis().toString()
+        }
     }
 
     private fun updateWidget() {

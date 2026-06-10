@@ -105,3 +105,36 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push version.json to website repo
+        if: env.WEBSITE_REPO_TOKEN != ''
+        env:
+          WEBSITE_REPO_TOKEN: ${{ secrets.WEBSITE_REPO_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.versionName }}"
+          VERSION_CODE="${{ steps.version.outputs.versionCode }}"
+          TAG_NAME="${GITHUB_REF_NAME}"
+          NOTES=$(git tag -l --format='%(contents)' "${TAG_NAME}" 2>/dev/null | head -5 | tr '\n' ' ' | sed 's/"/\\"/g' || echo "Yeni özellikler ve hata düzeltmeleri.")
+
+          cat > version.json << EOF
+          {
+            "version": "${VERSION}",
+            "versionCode": ${VERSION_CODE},
+            "releaseUrl": "https://github.com/GorkemGuray/Namaz/releases/tag/${TAG_NAME}",
+            "releaseNotes": "${NOTES}"
+          }
+          EOF
+
+          echo "Generated version.json:"
+          cat version.json
+
+          git clone "https://x-access-token:${WEBSITE_REPO_TOKEN}@github.com/GorkemGuray/gorkem_co_V4.git" website-repo
+          mkdir -p website-repo/namaz
+          cp version.json website-repo/namaz/version.json
+
+          cd website-repo
+          git config user.name "Namaz CI"
+          git config user.email "ci@namaz.local"
+          git add namaz/version.json
+          git diff --staged --quiet || git commit -m "Update Namaz version to v${VERSION}"
+          git push

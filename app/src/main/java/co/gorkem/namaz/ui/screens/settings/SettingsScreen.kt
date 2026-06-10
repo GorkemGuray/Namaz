@@ -48,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import co.gorkem.namaz.LocaleManager
 import co.gorkem.namaz.MainActivity
 import co.gorkem.namaz.R
+import co.gorkem.namaz.ui.components.UpdateCheckButton
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -574,6 +575,10 @@ fun SettingsScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            UpdateCheckButton()
 
             Spacer(modifier = Modifier.height(8.dp))
 

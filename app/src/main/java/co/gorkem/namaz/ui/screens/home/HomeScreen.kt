@@ -48,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.ui.components.CountdownTimer
+import co.gorkem.namaz.ui.components.UpdateBanner
 import co.gorkem.namaz.ui.components.PrayerHeroCard
 import co.gorkem.namaz.ui.components.PrayerTimesList
 import co.gorkem.namaz.ui.theme.PillShape
@@ -172,6 +173,10 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         item {
+                            UpdateBanner()
+                        }
+
+                        item {
                             PrayerHeroCard(
                                 dashboard = dash,
                                 locationName = locationDisplay,
@@ -212,6 +217,10 @@ fun HomeScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        item {
+                            UpdateBanner()
+                        }
+
                         item {
                             CountdownTimer(
                                 nextPrayer = np,
