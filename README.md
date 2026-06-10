@@ -68,6 +68,12 @@ Türkçe karakter ve büyük/küçük harf sorunları çözülmüştür (`kırkl
 - **Dakikalık Güncelleme:** `AlarmManager.setExactAndAllowWhileIdle()` ile her dakika başı `:00`'da yenilenir. Reboot sonrası otomatik yeniden zamanlanır.
 - **Vakit Geçiş Alarmı:** Widget, bir sonraki namaz vaktinde veya kerahat başlangıcında kendini otomatik günceller.
 
+### 🔔 Uygulama İçi Güncelleme Kontrolü
+- **Otomatik Kontrol:** Uygulama ana ekranı her açıldığında, son kontrolden 7 gün geçmişse `gorkem.co/namaz/version.json` endpoint'inden yeni sürümü sorgular. Yeni sürüm varsa banner ile bildirir — "İndir" butonu direkt GitHub Releases sayfasını açar.
+- **Manuel Kontrol:** Ayarlar sayfasındaki "Güncellemeleri Kontrol Et" butonu ile istenildiği zaman kontrol yapılabilir.
+- **Sürüm Gösterimi:** Ayarlar sayfasının altında `Namaz Vakitleri vX.Y.Z` şeklinde mevcut sürüm gösterilir.
+- **CI Entegrasyonu:** Her `v*` tag'i push'landığında GitHub Actions, `version.json` dosyasını otomatik oluşturup Cloudflare Pages reposuna pushlar. Endpoint herkese açıktır, token gerektirmez.
+
 ### 📅 Aylık Takvim
 Beş günlük vakit ve güneş sütunlarıyla donatılmış, içinde bulunulan günü belirgin şekilde vurgulayan responsive aylık tablo. Sol/sağ oklar ile aylar arası geçiş.
 
