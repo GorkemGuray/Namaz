@@ -32,6 +32,11 @@
     <string name="location_permission_grant">Konum İzni Ver</string>
     <string name="location_permission_skip">Varsayılan Konumla Devam Et</string>
 
+    <string name="bg_location_permission_title">Arka Plan Konum İzni</string>
+    <string name="bg_location_permission_desc">Widget\'ın arka planda güncel kalabilmesi için ayarlardan konum yetkisini "Her zaman izin ver" olarak değiştirmelisiniz. Uygulama, konumu sadece 10 kilometreden fazla yer değiştirdiğinizde yenileyecektir, bu nedenle pil dostudur.</string>
+    <string name="bg_location_permission_grant">Ayarlara Git</string>
+    <string name="bg_location_permission_skip">Şimdilik Geç</string>
+
     <!-- City Selection -->
     <string name="city_select_title">Konum Seç</string>
     <string name="city_back">Geri</string>

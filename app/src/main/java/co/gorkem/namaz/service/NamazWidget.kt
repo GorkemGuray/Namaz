@@ -24,8 +24,11 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
+import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.AndroidRemoteViews
@@ -44,6 +47,7 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.width
+import androidx.glance.layout.size
 import androidx.glance.text.FontWeight
 import androidx.glance.Image
 import androidx.glance.ImageProvider
@@ -497,7 +501,16 @@ private fun CompactLayout(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                maxLines = 1
+                maxLines = 1,
+                modifier = GlanceModifier.defaultWeight()
+            )
+            Image(
+                provider = ImageProvider(R.drawable.ic_widget_refresh),
+                contentDescription = "Yenile",
+                modifier = GlanceModifier
+                    .size(20.dp)
+                    .clickable(actionRunCallback<RefreshActionCallback>()),
+                colorFilter = ColorFilter.tint(onSurfaceVariantColor)
             )
         }
 
@@ -679,7 +692,16 @@ private fun ExpandedLayout(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                maxLines = 1
+                maxLines = 1,
+                modifier = GlanceModifier.defaultWeight()
+            )
+            Image(
+                provider = ImageProvider(R.drawable.ic_widget_refresh),
+                contentDescription = "Yenile",
+                modifier = GlanceModifier
+                    .size(20.dp)
+                    .clickable(actionRunCallback<RefreshActionCallback>()),
+                colorFilter = ColorFilter.tint(onSurfaceVariantColor)
             )
         }
 
@@ -954,6 +976,12 @@ private fun schedulePrayerTransitionAlarm(context: Context, targetEpochMillis: L
         }
     } catch (e: Exception) {
         Log.e("NamazWidget", "Failed to schedule transition alarm", e)
+    }
+}
+
+class RefreshActionCallback : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        LocationSyncWorker.executeNow(context)
     }
 }
 

@@ -72,6 +72,9 @@ class HomeViewModel @Inject constructor(
     private val _needsLocationPermission = MutableStateFlow(false)
     val needsLocationPermission: StateFlow<Boolean> = _needsLocationPermission.asStateFlow()
 
+    private val _needsBackgroundLocationPermission = MutableStateFlow(false)
+    val needsBackgroundLocationPermission: StateFlow<Boolean> = _needsBackgroundLocationPermission.asStateFlow()
+
     private var currentPreferences = UserPreferences()
     private var todayPrayerTime: PrayerTime? = null
     private var dashboardRefreshJob: Job? = null
@@ -117,8 +120,11 @@ class HomeViewModel @Inject constructor(
                     lastSchool = prefs.school
                     if (prefs.manualCityName.isNotEmpty()) {
                         _needsLocationPermission.value = false
+                        _needsBackgroundLocationPermission.value = false
                         loadPrayerTimes(prefs.getLocationInfo())
                     } else if (locationTracker.hasLocationPermission()) {
+                        _needsLocationPermission.value = false
+                        _needsBackgroundLocationPermission.value = !locationTracker.hasBackgroundLocationPermission()
                         val info = prefs.getLocationInfo()
                         if (info.cityName.isEmpty()) {
                             loadWithCurrentLocation()
@@ -128,6 +134,7 @@ class HomeViewModel @Inject constructor(
                         }
                     } else {
                         _needsLocationPermission.value = true
+                        _needsBackgroundLocationPermission.value = false
                         loadPrayerTimes(LocationInfo.DEFAULT)
                     }
                 } else if (themeChanged) {
@@ -145,22 +152,36 @@ class HomeViewModel @Inject constructor(
 
     fun onLocationPermissionGranted() {
         _needsLocationPermission.value = false
+        _needsBackgroundLocationPermission.value = !locationTracker.hasBackgroundLocationPermission()
         locationTracker.registerPassiveLocationListener()
         loadWithCurrentLocation()
     }
 
     fun onLocationPermissionDenied() {
         _needsLocationPermission.value = false
+        _needsBackgroundLocationPermission.value = false
         loadPrayerTimes(LocationInfo.DEFAULT)
     }
 
     fun useMyLocation() {
         if (locationTracker.hasLocationPermission()) {
+            _needsBackgroundLocationPermission.value = !locationTracker.hasBackgroundLocationPermission()
             viewModelScope.launch {
                 preferencesRepository.clearManualCity()
             }
         } else {
             _needsLocationPermission.value = true
+        }
+    }
+
+    fun dismissBackgroundLocationPermission() {
+        _needsBackgroundLocationPermission.value = false
+    }
+
+    fun onBackgroundLocationPermissionResult(granted: Boolean) {
+        _needsBackgroundLocationPermission.value = !granted
+        if (granted) {
+            locationTracker.registerPassiveLocationListener()
         }
     }
 

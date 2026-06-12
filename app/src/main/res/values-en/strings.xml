@@ -32,6 +32,11 @@
     <string name="location_permission_grant">Grant Location Permission</string>
     <string name="location_permission_skip">Continue with Default Location</string>
 
+    <string name="bg_location_permission_title">Background Location Permission</string>
+    <string name="bg_location_permission_desc">To keep the widget updated in the background, you need to change the location permission to "Allow all the time" in settings. The app will only update the location when you move more than 10 kilometers, so it is battery friendly.</string>
+    <string name="bg_location_permission_grant">Go to Settings</string>
+    <string name="bg_location_permission_skip">Skip for Now</string>
+
     <!-- City Selection -->
     <string name="city_select_title">Select Location</string>
     <string name="city_back">Back</string>

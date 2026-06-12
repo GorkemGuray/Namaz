@@ -69,6 +69,7 @@ fun HomeScreen(
     val error by viewModel.error.collectAsState()
     val locationInfo by viewModel.locationInfo.collectAsState()
     val needsLocationPermission by viewModel.needsLocationPermission.collectAsState()
+    val needsBackgroundLocationPermission by viewModel.needsBackgroundLocationPermission.collectAsState()
     val nextPrayer by viewModel.nextPrayer.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -81,6 +82,12 @@ fun HomeScreen(
         } else {
             viewModel.onLocationPermissionDenied()
         }
+    }
+
+    val bgPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.onBackgroundLocationPermissionResult(isGranted)
     }
 
     if (needsLocationPermission) {
@@ -96,6 +103,19 @@ fun HomeScreen(
             onSkip = { viewModel.onLocationPermissionDenied() }
         )
         return
+    }
+
+    if (needsBackgroundLocationPermission) {
+        BackgroundLocationPermissionDialog(
+            onGrantPermission = {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    bgPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                }
+            },
+            onDismiss = {
+                viewModel.dismissBackgroundLocationPermission()
+            }
+        )
     }
 
     val locationDisplay = locationInfo.formattedName
@@ -367,6 +387,32 @@ fun LocationPermissionScreen(
             Text(stringResource(R.string.location_permission_skip))
         }
     }
+}
+
+@Composable
+fun BackgroundLocationPermissionDialog(
+    onGrantPermission: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(stringResource(R.string.bg_location_permission_title))
+        },
+        text = {
+            Text(stringResource(R.string.bg_location_permission_desc))
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onGrantPermission) {
+                Text(stringResource(R.string.bg_location_permission_grant))
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.bg_location_permission_skip))
+            }
+        }
+    )
 }
 
 
