@@ -96,6 +96,8 @@ jobs:
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
+          repository: GorkemGuray/Namaz-App
+          token: ${{ secrets.RELEASE_REPO_TOKEN }}
           name: Namaz ${{ steps.version.outputs.versionName }}
           body: ${{ steps.release_notes.outputs.notes }}
           files: |
@@ -103,13 +105,11 @@ jobs:
             ${{ steps.artifacts.outputs.wearApk }}
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push version.json to website repo
-        if: env.WEBSITE_REPO_TOKEN != ''
+      - name: Push version.json to public release repo
+        if: env.RELEASE_REPO_TOKEN != ''
         env:
-          WEBSITE_REPO_TOKEN: ${{ secrets.WEBSITE_REPO_TOKEN }}
+          RELEASE_REPO_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
         run: |
           VERSION="${{ steps.version.outputs.versionName }}"
           VERSION_CODE="${{ steps.version.outputs.versionCode }}"
@@ -120,7 +120,7 @@ jobs:
           {
             "version": "${VERSION}",
             "versionCode": ${VERSION_CODE},
-            "releaseUrl": "https://github.com/GorkemGuray/Namaz/releases/tag/${TAG_NAME}",
+            "releaseUrl": "https://github.com/GorkemGuray/Namaz-App/releases/tag/${TAG_NAME}",
             "releaseNotes": "${NOTES}"
           }
           EOF
@@ -128,13 +128,22 @@ jobs:
           echo "Generated version.json:"
           cat version.json
 
-          git clone "https://x-access-token:${WEBSITE_REPO_TOKEN}@github.com/GorkemGuray/gorkem_co_V4.git" website-repo
-          mkdir -p website-repo/namaz
-          cp version.json website-repo/namaz/version.json
+          # Clone public repo gh-pages branch or set it up if it doesn't exist
+          if git clone --branch gh-pages "https://x-access-token:${RELEASE_REPO_TOKEN}@github.com/GorkemGuray/Namaz-App.git" public-repo; then
+            echo "Successfully cloned gh-pages branch"
+          else
+            echo "gh-pages branch not found, cloning default repository..."
+            git clone "https://x-access-token:${RELEASE_REPO_TOKEN}@github.com/GorkemGuray/Namaz-App.git" public-repo
+            cd public-repo
+            git checkout -b gh-pages 2>/dev/null || git checkout --orphan gh-pages
+            git rm -rf . || true
+            cd ..
+          fi
 
-          cd website-repo
+          cp version.json public-repo/version.json
+          cd public-repo
           git config user.name "Namaz CI"
           git config user.email "ci@namaz.local"
-          git add namaz/version.json
+          git add version.json
           git diff --staged --quiet || git commit -m "Update Namaz version to v${VERSION}"
-          git push
+          git push origin gh-pages
