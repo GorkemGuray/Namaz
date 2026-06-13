@@ -140,10 +140,13 @@ jobs:
             cd ..
           fi
 
+          # Copy website static files and generated version.json
+          cp -r website/* public-repo/
           cp version.json public-repo/version.json
+          
           cd public-repo
           git config user.name "Namaz CI"
           git config user.email "ci@namaz.local"
-          git add version.json
-          git diff --staged --quiet || git commit -m "Update Namaz version to v${VERSION}"
+          git add -A
+          git diff --staged --quiet || git commit -m "Update website and version to v${VERSION}"
           git push origin gh-pages
