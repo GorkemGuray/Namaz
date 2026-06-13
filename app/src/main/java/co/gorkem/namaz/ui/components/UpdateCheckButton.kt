@@ -22,7 +22,7 @@ fun UpdateCheckButton(modifier: Modifier = Modifier) {
     var showBanner by remember { mutableStateOf(false) }
 
     if (showBanner) {
-        UpdateBanner(manualCheck = true, onCheckCompleted = { showBanner = false })
+        UpdateBanner(manualCheck = true, onDismiss = { showBanner = false })
     }
 
     Button(

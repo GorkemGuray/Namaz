@@ -42,7 +42,7 @@ import kotlinx.coroutines.flow.first
 fun UpdateBanner(
     modifier: Modifier = Modifier,
     manualCheck: Boolean = false,
-    onCheckCompleted: (() -> Unit)? = null
+    onDismiss: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val currentVersion = BuildConfig.VERSION_NAME
@@ -62,7 +62,6 @@ fun UpdateBanner(
             val oneWeekMs = 7 * 24 * 60 * 60 * 1000L
             if (System.currentTimeMillis() - prefs.lastUpdateCheckMs < oneWeekMs) {
                 shouldCheck = false
-                onCheckCompleted?.invoke()
                 return@LaunchedEffect
             }
         }
@@ -74,22 +73,32 @@ fun UpdateBanner(
         checking = false
         result = checkResult
         shouldCheck = false
-        onCheckCompleted?.invoke()
     }
 
-    if (!manualCheck && (result == null || !result!!.updateAvailable || dismissed)) return
+    val currentResult = result
+    if (!manualCheck && (currentResult == null || !currentResult.updateAvailable || dismissed)) return
+
+    val isVisible = if (manualCheck) {
+        checking || (currentResult != null && !dismissed)
+    } else {
+        currentResult != null && currentResult.updateAvailable && !dismissed
+    }
 
     AnimatedVisibility(
-        visible = result != null && (manualCheck || (result?.updateAvailable == true && !dismissed)),
+        visible = isVisible,
         enter = slideInVertically() + fadeIn(),
         exit = slideOutVertically() + fadeOut()
     ) {
-        val res = result ?: return@AnimatedVisibility
+        val updateAvailable = result?.updateAvailable == true
+        val isError = result?.isError == true
+        val latestVer = result?.latestVersion ?: ""
+        val currentVer = result?.currentVersion ?: currentVersion
+        val relUrl = result?.releaseUrl ?: ""
 
         Surface(
             modifier = modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,
-            color = if (res.updateAvailable) MaterialTheme.colorScheme.primaryContainer
+            color = if (updateAvailable) MaterialTheme.colorScheme.primaryContainer
                    else MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 2.dp
         ) {
@@ -100,7 +109,7 @@ fun UpdateBanner(
                 Icon(
                     imageVector = Icons.Rounded.SystemUpdate,
                     contentDescription = null,
-                    tint = if (res.updateAvailable) MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = if (updateAvailable) MaterialTheme.colorScheme.onPrimaryContainer
                            else MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -108,12 +117,12 @@ fun UpdateBanner(
 
                 val message = if (checking) {
                     "Güncellemeler kontrol ediliyor..."
-                } else if (res.isError) {
+                } else if (isError) {
                     "Güncelleme kontrolü yapılamadı"
-                } else if (res.updateAvailable) {
-                    "Yeni sürüm mevcut: v${res.latestVersion} (Şu an: v${res.currentVersion})"
+                } else if (updateAvailable) {
+                    "Yeni sürüm mevcut: v$latestVer (Şu an: v$currentVer)"
                 } else {
-                    "Uygulamanız güncel (v${res.currentVersion})"
+                    "Uygulamanız güncel (v$currentVer)"
                 }
 
                 Text(
@@ -123,11 +132,11 @@ fun UpdateBanner(
                     modifier = Modifier.weight(1f)
                 )
 
-                if (res.updateAvailable) {
+                if (updateAvailable) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(res.releaseUrl))
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(relUrl))
                             context.startActivity(intent)
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -138,11 +147,12 @@ fun UpdateBanner(
                     }
                 }
 
-                if (manualCheck || !res.updateAvailable) {
+                if (manualCheck || !updateAvailable) {
                     Spacer(modifier = Modifier.width(4.dp))
                     IconButton(onClick = {
                         dismissed = true
                         result = null
+                        onDismiss?.invoke()
                     }) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
@@ -150,9 +160,12 @@ fun UpdateBanner(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                } else if (res.updateAvailable) {
+                } else if (updateAvailable) {
                     Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(onClick = { dismissed = true }) {
+                    IconButton(onClick = {
+                        dismissed = true
+                        onDismiss?.invoke()
+                    }) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
                             contentDescription = "Kapat",
