@@ -204,13 +204,37 @@ adb logcat -d | grep -E "WidgetMinuteReceiver|NamazWidgetUpdater|LocationSyncWor
 
 ---
 
-## 🚀 CI/CD (GitHub Actions)
+## 🚀 CI/CD (GitHub Actions) & Deployment
 
-`v*` formatındaki git tag'leri push'landığında otomatik olarak:
-1. Tag adından `versionName` ve `versionCode` türetilir
-2. Mobil (`:app`) ve Wear OS (`:wear`) debug APK'ları derlenir
-3. APK'lar `Namaz-{version}-app-debug.apk` / `Namaz-{version}-wear-debug.apk` olarak adlandırılır
-4. GitHub Release sayfasına otomatik yüklenir
+Projede otomatikleştirilmiş iki farklı dağıtım (deployment) iş akışı (workflow) bulunmaktadır:
+
+### 1. Sadece Web Sitesi Dağıtımı (`deploy-website.yml`)
+Tanıtım web sitesi dosyalarında (`website/` klasöründeki HTML, CSS, JS, görseller) bir değişiklik yapıldığında, uygulamayı yeniden derlemeden ve yeni bir sürüm çıkarmadan hızlıca canlıya almak için kullanılır:
+* **Tetikleyici:** `website/**` yollarındaki dosyalar güncellenip `main` branch'ine `push` yapıldığında.
+* **Süreç:** 
+  1. `GorkemGuray/Namaz-App` reposunun `gh-pages` branch'ini klonlar.
+  2. Canlıdaki `version.json` dosyasını yedekler (böylece mevcut uygulama güncellemelerini gösteren sürüm bilgileri korunur).
+  3. `website/` klasörünün yeni içeriğini klona kopyalar ve yedeklenen `version.json` dosyasını geri yükler.
+  4. Değişiklikleri `gh-pages` branch'ine push'layarak web sitesini saniyeler içinde günceller.
+* **Gereksinim:** Repo secrets alanında `RELEASE_REPO_TOKEN` tanımlı olmalıdır.
+
+### 2. Uygulama Sürümü & Otomatik Release Dağıtımı (`release.yml`)
+Hem uygulamayı güncelleyip yeni APK'ları yayınlamak hem de tanıtım sitesindeki "Sürüm Notları" ve indirilecek APK bağlantılarını güncellemek için kullanılır:
+* **Tetikleyici:** `v*` formatında bir git tag'i (Örn: `v1.0.5`) pushlandığında.
+* **Süreç:**
+  1. Tag adından `versionName` ve `versionCode` türetilir.
+  2. Mobil (`:app`) ve Wear OS (`:wear`) debug APK'ları bu sürüm numaralarıyla Gradle üzerinden derlenir.
+  3. APK'lar `Namaz-{version}-app-debug.apk` ve `Namaz-{version}-wear-debug.apk` şeklinde adlandırılarak GitHub Release sayfasına yüklenir.
+  4. Tag açıklamalarından otomatik sürüm notları (release notes) üretilir.
+  5. Sürüm ve sürüm notlarını içeren yeni bir `version.json` oluşturulup tanıtım web sitesiyle birlikte `gh-pages` branch'ine pushlanır. Böylece uygulama içi güncelleme denetleyicisi anında yeni sürümden haberdar olur.
+* **Derleme ve Yayınlama Komutları:**
+  ```bash
+  git add -A
+  git commit -m "feat: yeni ozellikler ve hata gidermeleri"
+  git push origin main
+  git tag -a v1.0.5 -m "Sürüm açıklamaları ve detayları buraya yazılır."
+  git push origin v1.0.5
+  ```
 
 ---
 

@@ -583,16 +583,21 @@ schedulePrayerTransitionAlarm() ← sonraki vakit için alarm kurar
   ```
 - Logcat filtreleme: `adb logcat -d | grep -E "WidgetMinuteReceiver|NamazWidgetUpdater|LocationSyncWorker"`
 
-### CI/CD Pipeline (GitHub Actions)
-- **Git Tag Tetikleyici**: `v*` formatındaki tag'ler pushlandığında otomatik çalışır.
-- **Dynamic Versioning**: Tag adından `versionName` (`v1.2.3` -> `1.2.3`) ve tag sayısından `versionCode` türetilir, Gradle'a `-PciVersionName` ve `-PciVersionCode` parametreleri ile iletilir.
-- **Gradle Güncellemeleri**: `app/build.gradle.kts` ve `wear/build.gradle.kts` dosyalarına dinamik sürüm parametreleri eklenmiştir. İmzalama ayarları (`signingConfigs`) ileride kullanılmak üzere şablon olarak eklenmiştir.
-- **Artifacts & Releases**: Derlenen `Namaz-{versionName}-app-debug.apk` ve `Namaz-{versionName}-wear-debug.apk` dosyaları GitHub Release'e otomatik olarak yüklenir.
-- **version.json Dağıtımı**: Her release'de workflow, `version.json` oluşturup `GorkemGuray/gorkem_co_V4` reposuna pushlar. Cloudflare Pages → `https://gorkem.co/namaz/version.json`. Uygulama içi güncelleme kontrolü bu endpoint'i kullanır (public, token'sız).
-- **Fine-grained PAT**: `WEBSITE_REPO_TOKEN` secret'ı sadece `gorkem_co_V4` reposuna `Contents: Read/Write` yetkisine sahiptir. Uygulama tarafında hiçbir token yoktur.
+### CI/CD Pipeline (GitHub Actions) & Deployment
+Projede iki adet otomatik iş akışı (workflow) tanımlıdır:
+- **1. Sadece Web Sitesi Dağıtımı (`deploy-website.yml`)**:
+  - `website/**` yollarındaki dosyalar güncellenip `main` branch'ine `push` yapıldığında tetiklenir.
+  - Sitenin barındırıldığı `GorkemGuray/Namaz-App` reposunun `gh-pages` branch'ini klonlar, mevcut `version.json` dosyasını koruyarak (yedekleyip geri yükleyerek) web sitesini günceller.
+  - Bu sayede uygulamayı derlemeden site güncellenebilir.
+- **2. Uygulama Sürümü & Otomatik Release (`release.yml`)**:
+  - `v*` formatındaki tag'ler pushlandığında tetiklenir.
+  - **Dynamic Versioning**: Tag adından `versionName` (`v1.2.3` -> `1.2.3`) ve tag sayısından `versionCode` türetilip Gradle derlemesine aktarılır.
+  - **Artifacts & Releases**: Derlenen `Namaz-{versionName}-app-debug.apk` ve `Namaz-{versionName}-wear-debug.apk` dosyaları oluşturulan GitHub Release'e yüklenir.
+  - **version.json Dağıtımı**: Otomatik olarak yeni sürümü, sürüm kodunu ve tag açıklamalarını içeren `version.json` dosyasını üretip, web sitesi ile birlikte `gh-pages` branch'ine pushlar.
+- **Secrets**: Her iki workflow da repo bazındaki `RELEASE_REPO_TOKEN` secret'ını kullanır.
 
 ### Uygulama İçi Güncelleme Kontrolü
-- **UpdateChecker** (`util/UpdateChecker.kt`): `https://gorkem.co/namaz/version.json` endpoint'inden JSON okur, semantik versiyon karşılaştırması yapar (`isNewerThan`).
+- **UpdateChecker** (`util/UpdateChecker.kt`): `https://gorkemguray.github.io/Namaz-App/version.json` endpoint'inden JSON verisini okur, semantik versiyon karşılaştırması yapar (`isNewerThan`).
 - **UpdateBanner** (`ui/components/UpdateBanner.kt`): Ana ekranda LazyColumn'ın ilk item'i olarak render edilir. İki mod: otomatik (haftada 1) ve manuel. Banner'da "İndir" butonu GitHub Releases sayfasını Intent ile açar.
 - **UpdateCheckButton** (`ui/components/UpdateCheckButton.kt`): Ayarlar sayfasında manuel kontrol butonu.
 - **Throttle**: `UserPreferencesRepository.lastUpdateCheckMs` ile haftada 1'den fazla otomatik kontrol yapılmaz.
