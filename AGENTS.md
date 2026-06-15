@@ -602,3 +602,27 @@ Projede iki adet otomatik iş akışı (workflow) tanımlıdır:
 - **UpdateCheckButton** (`ui/components/UpdateCheckButton.kt`): Ayarlar sayfasında manuel kontrol butonu.
 - **Throttle**: `UserPreferencesRepository.lastUpdateCheckMs` ile haftada 1'den fazla otomatik kontrol yapılmaz.
 - **Sürüm gösterimi**: `SettingsScreen` altında `BuildConfig.VERSION_NAME` ile `Namaz Vakitleri vX.Y.Z` yazar. `buildFeatures.buildConfig = true` etkin.
+
+### Web Sitesi ve SEO (`website/`)
+
+Tanıtım sitesi `gorkemguray.github.io/Namaz-App` adresinde GitHub Pages üzerinden yayınlanır. **Hibrit prerendering** yaklaşımı kullanır: her şehir için statik HTML (title, meta, JSON-LD, OG etiketleri gömülü), vakit değerleri JS ile canlı doldurulur.
+
+**Önemli dosyalar:**
+- `website/index.html` + `website/en/index.html` — ana sayfalar
+- `website/app.js` — SPA motoru (dinamik SEO, tema, API)
+- `website/generate_static.py` — statik şehir sayfası üretici
+- `website/sehir/{city}/index.html` — 976 TR şehir (generate_static.py ile üretilir)
+- `website/en/city/{city}/index.html` — 983 EN şehir
+- `website/sitemap_index.xml` → `sitemap-tr.xml` + `sitemap-en.xml`
+- `website/robots.txt` — `sitemap_index.xml` referansı
+
+**⚠️ Kritik adım — `generate_static.py`:**
+Sitemap değişikliği, yeni şehir ekleme veya sayfa şablonu güncellemelerinden sonra **mutlaka** çalıştırılmalıdır:
+```bash
+python3 website/generate_static.py
+```
+Bu script sitemap'lerden şehir listesini okur, her şehir için benzersiz statik HTML üretir. CI/CD (`deploy-website.yml`) bu adımı otomatik yapmaz — manuel çalıştırılmalı veya CI/CD'ye eklenmelidir.
+
+**URL yapısı (clean URL):** `/sehir/{city}/` ve `/en/city/{city}/` formatı. Eski `?sehir=X` URL'leri `app.js` içinde redirect ile yeni formata yönlendirilir.
+
+**SEO özellikleri:** Her sayfada benzersiz title/description/h1, OG/Twitter Card etiketleri, JSON-LD (WebApplication + Place), hreflang, GA4, lazy loading resimler, sitemap index yapısı. Sahte `aggregateRating` JSON-LD'den kaldırılmıştır (Google manuel ceza riski).

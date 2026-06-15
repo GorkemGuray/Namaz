@@ -241,3 +241,77 @@ Hem uygulamayı güncelleyip yeni APK'ları yayınlamak hem de tanıtım sitesin
 ## 📄 Lisans
 
 MIT © [Görkem](https://github.com/gorkem)
+
+---
+
+## 🌐 Tanıtım Web Sitesi ve SEO
+
+Uygulamanın tanıtım ve canlı namaz vakti sorgulama sitesi `website/` klasöründe bulunur ve **GitHub Pages** üzerinden `gorkemguray.github.io/Namaz-App` adresinde yayınlanır.
+
+### Site Yapısı
+
+| Dosya / Dizin | Açıklama |
+|---|---|
+| `website/index.html` | TR ana sayfa (tanıtım + canlı vakit widget'ı) |
+| `website/en/index.html` | EN ana sayfa |
+| `website/app.js` | SPA motoru: API'den vakit çekme, dinamik SEO, tema |
+| `website/style.css` | Responsive tasarım, 9 breakpoint |
+| `website/sehir/{city}/index.html` | **Prerender statik sayfalar** (976 TR şehir) |
+| `website/en/city/{city}/index.html` | **Prerender statik sayfalar** (983 EN şehir) |
+| `website/generate_static.py` | Statik sayfa üretici script |
+| `website/sitemap_index.xml` | Sitemap index (→ `sitemap-tr.xml` + `sitemap-en.xml`) |
+| `website/robots.txt` | `sitemap_index.xml` referansı |
+
+### Hibrit Prerendering (SSR Benzeri)
+
+Site **hibrit prerendering** yaklaşımı kullanır:
+
+```
+Googlebot → /sehir/istanbul/ → STATİK HTML:
+  <title>İstanbul Namaz Vakitleri - Ezan Saatleri — Namaz Vakitleri</title>
+  <meta name="description" content="İstanbul için bugünkü günlük namaz vakitleri…">
+  <h2>İstanbul</h2>
+  <script>window.PRERENDERED_CITY="istanbul";</script>
+                                ↓
+                          app.js yüklenir
+                          PRERENDERED_CITY'yi okur
+                          API'den canlı vakitleri çeker (--:-- → 04:30)
+```
+
+- **Google'a**: Benzersiz title, meta, h1, JSON-LD → duplicate content cezası riski yok
+- **Kullanıcıya**: JS'in API'den çektiği canlı, güncel vakitler
+
+### ⚠️ Statik Sayfaları Güncelleme (Gözden Kaçabilir!)
+
+Sitemap değişikliği, yeni şehir ekleme veya sayfa şablonu güncellemelerinden sonra **mutlaka** çalıştırılmalıdır:
+
+```bash
+python3 website/generate_static.py
+```
+
+Bu script:
+1. `sitemap-tr.xml` ve `sitemap-en.xml`'den şehir listesini okur
+2. Her şehir için `/sehir/{city}/index.html` ve `/en/city/{city}/index.html` üretir
+3. Her sayfaya özel title, meta description, OG etiketleri, JSON-LD schema gömer
+
+> 💡 `deploy-website.yml` CI/CD iş akışı bu adımı otomatik yapmaz. Manuel çalıştırılmalı veya CI/CD'ye `python3 website/generate_static.py` adımı eklenmelidir.
+
+### URL Yapısı
+
+| Eski (Query Param) | Yeni (Clean URL) |
+|---|---|
+| `?sehir=istanbul` | `/sehir/istanbul/` |
+| `?sehir=eregli-konya` | `/sehir/eregli-konya/` |
+| `?city=istanbul` | `/en/city/istanbul/` |
+
+Eski `?sehir=` URL'leri `app.js` içindeki redirect ile otomatik olarak yeni formata yönlendirilir.
+
+### SEO Özellikleri
+
+- Her şehir sayfasında benzersiz `<title>`, `<meta description>`, `<h1>`, canonical URL
+- Open Graph ve Twitter Card meta etiketleri (sosyal medya paylaşım kartları)
+- JSON-LD yapısal veri (`WebApplication` + `Place` schema)
+- `hreflang` etiketleri (TR/EN/x-default)
+- Google Analytics GA4 entegrasyonu
+- Resimlerde `loading="lazy"`, `fetchpriority="high"` ve `width`/`height` ipuçları
+- Sitemap index yapısı (`sitemap_index.xml` → `sitemap-tr.xml` + `sitemap-en.xml`)
