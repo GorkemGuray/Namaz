@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.WarningAmber
-import androidx.compose.material.icons.rounded.FormatListBulleted
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -60,8 +59,7 @@ import java.time.LocalDate
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
-    onLocationClick: () -> Unit,
-    onZikirClick: () -> Unit = {}
+    onLocationClick: () -> Unit
 ) {
     val prayerTimes by viewModel.prayerTimes.collectAsState()
     val dashboard by viewModel.dashboardData.collectAsState()
@@ -131,15 +129,6 @@ fun HomeScreen(
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
             ),
-            navigationIcon = {
-                IconButton(onClick = onZikirClick) {
-                    Icon(
-                        imageVector = Icons.Rounded.FormatListBulleted,
-                        contentDescription = "Zikirmatik",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            },
             actions = {
                 IconButton(onClick = { viewModel.useMyLocation() }) {
                     Icon(
