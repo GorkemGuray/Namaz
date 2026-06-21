@@ -5,6 +5,13 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.content.Context
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -167,8 +174,7 @@ fun ZikirmatikScreen(
                 onAddClick = {
                     showAddDialog = true
                     expanded = false
-                },
-                onDismiss = { expanded = false }
+                }
             )
         }
     }
@@ -423,109 +429,125 @@ private fun NamazTesbihatiFlow(
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
-        if (step.type != StepType.COMPLETED) {
-            // Content Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(vertical = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                shape = MaterialTheme.shapes.large
-            ) {
+        AnimatedContent(
+            targetState = currentStepIndex,
+            transitionSpec = {
+                val direction = if (targetState > initialState) 1 else -1
+                slideInHorizontally(
+                    animationSpec = tween(300, easing = EaseInOut),
+                    initialOffsetX = { fullWidth -> fullWidth / 2 * direction }
+                ) + fadeIn(tween(300)) togetherWith
+                slideOutHorizontally(
+                    animationSpec = tween(300, easing = EaseInOut),
+                    targetOffsetX = { fullWidth -> fullWidth / 2 * -direction }
+                ) + fadeOut(tween(300))
+            },
+            label = "tesbihat_step_transition",
+            modifier = Modifier.weight(1f).fillMaxWidth()
+        ) { stepIdx ->
+            val currentStep = NamazTesbihatiSteps.steps.getOrNull(stepIdx) ?: return@AnimatedContent
+            if (currentStep.type != StepType.COMPLETED) {
+                // Content Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(20.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        if (currentStep.textArabic.isNotEmpty()) {
+                            Text(
+                                text = currentStep.textArabic,
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontSize = 28.sp,
+                                    lineHeight = 44.sp,
+                                    textAlign = TextAlign.Center
+                                ),
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                        }
+                        if (currentStep.textTurkish.isNotEmpty()) {
+                            Text(
+                                text = currentStep.textTurkish,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 18.sp,
+                                    lineHeight = 26.sp,
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                        }
+                        if (currentStep.meaning.isNotEmpty()) {
+                            Text(
+                                text = currentStep.meaning,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = 15.sp,
+                                    lineHeight = 22.sp,
+                                    textAlign = TextAlign.Center
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Completion Layout
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(20.dp)
-                        .verticalScroll(rememberScrollState()),
+                        .padding(vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    if (step.textArabic.isNotEmpty()) {
-                        Text(
-                            text = step.textArabic,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontSize = 28.sp,
-                                lineHeight = 44.sp,
-                                textAlign = TextAlign.Center
-                            ),
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(120.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                            .padding(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Başarı",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
-                    if (step.textTurkish.isNotEmpty()) {
-                        Text(
-                            text = step.textTurkish,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 26.sp,
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-                    }
-                    if (step.meaning.isNotEmpty()) {
-                        Text(
-                            text = step.meaning,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 15.sp,
-                                lineHeight = 22.sp,
-                                textAlign = TextAlign.Center
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                    }
-                }
-            }
-        } else {
-            // Completion Layout
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(120.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                        .padding(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Başarı",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.fillMaxSize()
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = currentStep.textTurkish, // "Kabûl Olsun"
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = currentStep.meaning,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = step.textTurkish, // "Kabûl Olsun"
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = step.meaning,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
             }
         }
 
@@ -710,12 +732,11 @@ private fun vibrate(context: Context, isTargetReached: Boolean) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ZikirSelectionBottomSheetContent(
-    zikirs: List<co.gorkem.namaz.data.local.room.ZikirEntity>,
-    currentZikir: co.gorkem.namaz.data.local.room.ZikirEntity?,
-    onZikirSelect: (co.gorkem.namaz.data.local.room.ZikirEntity) -> Unit,
-    onDeleteClick: (co.gorkem.namaz.data.local.room.ZikirEntity) -> Unit,
-    onAddClick: () -> Unit,
-    onDismiss: () -> Unit
+    zikirs: List<ZikirEntity>,
+    currentZikir: ZikirEntity?,
+    onZikirSelect: (ZikirEntity) -> Unit,
+    onDeleteClick: (ZikirEntity) -> Unit,
+    onAddClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
