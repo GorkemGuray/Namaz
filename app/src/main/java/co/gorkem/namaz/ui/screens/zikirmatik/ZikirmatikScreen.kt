@@ -25,6 +25,10 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -143,6 +147,32 @@ fun ZikirmatikScreen(
         )
     }
 
+    if (expanded) {
+        ModalBottomSheet(
+            onDismissRequest = { expanded = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ) {
+            ZikirSelectionBottomSheetContent(
+                zikirs = zikirs,
+                currentZikir = currentZikir,
+                onZikirSelect = { zikir ->
+                    viewModel.selectZikir(zikir)
+                    expanded = false
+                },
+                onDeleteClick = { zikir ->
+                    viewModel.deleteCustomZikir(zikir)
+                },
+                onAddClick = {
+                    showAddDialog = true
+                    expanded = false
+                },
+                onDismiss = { expanded = false }
+            )
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -193,82 +223,35 @@ fun ZikirmatikScreen(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Dropdown and Add Button Row
+                        // Dropdown Row
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp)
                         ) {
-                            Box {
-                                ElevatedCard(
-                                    onClick = { expanded = true },
-                                    colors = CardDefaults.elevatedCardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                    ),
-                                    shape = CircleShape
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                    ) {
-                                        Text(
-                                            text = currentZikir?.title ?: "Zikir Seçiniz",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowDropDown,
-                                            contentDescription = "Seç",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                DropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }
-                                ) {
-                                    zikirs.forEach { zikir ->
-                                        DropdownMenuItem(
-                                            text = { Text(zikir.title) },
-                                            trailingIcon = if (!zikir.isNamazTesbihati) {
-                                                {
-                                                    IconButton(
-                                                        onClick = {
-                                                            viewModel.deleteCustomZikir(zikir)
-                                                        },
-                                                        modifier = Modifier.size(24.dp)
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Delete,
-                                                            contentDescription = "Sil",
-                                                            tint = MaterialTheme.colorScheme.error,
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    }
-                                                }
-                                            } else null,
-                                            onClick = {
-                                                viewModel.selectZikir(zikir)
-                                                expanded = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            FilledTonalIconButton(
-                                onClick = { showAddDialog = true },
-                                modifier = Modifier.size(40.dp)
+                            ElevatedCard(
+                                onClick = { expanded = true },
+                                colors = CardDefaults.elevatedCardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                shape = CircleShape
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Yeni Zikir Ekle",
-                                    modifier = Modifier.size(20.dp)
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = currentZikir?.title ?: "Zikir Seçiniz",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = "Seç",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
 
@@ -721,5 +704,98 @@ private fun vibrate(context: Context, isTargetReached: Boolean) {
     } else {
         @Suppress("DEPRECATION")
         vibrator.vibrate(if (isTargetReached) 300L else 30L)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ZikirSelectionBottomSheetContent(
+    zikirs: List<co.gorkem.namaz.data.local.room.ZikirEntity>,
+    currentZikir: co.gorkem.namaz.data.local.room.ZikirEntity?,
+    onZikirSelect: (co.gorkem.namaz.data.local.room.ZikirEntity) -> Unit,
+    onDeleteClick: (co.gorkem.namaz.data.local.room.ZikirEntity) -> Unit,
+    onAddClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .navigationBarsPadding(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Zikir Seçin",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(zikirs) { zikir ->
+                val isSelected = currentZikir?.id == zikir.id
+                Card(
+                    onClick = { onZikirSelect(zikir) },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = zikir.title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Sayaç: ${zikir.currentCount}" + if (zikir.targetCount > 0) " / ${zikir.targetCount}" else " (Sınırsız)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (!zikir.isNamazTesbihati) {
+                            IconButton(
+                                onClick = { onDeleteClick(zikir) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Sil",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Button(
+            onClick = onAddClick,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = CircleShape
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Yeni Özel Zikir Ekle")
+        }
     }
 }
