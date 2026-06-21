@@ -46,8 +46,7 @@ import co.gorkem.namaz.data.local.room.ZikirEntity
 @Composable
 fun ZikirmatikScreen(
     modifier: Modifier = Modifier,
-    viewModel: ZikirmatikViewModel = hiltViewModel(),
-    onBackClick: () -> Unit = {}
+    viewModel: ZikirmatikViewModel = hiltViewModel()
 ) {
     val currentZikir by viewModel.currentZikir.collectAsState()
     val zikirs by viewModel.zikirs.collectAsState()
@@ -144,15 +143,6 @@ fun ZikirmatikScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Zikirmatik & Tesbihat", style = MaterialTheme.typography.titleLarge) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Geri Dön",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
                 )
