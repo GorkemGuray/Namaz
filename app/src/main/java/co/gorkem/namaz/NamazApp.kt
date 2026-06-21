@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.FilterVintage
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.FilterVintage
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
@@ -57,7 +59,6 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.launch
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -87,15 +88,20 @@ sealed class BottomNavItem(
         selectedIcon = Icons.Filled.Schedule,
         unselectedIcon = Icons.Rounded.Schedule
     )
-    data object Calendar : BottomNavItem(
-        titleRes = R.string.nav_calendar,
-        selectedIcon = Icons.Filled.CalendarMonth,
-        unselectedIcon = Icons.Rounded.CalendarMonth
-    )
     data object Qibla : BottomNavItem(
         titleRes = R.string.nav_qibla,
         selectedIcon = Icons.Filled.Explore,
         unselectedIcon = Icons.Rounded.Explore
+    )
+    data object Zikirmatik : BottomNavItem(
+        titleRes = R.string.nav_zikirmatik,
+        selectedIcon = Icons.Filled.FilterVintage,
+        unselectedIcon = Icons.Rounded.FilterVintage
+    )
+    data object Calendar : BottomNavItem(
+        titleRes = R.string.nav_calendar,
+        selectedIcon = Icons.Filled.CalendarMonth,
+        unselectedIcon = Icons.Rounded.CalendarMonth
     )
     data object Settings : BottomNavItem(
         titleRes = R.string.nav_settings,
@@ -112,7 +118,13 @@ fun NamazApp() {
 
     val currentTheme = rememberAppTheme()
 
-    val items = listOf(BottomNavItem.Times, BottomNavItem.Calendar, BottomNavItem.Qibla, BottomNavItem.Settings)
+    val items = listOf(
+        BottomNavItem.Times,
+        BottomNavItem.Qibla,
+        BottomNavItem.Zikirmatik,
+        BottomNavItem.Calendar,
+        BottomNavItem.Settings
+    )
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     NamazTheme(currentTheme = currentTheme) {
@@ -170,35 +182,21 @@ fun NamazApp() {
             label = "tab_switch"
         ) { tab ->
             when (tab) {
-                0 -> {
-                    val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = 1) { 2 }
-                    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
-                    androidx.compose.foundation.pager.HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxSize()
-                    ) { page ->
-                        if (page == 0) {
-                            co.gorkem.namaz.ui.screens.zikirmatik.ZikirmatikScreen(
-                                modifier = Modifier.padding(paddingValues),
-                                onBackClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } }
-                            )
-                        } else {
-                            HomeScreen(
-                                modifier = Modifier.padding(paddingValues),
-                                onLocationClick = { showCitySheet = true },
-                                onZikirClick = { coroutineScope.launch { pagerState.animateScrollToPage(0) } }
-                            )
-                        }
-                    }
-                }
-                1 -> CalendarScreen(
-                    modifier = Modifier.padding(paddingValues)
+                0 -> HomeScreen(
+                    modifier = Modifier.padding(paddingValues),
+                    onLocationClick = { showCitySheet = true }
                 )
-                2 -> QiblaScreen(
+                1 -> QiblaScreen(
                     modifier = Modifier.padding(paddingValues),
                     onSetLocationClick = { showCitySheet = true }
                 )
-                3 -> SettingsScreen(modifier = Modifier.padding(paddingValues))
+                2 -> co.gorkem.namaz.ui.screens.zikirmatik.ZikirmatikScreen(
+                    modifier = Modifier.padding(paddingValues)
+                )
+                3 -> CalendarScreen(
+                    modifier = Modifier.padding(paddingValues)
+                )
+                4 -> SettingsScreen(modifier = Modifier.padding(paddingValues))
             }
         }
     }
