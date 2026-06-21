@@ -37,10 +37,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import co.gorkem.namaz.data.local.room.ZikirEntity
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +56,8 @@ fun ZikirmatikScreen(
     val zikirs by viewModel.zikirs.collectAsState()
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
-    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    val coroutineScope = rememberCoroutineScope()
 
     // Dialog state for adding custom zikir
     var showAddDialog by remember { mutableStateOf(false) }
@@ -158,7 +163,7 @@ fun ZikirmatikScreen(
         ) {
             // Mode Toggle TabRow
             TabRow(
-                selectedTabIndex = selectedTab,
+                selectedTabIndex = pagerState.currentPage,
                 containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -166,211 +171,223 @@ fun ZikirmatikScreen(
                     .padding(vertical = 8.dp)
             ) {
                 Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
+                    selected = pagerState.currentPage == 0,
+                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(0) } },
                     text = { Text("Zikirmatik", fontWeight = FontWeight.Bold) }
                 )
                 Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
+                    selected = pagerState.currentPage == 1,
+                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } },
                     text = { Text("Namaz Tesbihatı", fontWeight = FontWeight.Bold) }
                 )
             }
 
-            if (selectedTab == 0) {
-                // Dropdown and Add Button Row
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp)
-                ) {
-                    Box {
-                        ElevatedCard(
-                            onClick = { expanded = true },
-                            colors = CardDefaults.elevatedCardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                            shape = CircleShape
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) { page ->
+                if (page == 0) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Dropdown and Add Button Row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = currentZikir?.title ?: "Zikir Seçiniz",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = "Seç",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            zikirs.forEach { zikir ->
-                                DropdownMenuItem(
-                                    text = { Text(zikir.title) },
-                                    trailingIcon = if (!zikir.isNamazTesbihati) {
-                                        {
-                                            IconButton(
-                                                onClick = {
-                                                    viewModel.deleteCustomZikir(zikir)
-                                                },
-                                                modifier = Modifier.size(24.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Delete,
-                                                    contentDescription = "Sil",
-                                                    tint = MaterialTheme.colorScheme.error,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                            }
-                                        }
-                                    } else null,
-                                    onClick = {
-                                        viewModel.selectZikir(zikir)
-                                        expanded = false
+                            Box {
+                                ElevatedCard(
+                                    onClick = { expanded = true },
+                                    colors = CardDefaults.elevatedCardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                    shape = CircleShape
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = currentZikir?.title ?: "Zikir Seçiniz",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowDropDown,
+                                            contentDescription = "Seç",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
-                                )
+                                }
+
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    zikirs.forEach { zikir ->
+                                        DropdownMenuItem(
+                                            text = { Text(zikir.title) },
+                                            trailingIcon = if (!zikir.isNamazTesbihati) {
+                                                {
+                                                    IconButton(
+                                                        onClick = {
+                                                            viewModel.deleteCustomZikir(zikir)
+                                                        },
+                                                        modifier = Modifier.size(24.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Delete,
+                                                            contentDescription = "Sil",
+                                                            tint = MaterialTheme.colorScheme.error,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+                                                }
+                                            } else null,
+                                            onClick = {
+                                                viewModel.selectZikir(zikir)
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
                             }
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
 
-                    FilledTonalIconButton(
-                        onClick = { showAddDialog = true },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Yeni Zikir Ekle",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                currentZikir?.let { zikir ->
-                    val target = if (zikir.isNamazTesbihati) 33 else zikir.targetCount
-                    val progress = if (target > 0) {
-                        (zikir.currentCount.toFloat() / target.toFloat()).coerceIn(0f, 1f)
-                    } else {
-                        0f
-                    }
-
-                    val animatedProgress by animateFloatAsState(
-                        targetValue = progress,
-                        animationSpec = tween(300),
-                        label = "progress"
-                    )
-
-                    // Current phase label (for Namaz Tesbihati)
-                    if (zikir.isNamazTesbihati) {
-                        Text(
-                            text = viewModel.namazTesbihatPhases.getOrElse(zikir.currentPhase) { "" },
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 24.dp)
-                        )
-                    }
-
-                    // Big Tap Area
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(280.dp)
-                            .clip(CircleShape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
+                            FilledTonalIconButton(
+                                onClick = { showAddDialog = true },
+                                modifier = Modifier.size(40.dp)
                             ) {
-                                viewModel.increment()
-                                val newCount = zikir.currentCount + 1
-                                vibrate(context, isTargetReached = (target > 0 && newCount == target))
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Yeni Zikir Ekle",
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
-                    ) {
-                        // Background circle
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            drawCircle(
-                                color = Color.Gray.copy(alpha = 0.2f),
-                                style = Stroke(width = 16.dp.toPx())
+                        }
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        currentZikir?.let { zikir ->
+                            val target = if (zikir.isNamazTesbihati) 33 else zikir.targetCount
+                            val progress = if (target > 0) {
+                                (zikir.currentCount.toFloat() / target.toFloat()).coerceIn(0f, 1f)
+                            } else {
+                                0f
+                            }
+
+                            val animatedProgress by animateFloatAsState(
+                                targetValue = progress,
+                                animationSpec = tween(300),
+                                label = "progress"
                             )
-                        }
 
-                        // Progress circle (Only if not unlimited)
-                        if (target > 0) {
-                            val primaryColor = MaterialTheme.colorScheme.primary
-                            Canvas(modifier = Modifier.fillMaxSize()) {
-                                drawArc(
-                                    color = primaryColor,
-                                    startAngle = -90f,
-                                    sweepAngle = 360f * animatedProgress,
-                                    useCenter = false,
-                                    style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
+                            // Current phase label (for Namaz Tesbihati)
+                            if (zikir.isNamazTesbihati) {
+                                Text(
+                                    text = viewModel.namazTesbihatPhases.getOrElse(zikir.currentPhase) { "" },
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(bottom = 24.dp)
                                 )
                             }
-                        }
 
-                        // Inner circle background
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(24.dp)
-                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = zikir.currentCount.toString(),
-                                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp),
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                if (target > 0) {
-                                    Text(
-                                        text = "/ $target",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            // Big Tap Area
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(280.dp)
+                                    .clip(CircleShape)
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) {
+                                        viewModel.increment()
+                                        val newCount = zikir.currentCount + 1
+                                        vibrate(context, isTargetReached = (target > 0 && newCount == target))
+                                    }
+                            ) {
+                                // Background circle
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    drawCircle(
+                                        color = Color.Gray.copy(alpha = 0.2f),
+                                        style = Stroke(width = 16.dp.toPx())
                                     )
+                                }
+
+                                // Progress circle (Only if not unlimited)
+                                if (target > 0) {
+                                    val primaryColor = MaterialTheme.colorScheme.primary
+                                    Canvas(modifier = Modifier.fillMaxSize()) {
+                                        drawArc(
+                                            color = primaryColor,
+                                            startAngle = -90f,
+                                            sweepAngle = 360f * animatedProgress,
+                                            useCenter = false,
+                                            style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
+                                        )
+                                    }
+                                }
+
+                                // Inner circle background
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(24.dp)
+                                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = zikir.currentCount.toString(),
+                                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp),
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                        if (target > 0) {
+                                            Text(
+                                                text = "/ $target",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
 
-                Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.weight(1f))
 
-                // Bottom Actions
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp)
-                ) {
-                    FilledTonalIconButton(
-                        onClick = { viewModel.reset() },
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Sıfırla",
-                            modifier = Modifier.size(32.dp)
-                        )
+                        // Bottom Actions
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 32.dp)
+                        ) {
+                            FilledTonalIconButton(
+                                onClick = { viewModel.reset() },
+                                modifier = Modifier.size(64.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Sıfırla",
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
                     }
+                } else {
+                    // Interactive Namaz Tesbihatı Flow
+                    NamazTesbihatiFlow(viewModel = viewModel, context = context)
                 }
-            } else {
-                // Interactive Namaz Tesbihatı Flow
-                NamazTesbihatiFlow(viewModel = viewModel, context = context)
             }
         }
     }
