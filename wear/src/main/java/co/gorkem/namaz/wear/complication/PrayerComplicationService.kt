@@ -37,6 +37,7 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
         }
 
         if (data == null) {
+            co.gorkem.namaz.wear.scheduleComplicationUpdateAlarm(this, System.currentTimeMillis() + 5 * 60 * 1000L)
             return androidx.wear.watchface.complications.data.NoDataComplicationData()
         }
 

@@ -47,7 +47,9 @@ class WearZikirmatikViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             context.wearZikirDataStore.data.collect { prefs ->
-                _currentMode.value = prefs[MODE_KEY] ?: 0
+                val savedMode = prefs[MODE_KEY] ?: 0
+                // Backward compatibility: Old Serbest Sayaç was 2, now 0.
+                _currentMode.value = if (savedMode == 2) 0 else savedMode.coerceIn(0, 1)
                 _interactiveStepIndex.value = prefs[INTERACTIVE_STEP_KEY] ?: 0
                 _interactiveCount.value = prefs[INTERACTIVE_COUNT_KEY] ?: 0
                 _freeCount.value = prefs[FREE_COUNT_KEY] ?: 0
@@ -59,7 +61,7 @@ class WearZikirmatikViewModel @Inject constructor(
     fun setMode(mode: Int) {
         viewModelScope.launch {
             context.wearZikirDataStore.edit { prefs ->
-                prefs[MODE_KEY] = mode
+                prefs[MODE_KEY] = mode.coerceIn(0, 1)
             }
         }
     }

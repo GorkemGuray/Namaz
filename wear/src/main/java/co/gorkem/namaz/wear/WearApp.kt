@@ -46,11 +46,7 @@ fun WearApp(
                     )
                 }
                 composable("zikirmatik") {
-                    WearZikirmatikScreen(
-                        onNavigateBack = {
-                            navController.popBackStack()
-                        }
-                    )
+                    WearZikirmatikScreen()
                 }
             }
         }

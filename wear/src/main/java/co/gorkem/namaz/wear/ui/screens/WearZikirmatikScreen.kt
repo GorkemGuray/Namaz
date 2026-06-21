@@ -5,13 +5,22 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,7 +49,6 @@ import co.gorkem.namaz.wear.ui.WearZikirmatikViewModel
 
 @Composable
 fun WearZikirmatikScreen(
-    onNavigateBack: () -> Unit,
     viewModel: WearZikirmatikViewModel = hiltViewModel()
 ) {
     val mode by viewModel.currentMode.collectAsState()
@@ -50,6 +58,21 @@ fun WearZikirmatikScreen(
     val freeTarget by viewModel.freeTarget.collectAsState()
 
     val context = LocalContext.current
+    val pagerState = rememberPagerState(initialPage = mode.coerceIn(0, 1), pageCount = { 2 })
+
+    // Sync pagerState with ViewModel mode
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage != mode) {
+            viewModel.setMode(pagerState.currentPage)
+        }
+    }
+
+    // Sync ViewModel mode changes (e.g. loaded from DataStore) back to pagerState
+    LaunchedEffect(mode) {
+        if (pagerState.currentPage != mode) {
+            pagerState.scrollToPage(mode)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -57,124 +80,60 @@ fun WearZikirmatikScreen(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        when (mode) {
-            0 -> {
-                // Landing Screen / Mode Selector
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Zikirmatik",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Button(
-                        onClick = { viewModel.setMode(1) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        modifier = Modifier.fillMaxWidth().height(40.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Tesbihat",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Namaz Tesbihatı",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = { viewModel.setMode(2) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
-                        modifier = Modifier.fillMaxWidth().height(40.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Sayaç",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Serbest Sayaç",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Geri",
-                            modifier = Modifier.size(18.dp)
+        HorizontalPagerScaffold(
+            pagerState = pagerState,
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        // Free Counter (Serbest Sayaç)
+                        WearFreeCounter(
+                            count = freeCount,
+                            target = freeTarget,
+                            viewModel = viewModel,
+                            context = context
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
+                    1 -> {
+                        // Namaz Tesbihatı (Interactive Flow)
+                        val step = WearNamazTesbihatiSteps.steps.getOrNull(interactiveStepIndex)
+                        if (step != null) {
+                            AnimatedContent(
+                                targetState = interactiveStepIndex,
+                                transitionSpec = {
+                                    val direction = if (targetState > initialState) 1 else -1
+                                    slideInHorizontally(
+                                        animationSpec = tween(300, easing = EaseInOut),
+                                        initialOffsetX = { fullWidth -> fullWidth / 2 * direction }
+                                    ) + fadeIn(tween(300)) togetherWith
+                                    slideOutHorizontally(
+                                        animationSpec = tween(300, easing = EaseInOut),
+                                        targetOffsetX = { fullWidth -> fullWidth / 2 * -direction }
+                                    ) + fadeOut(tween(300))
+                                },
+                                label = "tesbihat_step_transition",
+                                modifier = Modifier.fillMaxSize()
+                            ) { stepIdx ->
+                                val currentStep = WearNamazTesbihatiSteps.steps.getOrNull(stepIdx)
+                                if (currentStep != null) {
+                                    WearInteractiveFlow(
+                                        step = currentStep,
+                                        currentStepIndex = stepIdx,
+                                        totalSteps = WearNamazTesbihatiSteps.steps.size,
+                                        currentCount = interactiveCount,
+                                        viewModel = viewModel,
+                                        context = context
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-            1 -> {
-                // Interactive Namaz Tesbihatı
-                val step = WearNamazTesbihatiSteps.steps.getOrNull(interactiveStepIndex)
-                if (step != null) {
-                    WearInteractiveFlow(
-                        step = step,
-                        currentStepIndex = interactiveStepIndex,
-                        totalSteps = WearNamazTesbihatiSteps.steps.size,
-                        currentCount = interactiveCount,
-                        viewModel = viewModel,
-                        context = context
-                    )
-                }
-            }
-            2 -> {
-                // Free Counter
-                WearFreeCounter(
-                    count = freeCount,
-                    target = freeTarget,
-                    viewModel = viewModel,
-                    context = context
-                )
             }
         }
     }
@@ -330,7 +289,7 @@ private fun WearInteractiveFlow(
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(96.dp)
+                            .size(108.dp) // Large tap target matching the free counter
                             .clip(CircleShape)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
@@ -366,7 +325,7 @@ private fun WearInteractiveFlow(
                         ) {
                             Text(
                                 text = currentCount.toString(),
-                                style = MaterialTheme.typography.displayMedium.copy(fontSize = 26.sp),
+                                style = MaterialTheme.typography.displayMedium.copy(fontSize = 28.sp),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
@@ -397,12 +356,12 @@ private fun WearInteractiveFlow(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 FilledTonalButton(
-                    onClick = { viewModel.setMode(0) },
+                    onClick = { viewModel.resetInteractive() },
                     modifier = Modifier.height(28.dp).wrapContentWidth(),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "Menü (${currentStepIndex + 1}/$totalSteps)",
+                        text = "Yeniden Başlat (${currentStepIndex + 1}/$totalSteps)",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
                     )
                 }
@@ -456,7 +415,6 @@ private fun WearInteractiveFlow(
             Button(
                 onClick = {
                     viewModel.resetInteractive()
-                    viewModel.setMode(0)
                 },
                 modifier = Modifier.fillMaxWidth().height(36.dp)
             ) {
@@ -512,85 +470,70 @@ private fun WearFreeCounter(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(108.dp) // Large touch dial
+                .clip(CircleShape)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    val newCount = count + 1
+                    vibrate(context, isTargetReached = (target > 0 && newCount == target))
+                    viewModel.incrementFree()
+                }
         ) {
-            IconButton(
-                onClick = { viewModel.setMode(0) },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Menü",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Canvas(modifier = Modifier.fillMaxSize().padding(5.dp)) {
+                drawCircle(
+                    color = Color.Gray.copy(alpha = 0.2f),
+                    style = Stroke(width = 4.dp.toPx())
                 )
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
-
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(96.dp)
-                    .clip(CircleShape)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        val newCount = count + 1
-                        vibrate(context, isTargetReached = (target > 0 && newCount == target))
-                        viewModel.incrementFree()
-                    }
-            ) {
+            if (target > 0) {
+                val primaryColor = MaterialTheme.colorScheme.primary
                 Canvas(modifier = Modifier.fillMaxSize().padding(5.dp)) {
-                    drawCircle(
-                        color = Color.Gray.copy(alpha = 0.2f),
-                        style = Stroke(width = 4.dp.toPx())
+                    drawArc(
+                        color = primaryColor,
+                        startAngle = -90f,
+                        sweepAngle = 360f * animatedProgress,
+                        useCenter = false,
+                        style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
                     )
-                }
-
-                if (target > 0) {
-                    val primaryColor = MaterialTheme.colorScheme.primary
-                    Canvas(modifier = Modifier.fillMaxSize().padding(5.dp)) {
-                        drawArc(
-                            color = primaryColor,
-                            startAngle = -90f,
-                            sweepAngle = 360f * animatedProgress,
-                            useCenter = false,
-                            style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                        )
-                    }
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer(scaleX = animatedScale, scaleY = animatedScale)
-                ) {
-                    Text(
-                        text = count.toString(),
-                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 26.sp),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    if (target > 0) {
-                        Text(
-                            text = "/ $target",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                        )
-                    }
                 }
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(scaleX = animatedScale, scaleY = animatedScale)
+            ) {
+                Text(
+                    text = count.toString(),
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 28.sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold
+                )
 
+                if (target > 0) {
+                    Text(
+                        text = "/ $target",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             IconButton(
                 onClick = { viewModel.resetFree() },
                 modifier = Modifier.size(32.dp)
@@ -598,34 +541,30 @@ private fun WearFreeCounter(
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = "Sıfırla",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        FilledTonalButton(
-            onClick = {
-                val nextTarget = when (target) {
-                    0 -> 33
-                    33 -> 99
-                    99 -> 100
-                    100 -> 1000
-                    else -> 0
-                }
-                viewModel.setFreeTarget(nextTarget)
-            },
-            modifier = Modifier.height(28.dp).wrapContentWidth(),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-        ) {
-            Text(
-                text = if (target == 0) "Sınırsız" else "Hedef: $target",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            FilledTonalButton(
+                onClick = {
+                    val nextTarget = when (target) {
+                        0 -> 33
+                        33 -> 99
+                        99 -> 100
+                        100 -> 1000
+                        else -> 0
+                    }
+                    viewModel.setFreeTarget(nextTarget)
+                },
+                modifier = Modifier.height(32.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = if (target == 0) "Sınırsız" else "Hedef: $target",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -650,4 +589,3 @@ private fun vibrate(context: Context, isTargetReached: Boolean) {
         vibrator.vibrate(if (isTargetReached) 300L else 30L)
     }
 }
-
