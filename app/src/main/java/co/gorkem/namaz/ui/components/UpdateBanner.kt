@@ -1,7 +1,5 @@
 package co.gorkem.namaz.ui.components
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -36,6 +34,7 @@ import co.gorkem.namaz.BuildConfig
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.util.UpdateCheckResult
 import co.gorkem.namaz.util.UpdateChecker
+import co.gorkem.namaz.util.UpdateDownloader
 import kotlinx.coroutines.flow.first
 
 @Composable
@@ -93,7 +92,9 @@ fun UpdateBanner(
         val isError = result?.isError == true
         val latestVer = result?.latestVersion ?: ""
         val currentVer = result?.currentVersion ?: currentVersion
-        val relUrl = result?.releaseUrl ?: ""
+        val downloadUrl = result?.downloadUrl?.takeIf { it.isNotBlank() }
+            ?: result?.releaseUrl
+            ?: ""
 
         Surface(
             modifier = modifier.fillMaxWidth(),
@@ -136,8 +137,7 @@ fun UpdateBanner(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(relUrl))
-                            context.startActivity(intent)
+                            UpdateDownloader.downloadAndInstall(context, downloadUrl, latestVer)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary

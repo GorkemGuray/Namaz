@@ -13,6 +13,7 @@ data class UpdateCheckResult(
     val latestVersion: String,
     val currentVersion: String,
     val releaseUrl: String,
+    val downloadUrl: String,
     val releaseNotes: String,
     val isError: Boolean = false
 )
@@ -23,6 +24,7 @@ class UpdateChecker(private val gson: Gson = Gson()) {
         private const val TAG = "UpdateChecker"
         private const val VERSION_JSON_URL = "https://gorkemguray.github.io/Namaz-App/version.json"
         private const val GITHUB_RELEASES_URL = "https://github.com/GorkemGuray/Namaz-App/releases/latest"
+        private const val GITHUB_DOWNLOAD_BASE = "https://github.com/GorkemGuray/Namaz-App/releases/download"
     }
 
     suspend fun check(currentVersion: String): UpdateCheckResult = withContext(Dispatchers.IO) {
@@ -42,6 +44,7 @@ class UpdateChecker(private val gson: Gson = Gson()) {
                     latestVersion = "",
                     currentVersion = currentVersion,
                     releaseUrl = GITHUB_RELEASES_URL,
+                    downloadUrl = "",
                     releaseNotes = "",
                     isError = true
                 )
@@ -53,13 +56,17 @@ class UpdateChecker(private val gson: Gson = Gson()) {
             val latestVersion = versionInfo.version.removePrefix("v")
             val updateAvailable = isNewerThan(latestVersion, currentVersion)
 
+            val downloadUrl = "$GITHUB_DOWNLOAD_BASE/v$latestVersion/Namaz-$latestVersion-app-debug.apk"
+            val releaseUrl = versionInfo.releaseUrl.ifEmpty { GITHUB_RELEASES_URL }
+
             Log.d(TAG, "Current: $currentVersion, Latest: $latestVersion, Update available: $updateAvailable")
 
             UpdateCheckResult(
                 updateAvailable = updateAvailable,
                 latestVersion = latestVersion,
                 currentVersion = currentVersion,
-                releaseUrl = versionInfo.releaseUrl.ifEmpty { GITHUB_RELEASES_URL },
+                releaseUrl = releaseUrl,
+                downloadUrl = downloadUrl,
                 releaseNotes = versionInfo.releaseNotes.ifEmpty { "Yeni özellikler ve hata düzeltmeleri." }
             )
         } catch (e: Exception) {
@@ -69,6 +76,7 @@ class UpdateChecker(private val gson: Gson = Gson()) {
                 latestVersion = "",
                 currentVersion = currentVersion,
                 releaseUrl = GITHUB_RELEASES_URL,
+                downloadUrl = "",
                 releaseNotes = "",
                 isError = true
             )
