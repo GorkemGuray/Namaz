@@ -60,9 +60,15 @@ class PrayerCountdownComplicationService : SuspendingComplicationDataSourceServi
             entryPoint.dataLayerService.getLatestPrayerData()
         }
 
-        if (data == null) {
+        val resolved = co.gorkem.namaz.wear.tile.resolveDisplayData(
+            live = data,
+            cached = data,
+            nowMillis = System.currentTimeMillis()
+        )
+
+        if (resolved.source == co.gorkem.namaz.wear.tile.DisplaySource.EMPTY) {
             co.gorkem.namaz.wear.scheduleComplicationUpdateAlarm(this, System.currentTimeMillis() + 5 * 60 * 1000L)
-            return androidx.wear.watchface.complications.data.NoDataComplicationData()
+            return buildLoadingData(request.complicationType)
         }
 
         val tapIntent = PendingIntent.getActivity(
@@ -72,17 +78,41 @@ class PrayerCountdownComplicationService : SuspendingComplicationDataSourceServi
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return buildData(request.complicationType, data, tapIntent) ?: androidx.wear.watchface.complications.data.NoDataComplicationData()
+        return buildData(request.complicationType, resolved, tapIntent) ?: buildLoadingData(request.complicationType)
     }
 
     override fun onComplicationActivated(complicationInstanceId: Int, type: ComplicationType) {}
     override fun onComplicationDeactivated(complicationInstanceId: Int) {}
 
+    private fun buildLoadingData(type: ComplicationType): ComplicationData {
+        val loading = PlainComplicationText.Builder(text = getString(R.string.wear_loading)).build()
+        val titleText = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_times)).build()
+        val contentDesc = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
+
+        return when (type) {
+            ComplicationType.SHORT_TEXT -> ShortTextComplicationData.Builder(
+                text = loading,
+                contentDescription = contentDesc
+            ).setTitle(titleText).build()
+
+            ComplicationType.LONG_TEXT -> LongTextComplicationData.Builder(
+                text = loading,
+                contentDescription = contentDesc
+            ).setTitle(titleText).build()
+
+            else -> ShortTextComplicationData.Builder(
+                text = loading,
+                contentDescription = contentDesc
+            ).setTitle(titleText).build()
+        }
+    }
+
     private fun buildData(
         type: ComplicationType,
-        data: co.gorkem.namaz.wear.data.WearPrayerData?,
+        resolved: co.gorkem.namaz.wear.tile.ResolvedDisplay,
         tapAction: PendingIntent
     ): ComplicationData? {
+        val data = resolved.data
         val prayers = data?.prayers ?: emptyList()
         val nextPrayer = if (prayers.isNotEmpty()) {
             co.gorkem.namaz.wear.calculateNextPrayer(prayers)
@@ -98,8 +128,13 @@ class PrayerCountdownComplicationService : SuspendingComplicationDataSourceServi
             countDownTimeReference = androidx.wear.watchface.complications.data.CountDownTimeReference(targetInstant)
         ).setText("-^1").build()
 
+        val prayerLabel = prayerNameFromEnum(this, co.gorkem.namaz.wear.getPreviousPrayer(nextPrayer.name))
         val titleText = PlainComplicationText.Builder(
-            text = prayerNameFromEnum(this, co.gorkem.namaz.wear.getPreviousPrayer(nextPrayer.name))
+            text = if (resolved.source == co.gorkem.namaz.wear.tile.DisplaySource.CACHE) {
+                "$prayerLabel · ${getString(R.string.wear_standalone_mode)}"
+            } else {
+                prayerLabel
+            }
         ).build()
 
         val contentDesc = PlainComplicationText.Builder(

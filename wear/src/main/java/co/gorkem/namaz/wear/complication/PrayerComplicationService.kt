@@ -36,9 +36,15 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
             entryPoint.dataLayerService.getLatestPrayerData()
         }
 
-        if (data == null) {
+        val resolved = co.gorkem.namaz.wear.tile.resolveDisplayData(
+            live = data,
+            cached = data,
+            nowMillis = System.currentTimeMillis()
+        )
+
+        if (resolved.source == co.gorkem.namaz.wear.tile.DisplaySource.EMPTY) {
             co.gorkem.namaz.wear.scheduleComplicationUpdateAlarm(this, System.currentTimeMillis() + 5 * 60 * 1000L)
-            return androidx.wear.watchface.complications.data.NoDataComplicationData()
+            return buildLoadingData()
         }
 
         val tapIntent = PendingIntent.getActivity(
@@ -48,16 +54,26 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return buildData(data, tapIntent)
+        return buildData(resolved, tapIntent)
     }
 
     override fun onComplicationActivated(complicationInstanceId: Int, type: ComplicationType) {}
     override fun onComplicationDeactivated(complicationInstanceId: Int) {}
 
+    private fun buildLoadingData(): ComplicationData {
+        return ShortTextComplicationData.Builder(
+            text = PlainComplicationText.Builder(text = getString(R.string.wear_loading)).build(),
+            contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
+        )
+            .setTitle(PlainComplicationText.Builder(text = getString(R.string.wear_prayer_times)).build())
+            .build()
+    }
+
     private fun buildData(
-        data: co.gorkem.namaz.wear.data.WearPrayerData?,
+        resolved: co.gorkem.namaz.wear.tile.ResolvedDisplay,
         tapAction: PendingIntent
     ): ComplicationData {
+        val data = resolved.data
         val prayers = data?.prayers ?: emptyList()
         val nextPrayer = if (prayers.isNotEmpty()) {
             co.gorkem.namaz.wear.calculateNextPrayer(prayers)
@@ -69,24 +85,27 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
             co.gorkem.namaz.wear.scheduleComplicationUpdateAlarm(this, nextPrayer.targetTimeMillis)
         }
 
-        val builder = ShortTextComplicationData.Builder(
-            text = PlainComplicationText.Builder(
-                text = nextPrayer?.time ?: "--:--"
-            ).build(),
-            contentDescription = PlainComplicationText.Builder(
-                text = getString(R.string.wear_prayer_time)
-            ).build()
-        )
-
-        if (nextPrayer != null) {
-            builder.setTitle(
-                PlainComplicationText.Builder(
-                    text = prayerNameFromEnum(this, nextPrayer.name)
-                ).build()
+        if (nextPrayer == null) {
+            return ShortTextComplicationData.Builder(
+                text = PlainComplicationText.Builder(text = getString(R.string.wear_loading)).build(),
+                contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
             )
+                .setTitle(PlainComplicationText.Builder(text = data?.cityName ?: getString(R.string.wear_prayer_times)).build())
+                .setTapAction(tapAction)
+                .build()
         }
 
-        return builder
+        val title = if (resolved.source == co.gorkem.namaz.wear.tile.DisplaySource.CACHE) {
+            "${prayerNameFromEnum(this, nextPrayer.name)} · ${getString(R.string.wear_standalone_mode)}"
+        } else {
+            prayerNameFromEnum(this, nextPrayer.name)
+        }
+
+        return ShortTextComplicationData.Builder(
+            text = PlainComplicationText.Builder(text = nextPrayer.time).build(),
+            contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
+        )
+            .setTitle(PlainComplicationText.Builder(text = title).build())
             .setTapAction(tapAction)
             .build()
     }
