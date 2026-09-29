@@ -3,6 +3,7 @@ package co.gorkem.namaz.di
 import android.content.Context
 import androidx.room.Room
 import co.gorkem.namaz.data.local.room.NamazDatabase
+import co.gorkem.namaz.data.local.room.NamazDatabaseMigrations
 import co.gorkem.namaz.data.local.room.PrayerTimeDao
 import dagger.Module
 import dagger.Provides
@@ -22,7 +23,8 @@ object RoomModule {
             context,
             NamazDatabase::class.java,
             "namaz_database"
-        ).fallbackToDestructiveMigration(true).build()
+        ).addMigrations(*NamazDatabaseMigrations.migrations)
+            .fallbackToDestructiveMigration(true).build()
     }
 
     @Provides

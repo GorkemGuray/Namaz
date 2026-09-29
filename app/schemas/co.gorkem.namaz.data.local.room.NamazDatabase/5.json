@@ -1,0 +1,191 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 5,
+    "identityHash": "ef1ca634f5abd80598a037399440c6a6",
+    "entities": [
+      {
+        "tableName": "prayer_times",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`date` TEXT NOT NULL, `cityName` TEXT NOT NULL, `gregorianDate` TEXT NOT NULL, `hijriDay` TEXT NOT NULL, `hijriMonthNumber` INTEGER NOT NULL, `hijriYear` TEXT NOT NULL, `imsak` TEXT NOT NULL, `gunes` TEXT NOT NULL, `ogle` TEXT NOT NULL, `ikindi` TEXT NOT NULL, `aksam` TEXT NOT NULL, `yatsi` TEXT NOT NULL, `timezone` TEXT NOT NULL, `cacheMonth` INTEGER NOT NULL, `cacheYear` INTEGER NOT NULL, `cacheMethod` INTEGER NOT NULL, `cacheSchool` INTEGER NOT NULL, `cacheDataSource` INTEGER NOT NULL, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`date`, `cityName`, `cacheMethod`, `cacheSchool`, `cacheDataSource`))",
+        "fields": [
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cityName",
+            "columnName": "cityName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gregorianDate",
+            "columnName": "gregorianDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hijriDay",
+            "columnName": "hijriDay",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hijriMonthNumber",
+            "columnName": "hijriMonthNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hijriYear",
+            "columnName": "hijriYear",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imsak",
+            "columnName": "imsak",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gunes",
+            "columnName": "gunes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ogle",
+            "columnName": "ogle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ikindi",
+            "columnName": "ikindi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "aksam",
+            "columnName": "aksam",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yatsi",
+            "columnName": "yatsi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timezone",
+            "columnName": "timezone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cacheMonth",
+            "columnName": "cacheMonth",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cacheYear",
+            "columnName": "cacheYear",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cacheMethod",
+            "columnName": "cacheMethod",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cacheSchool",
+            "columnName": "cacheSchool",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cacheDataSource",
+            "columnName": "cacheDataSource",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cachedAt",
+            "columnName": "cachedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "date",
+            "cityName",
+            "cacheMethod",
+            "cacheSchool",
+            "cacheDataSource"
+          ]
+        }
+      },
+      {
+        "tableName": "zikirs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `targetCount` INTEGER NOT NULL, `currentCount` INTEGER NOT NULL, `isNamazTesbihati` INTEGER NOT NULL, `currentPhase` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetCount",
+            "columnName": "targetCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentCount",
+            "columnName": "currentCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isNamazTesbihati",
+            "columnName": "isNamazTesbihati",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentPhase",
+            "columnName": "currentPhase",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ef1ca634f5abd80598a037399440c6a6')"
+    ]
+  }
+}

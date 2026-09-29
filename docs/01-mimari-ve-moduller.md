@@ -76,11 +76,14 @@ Kurallar: Türkçe vakit isimleri (`imsak, gunes, ogle, ikindi, aksam, yatsi`), 
 - `ZikirRepositoryImpl`: DAO delegasyonu.
 
 ### 4.4 `data/local/room/`
-- `NamazDatabase` v5, `exportSchema=false`, entities `[PrayerTimeEntity, ZikirEntity]`.
+- `NamazDatabase` v5 (`NamazDatabase.VERSION`), `exportSchema=true`, entities `[PrayerTimeEntity, ZikirEntity]`. Şemalar `app/schemas/` altına KSP ile dışa aktarılır (`room.schemaLocation`).
+- **Migration kuralı:** v1–v4 arası sürümlerde `zikirs` tablosu yoktu, bu nedenle v5'e geçişte kullanıcı verisi kaybedilecek bir şey bulunmuyor. **v5'ten sonraki her şema değişikliğinde `MigrationSpec(from, to, statements)` eklenmeli** ve `NamazDatabaseMigrations.registry`'ye kaydedilmelidir; registry boş kaldığı sürece `RoomModule`'daki `fallbackToDestructiveMigration(true)` devreye girer. Migration yazılmadan sürüm artırılmayacaktır.
+- Zikir verisi (kullanıcıya ait sayaçlar) API'den yeniden çekilemez; vakit cache'i ise `cleanupOldData(30)` ile zaten temizlenen, yeniden alınabilir veridir.
 - `PrayerTimeEntity` (PK: date+cityName+cacheMethod+cacheSchool+cacheDataSource): 6 vakit + hicri + timezone + cacheMonth/Year/Method/School/DataSource + cachedAt.
 - `PrayerTimeDao`: `getPrayerTimesForMonth()`, `getMonthRecordCount()`, `getPrayerTimeForDate()`, `insertAll(REPLACE)`, `deleteOlderThan()`, `deleteMonthForCity()`.
 - `ZikirEntity` (auto id): `title/targetCount/currentCount/isNamazTesbihati/currentPhase`.
 - `ZikirDao`: `getAllZikirs(): Flow`, `getNamazTesbihati(): Flow`, `insert/update/delete`, `updateCountAndPhase()`.
+- `NamazDatabaseMigrationTest`: migration yolu çözümleme (tek adım, zincir, kopuk zincir, downgrade) ve registry tutarlılığı testleri.
 
 ### 4.5 `data/local/datastore/`
 - `UserPreferencesDataStore.kt`: `preferencesDataStore(name="namaz_preferences")`.
