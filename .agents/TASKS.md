@@ -19,7 +19,7 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 | T-102 | Wear hardcoded fallback kaldır (GPS → DataStore → DEFAULT) | P0 | DONE | worker-1 | `wear/.../ui/WearViewModel.kt` (+ test) | GPS kapalı senaryoda doğru konum, test yeşil |
 | T-103 | CI-CD-PLAN + README rozet senkronu (applicationId, JDK, AGP/KSP) | P0 | DONE | worker-1 | `CI-CD-PLAN.md`, `README.md` | Gerçek değerlerle birebir (bkz. `docs/08` Bölüm 3) |
 | T-104 | Room migration stratejisi (exportSchema / migration kararı + doküman) | P0 | DONE | worker-1 | `app/.../data/local/room/NamazDatabase.kt`, `docs/01-*` ilgili bölüm | Karar dokümante, test yeşil |
-| T-105 | Ölü `UserPreferencesSerializer` temizliği | P1 | ASSIGNED | worker-1 | `app/.../data/local/datastore/UserPreferencesSerializer.kt` | Sil veya gerekçe notu, test yeşil |
+| T-105 | Ölü `UserPreferencesSerializer` temizliği | P1 | DONE | worker-1 | `app/.../data/local/datastore/UserPreferencesSerializer.kt` | Dosya zaten silinmiş (42d5fd93), referans yok — no-op, doküman senkronu yapıldı |
 
 ## Faz 2 — Güvenilirlik ve Pil
 
