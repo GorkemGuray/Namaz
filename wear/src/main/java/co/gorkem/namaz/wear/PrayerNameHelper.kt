@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import co.gorkem.namaz.wear.complication.ComplicationUpdateReceiver
 import co.gorkem.namaz.wear.data.WearNextPrayer
 import co.gorkem.namaz.wear.data.WearPrayerItem
@@ -14,16 +16,27 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-fun prayerNameFromEnum(context: Context, name: String): String {
+fun prayerNameStringRes(name: String): Int? {
     return when (name) {
-        "IMSAK" -> context.getString(R.string.prayer_imsak)
-        "GUNES" -> context.getString(R.string.prayer_gunes)
-        "OGLE" -> context.getString(R.string.prayer_ogle)
-        "IKINDI" -> context.getString(R.string.prayer_ikindi)
-        "AKSAM" -> context.getString(R.string.prayer_aksam)
-        "YATSI" -> context.getString(R.string.prayer_yatsi)
-        else -> name
+        "IMSAK" -> R.string.prayer_imsak
+        "GUNES" -> R.string.prayer_gunes
+        "OGLE" -> R.string.prayer_ogle
+        "IKINDI" -> R.string.prayer_ikindi
+        "AKSAM" -> R.string.prayer_aksam
+        "YATSI" -> R.string.prayer_yatsi
+        else -> null
     }
+}
+
+fun prayerNameFromEnum(context: Context, name: String): String {
+    val res = prayerNameStringRes(name)
+    return if (res != null) context.getString(res) else name
+}
+
+@Composable
+fun prayerNameFromEnum(name: String): String {
+    val res = prayerNameStringRes(name)
+    return if (res != null) stringResource(res) else name
 }
 
 fun getPreviousPrayer(name: String): String {

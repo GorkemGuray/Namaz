@@ -42,7 +42,7 @@ import co.gorkem.namaz.wear.data.WearKerahatInfo
 import co.gorkem.namaz.wear.data.WearNextPrayer
 import co.gorkem.namaz.wear.data.WearPrayerItem
 import co.gorkem.namaz.wear.ui.WearViewModel
-import co.gorkem.namaz.wear.ui.prayerNameFromEnum
+import co.gorkem.namaz.wear.prayerNameFromEnum
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.LocalDateTime
