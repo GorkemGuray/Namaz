@@ -17,8 +17,8 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 |----|--------|---------|-------|-------|----------------|-------|
 | T-101 | Duplicate `PrayerNameHelper` birleştir (wear) | P0 | DONE | worker-1 | `wear/.../PrayerNameHelper.kt`, `wear/.../ui/PrayerNameHelper.kt` | Tek dosya, derleme + Wear smoke yeşil |
 | T-102 | Wear hardcoded fallback kaldır (GPS → DataStore → DEFAULT) | P0 | DONE | worker-1 | `wear/.../ui/WearViewModel.kt` (+ test) | GPS kapalı senaryoda doğru konum, test yeşil |
-| T-103 | CI-CD-PLAN + README rozet senkronu (applicationId, JDK, AGP/KSP) | P0 | ASSIGNED | worker-1 | `CI-CD-PLAN.md`, `README.md` | Gerçek değerlerle birebir (bkz. `docs/08` Bölüm 3) |
-| T-104 | Room migration stratejisi (exportSchema / migration kararı + doküman) | P0 | PENDING | — | `app/.../data/local/room/NamazDatabase.kt`, `docs/01-*` ilgili bölüm | Karar dokümante, test yeşil |
+| T-103 | CI-CD-PLAN + README rozet senkronu (applicationId, JDK, AGP/KSP) | P0 | DONE | worker-1 | `CI-CD-PLAN.md`, `README.md` | Gerçek değerlerle birebir (bkz. `docs/08` Bölüm 3) |
+| T-104 | Room migration stratejisi (exportSchema / migration kararı + doküman) | P0 | ASSIGNED | worker-1 | `app/.../data/local/room/NamazDatabase.kt`, `docs/01-*` ilgili bölüm | Karar dokümante, test yeşil |
 | T-105 | Ölü `UserPreferencesSerializer` temizliği | P1 | PENDING | — | `app/.../data/local/datastore/UserPreferencesSerializer.kt` | Sil veya gerekçe notu, test yeşil |
 
 ## Faz 2 — Güvenilirlik ve Pil
@@ -40,6 +40,7 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 |----|--------|---------|-------|-------|----------------|-------|
 | T-401 | İmzalı release altyapısı (keystore docs + workflow eki) | P1 | PENDING | — | `.github/workflows/release.yml`, `*/build.gradle.kts` | Dry-run release yeşil |
 | T-402 | `generate_static.py` adımını `deploy-website.yml`'e ekleme | P1 | PENDING | — | `.github/workflows/deploy-website.yml` | Site deploy'da statik sayfalar üretiliyor |
+| T-403 | `release.yml` RELEASE_REPO_TOKEN guard denetimi (`if: env...` job-seviyesi env'siz) | P2 | PENDING | — | `.github/workflows/release.yml` | Guard gerçekten çalışıyor veya düzeltilmiş |
 
 ---
 *Yeni görev ekleme: coordinator tabloya satır ekler, ID sıradaki numaradan verilir. Worker kendi görev açamaz.*
