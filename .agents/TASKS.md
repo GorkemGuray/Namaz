@@ -15,7 +15,7 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 
 | ID | Başlık | Öncelik | Durum | Sahip | Kapsam (dosya) | Kabul |
 |----|--------|---------|-------|-------|----------------|-------|
-| T-101 | Duplicate `PrayerNameHelper` birleştir (wear) | P0 | PENDING | — | `wear/.../PrayerNameHelper.kt`, `wear/.../ui/PrayerNameHelper.kt` | Tek dosya, derleme + Wear smoke yeşil |
+| T-101 | Duplicate `PrayerNameHelper` birleştir (wear) | P0 | ASSIGNED | worker-1 | `wear/.../PrayerNameHelper.kt`, `wear/.../ui/PrayerNameHelper.kt` | Tek dosya, derleme + Wear smoke yeşil |
 | T-102 | Wear hardcoded fallback kaldır (GPS → DataStore → DEFAULT) | P0 | PENDING | — | `wear/.../ui/WearViewModel.kt` (+ test) | GPS kapalı senaryoda doğru konum, test yeşil |
 | T-103 | CI-CD-PLAN + README rozet senkronu (applicationId, JDK, AGP/KSP) | P0 | PENDING | — | `CI-CD-PLAN.md`, `README.md` | Gerçek değerlerle birebir (bkz. `docs/08` Bölüm 3) |
 | T-104 | Room migration stratejisi (exportSchema / migration kararı + doküman) | P0 | PENDING | — | `app/.../data/local/room/NamazDatabase.kt`, `docs/01-*` ilgili bölüm | Karar dokümante, test yeşil |
