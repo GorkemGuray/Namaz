@@ -64,7 +64,28 @@ Worker işini bitirince coordinator'a **tek mesajda** şunu döndürür:
 - Worker çalışırken coordinator o dosyalara kendisi dokunmaz.
 - REVIEW aşamasında çakışma çıkarsa coordinator çözer, worker'a geri göndermez (küçükse); büyükse yeni görev açılır.
 
-## 7. Dosya Haritası
+## 7. Doğrulama Kademeleri (coordinator uygular)
+
+| Kademe | Araç | Ne zaman |
+|--------|------|----------|
+| K1 — birim | `./gradlew test` (+ `--rerun-tasks` ile bağımsız koşu) | Her görevde zorunlu |
+| K2 — derleme | `./gradlew assembleDebug` (gerekirse `--rerun-tasks`) | Her görevde zorunlu |
+| K3 — statik | `git diff` incelemesi + kapsam taraması (`grep` eski import/mock) | Her görevde zorunlu |
+| K4 — canlı | Android CLI (`android` v1.0+) — emülatör + kurulum + layout + ekran | Birim testin erişemediği davranışlarda (alarm, widget, izin senaryoları) |
+
+K4 komutları (coordinator tarafı, worker'dan istenmez):
+
+```bash
+android emulator list                  # AVD envanteri (Medium_Phone_API_36.1, Wear_OS_XL_Round)
+android emulator start <ad>            # emülatör başlat
+android run --debug                    # derle + kur + başlat
+android layout --pretty                # UI hiyerarşisi (görsel incelemeden hızlı)
+android screen capture                 # PNG ekran görüntüsü
+```
+
+K4 gereken görevlerde worker promptuna "canlı doğrulama coordinator tarafından yapılacaktır" notu düşülür; worker emülatör yokluğunu bahane etmez, birim kanıtı sunar.
+
+## 8. Dosya Haritası
 
 ```
 .agents/
