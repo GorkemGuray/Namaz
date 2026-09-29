@@ -10,12 +10,9 @@
 - `WearViewModel.loadFromStandalone()` GPS yoksa İstanbul/Silivri districtId=9548'e düşer.
 - Risk: İstanbul dışındaki kullanıcıya yanlış vakit. Çözüm: saat GPS → son DataStore konumu → DEFAULT sıralaması.
 
-### 3. CI-CD-PLAN.md Güncel Değil
-- Wear `applicationId`: planda `co.gorkem.namaz.wear`, gerçekte `co.gorkem.namaz`.
-- JDK: planda 17, yerel derleme 11.
-- `versionCode`: planda tag-sayısı/date alternatifli, workflow tag sayısı kullanır.
-- README rozetleri: AGP 9.2.1/KSP 2.3.2 yazıyor, `libs.versions.toml` 9.4.0/2.3.6.
-- Çözüm: plan + rozetleri gerçekle eşitle.
+### 3. CI-CD-PLAN.md Güncel Değil — ✅ ÇÖZÜLDÜ (T-103)
+- Wear `applicationId`, JDK (CI 17 / yerel 11+, bytecode Java 11), `versionCode` (yalnızca tag sayısı), README rozetleri (AGP 9.4.0, KSP 2.3.6, Gradle 9.6.0) ve workflow snippet'leri gerçek dosyalarla eşitlendi.
+- Not: JDK 11 bir taban gereksinimdir (bytecode seviyesi); yerel derleme JDK 25 ile de çalışır.
 
 ## P1 — Kısa Vadede
 

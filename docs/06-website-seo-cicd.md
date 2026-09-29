@@ -27,7 +27,7 @@ python3 website/generate_static.py
 ```
 Sitemap'lerden şehir listesini okur, her şehir için benzersiz HTML üretir. `deploy-website.yml` bunu otomatik yapmaz — manuel veya CI adımıyla çalıştırılmalıdır.
 
-URL: `/sehir/{city}/`, `/en/city/{city}/` (eski `?sehir=` redirect ile taşınır). SEO: benzersiz title/description/h1/canonical, OG/Twitter Card, JSON-LD (WebApplication+Place, sahte aggregateRating kaldırıldı), hreflang, GA4, lazy img, sitemap index.
+URL: `/sehir/{city}/`, `/en/city/{city}/` (eski `?sehir=` redirect ile taşınır). SEO: benzersiz title/description/h1/canonical, OG/Twitter Card, JSON-LD (WebApplication+Place, sahte aggregateRating kaldırıldı), hreflang, GA4, lazy img, birleşik sitemap (`sitemap.xml`, `xhtml:link` alternates).
 
 ## 2. CI/CD (`.github/workflows/`)
 

@@ -5,8 +5,9 @@
 
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-%237F52FF?logo=kotlin)](https://kotlinlang.org)
   [![Compose](https://img.shields.io/badge/Compose%20BOM-2026.05-%234285F4?logo=jetpackcompose)](https://developer.android.com/compose)
-  [![AGP](https://img.shields.io/badge/AGP-9.2.1-%233DDC84?logo=android)](https://developer.android.com/build)
-  [![Gradle](https://img.shields.io/badge/Gradle-9.4.1-%2302303A?logo=gradle)](https://gradle.org)
+  [![AGP](https://img.shields.io/badge/AGP-9.4.0-%233DDC84?logo=android)](https://developer.android.com/build)
+  [![KSP](https://img.shields.io/badge/KSP-2.3.6-%237952D6?logo=google-developer-zone)](https://kotlinlang.org/docs/ksp-overview.html)
+  [![Gradle](https://img.shields.io/badge/Gradle-9.6.0-%2302303A?logo=gradle)](https://gradle.org)
   [![API](https://img.shields.io/badge/minSdk-24%20|%20targetSdk-36-brightgreen)](https://developer.android.com/tools/releases/platforms)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 </div>
@@ -69,10 +70,10 @@ Türkçe karakter ve büyük/küçük harf sorunları çözülmüştür (`kırkl
 - **Vakit Geçiş Alarmı:** Widget, bir sonraki namaz vaktinde veya kerahat başlangıcında kendini otomatik günceller.
 
 ### 🔔 Uygulama İçi Güncelleme Kontrolü
-- **Otomatik Kontrol:** Uygulama ana ekranı her açıldığında, son kontrolden 7 gün geçmişse `gorkem.co/namaz/version.json` endpoint'inden yeni sürümü sorgular. Yeni sürüm varsa banner ile bildirir — "İndir" butonu direkt GitHub Releases sayfasını açar.
+- **Otomatik Kontrol:** Uygulama ana ekranı her açıldığında, son kontrolden 7 gün geçmişse `gorkemguray.github.io/Namaz-App/version.json` endpoint'inden yeni sürümü sorgular. Yeni sürüm varsa banner ile bildirir — "İndir" butonu direkt GitHub Releases sayfasını açar.
 - **Manuel Kontrol:** Ayarlar sayfasındaki "Güncellemeleri Kontrol Et" butonu ile istenildiği zaman kontrol yapılabilir.
 - **Sürüm Gösterimi:** Ayarlar sayfasının altında `Namaz Vakitleri vX.Y.Z` şeklinde mevcut sürüm gösterilir.
-- **CI Entegrasyonu:** Her `v*` tag'i push'landığında GitHub Actions, `version.json` dosyasını otomatik oluşturup Cloudflare Pages reposuna pushlar. Endpoint herkese açıktır, token gerektirmez.
+- **CI Entegrasyonu:** Her `v*` tag'i push'landığında GitHub Actions, `version.json` dosyasını otomatik oluşturup `GorkemGuray/Namaz-App` reposunun `gh-pages` branch'ine (GitHub Pages) pushlar. Endpoint herkese açıktır, token gerektirmez.
 
 ### 📅 Aylık Takvim
 Beş günlük vakit ve güneş sütunlarıyla donatılmış, içinde bulunulan günü belirgin şekilde vurgulayan responsive aylık tablo. Sol/sağ oklar ile aylar arası geçiş.
@@ -109,13 +110,16 @@ Konum 10km değişti
 
 Uygulamanın kritik iş mantığı kapsamlı birim testleri ile güvence altındadır:
 
-| Test Paketi | Kapsam |
+| Test Dosyası | Kapsam |
 |-------------|--------|
 | `PrayerTimeCalculatorTest` | Lokal hesaplama motoru — İstanbul, Ankara, Mayıs, Ocak, Aralık, Haziran için Diyanet saatleriyle karşılaştırmalı (tolerans ±10dk) |
 | `QiblaUseCaseTest` | Kıble yön açısı — İstanbul (~151.6°), NYC (~58.5°), Sydney (~277.5°), Kabe (0°), kardinal yönler |
-| `GetNextPrayerUseCase` | Vakit geçişleri ve kalan dakika hesaplamaları |
-| `GetPrayerDashboardUseCase` | Periyot tespiti, kerahat pencereleri, aktif/yaklaşan kerahat mantığı |
-| Wear modül testleri | Komplikasyon hesaplamaları, saat ana ekranı vakit geçişleri |
+| `GetNextPrayerUseCaseTest` | Vakit geçişleri ve kalan dakika hesaplamaları |
+| `GetPrayerDashboardUseCaseTest` | Periyot tespiti, kerahat pencereleri, aktif/yaklaşan kerahat mantığı |
+| `LocationMathTest` | Konumlar arası mesafe ve eşik kontrolleri |
+| `PrayerNextPrayerCalculationTest` *(wear)* | Saat ana ekranı vakit geçişleri ve kalan süre hesabı |
+| `PrayerNameMappingTest` *(wear)* | 6 vakit isminin string kaynaklarına eşlemesi (tekilleştirilmiş helper) |
+| `StandaloneLocationResolutionTest` *(wear)* | Saat GPS → önbellek → varsayılan konum öncelik zinciri |
 
 ```bash
 ./gradlew test                 # Tüm testler
@@ -128,8 +132,8 @@ Uygulamanın kritik iş mantığı kapsamlı birim testleri ile güvence altınd
 ## 🛠️ Kurulum ve Derleme
 
 ```bash
-# Gereksinimler: JDK 11+, Android SDK 36
-git clone https://github.com/gorkem/Namaz.git
+# Gereksinimler: JDK 11+ (CI JDK 17 kullanır), Android SDK 36
+git clone https://github.com/gorkemguray/Namaz.git
 cd Namaz
 
 # Tüm projeyi derle (Mobil + Wear OS)
@@ -180,7 +184,7 @@ adb logcat -d | grep -E "WidgetMinuteReceiver|NamazWidgetUpdater|LocationSyncWor
 ├─────────────────────────────────────┤
 │  Data Layer                         │
 │  RepositoryImpl → API + Local       │  ← data/repository/
-│  Remote (Retrofit 3 API) + DTO      │  ← data/remote/
+│  Remote (Retrofit 2.11) + DTO      │  ← data/remote/
 │  Local (Room + DataStore)           │  ← data/local/
 ├─────────────────────────────────────┤
 │  DI (Dagger Hilt)                   │  ← di/
@@ -259,8 +263,8 @@ Uygulamanın tanıtım ve canlı namaz vakti sorgulama sitesi `website/` klasör
 | `website/sehir/{city}/index.html` | **Prerender statik sayfalar** (976 TR şehir) |
 | `website/en/city/{city}/index.html` | **Prerender statik sayfalar** (983 EN şehir) |
 | `website/generate_static.py` | Statik sayfa üretici script |
-| `website/sitemap_index.xml` | Sitemap index (→ `sitemap-tr.xml` + `sitemap-en.xml`) |
-| `website/robots.txt` | `sitemap_index.xml` referansı |
+| `website/sitemap.xml` | Birleşik sitemap (`xhtml:link` alternates) |
+| `website/robots.txt` | `sitemap.xml` referansı |
 
 ### Hibrit Prerendering (SSR Benzeri)
 
@@ -290,7 +294,7 @@ python3 website/generate_static.py
 ```
 
 Bu script:
-1. `sitemap-tr.xml` ve `sitemap-en.xml`'den şehir listesini okur
+1. `sitemap.xml` içindeki TR/EN şehir listesini okur
 2. Her şehir için `/sehir/{city}/index.html` ve `/en/city/{city}/index.html` üretir
 3. Her sayfaya özel title, meta description, OG etiketleri, JSON-LD schema gömer
 
@@ -314,4 +318,4 @@ Eski `?sehir=` URL'leri `app.js` içindeki redirect ile otomatik olarak yeni for
 - `hreflang` etiketleri (TR/EN/x-default)
 - Google Analytics GA4 entegrasyonu
 - Resimlerde `loading="lazy"`, `fetchpriority="high"` ve `width`/`height` ipuçları
-- Sitemap index yapısı (`sitemap_index.xml` → `sitemap-tr.xml` + `sitemap-en.xml`)
+- Sitemap yapısı (`sitemap.xml` — TR/EN `xhtml:link` alternates ile)

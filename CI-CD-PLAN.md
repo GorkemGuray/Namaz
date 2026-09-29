@@ -38,22 +38,28 @@ git push origin v1.0.0
 
 Pipeline şu an **debug APK** üretir. İmzalı release APK için bir keystore dosyası ve GitHub Secrets hazırlığı gerekir (Bölüm 6'da detaylandırılmıştır).
 
+### 2.4 JDK Sürümü (Yerel vs CI)
+
+Yerel derleme ile CI derlemesi farklı JDK sürümleri kullanır; bu kasıtlıdır ve iki ortam birbirinin yerine geçmez:
+
+| Ortam | JDK | Kaynak |
+|-------|-----|--------|
+| GitHub Actions (CI) | **17** (Temurin) | `.github/workflows/release.yml` → `actions/setup-java` |
+| Yerel geliştirme | **11 veya üzeri** (JDK 25 ile de derlenir) | `java-version` toolchain kullanılmaz; `JAVA_HOME`/PATH'teki JDK ile çalışır |
+
+> **Neden farklı?** `release.yml` sabit olarak JDK 17 kurar; bu değer CI için güvenli bir tabandır. Yerelde ise tek bir sürüm zorunlu değildir — Gradle derleme JDK'sını çalıştığı ortamdan alır. JDK 25 (LTS) ile de `./gradlew :app:assembleDebug :wear:assembleDebug` sorunsuz çalışmaktadır.
+
+Kritik nokta: her iki modülde de `compileOptions` **Java 11** seviyesindedir (`sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_11`, mobilde ayrıca core library desugaring açık). Yani "JDK sürümü" derlemenin *çalıştığı* JVM'i, "Java 11" ise *üretilen bytecode seviyesini* tanımlar. JDK 17 veya 25 ile derlemek, Java 11 uyumlu çıktı üretmek anlamına gelir.
+
 ---
 
 ## 3. Gradle Değişiklikleri
 
 ### 3.1 `app/build.gradle.kts`
 
-Mevcut `defaultConfig` ve `buildTypes` bloklarına aşağıdaki değişiklikler eklenir:
+CI/CD için gereken değişiklikler **uygulanmış ve commit'lenmiş durumdadır**. Aşağıdaki blok, dosyanın CI ile ilgili kısımlarının güncel halidir; tam ve tek doğruluk kaynağı `app/build.gradle.kts` dosyasının kendisidir.
 
 ```kotlin
-plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt.android)
-    alias(libs.plugins.ksp)
-}
-
 android {
     namespace = "co.gorkem.namaz"
     compileSdk = 36
@@ -62,7 +68,6 @@ android {
         applicationId = "co.gorkem.namaz"
         minSdk = 24
         targetSdk = 36
-
         // CI'dan -P ile override edilir; varsayılan değerler
         versionCode = getVersionCode()
         versionName = getVersionName()
@@ -70,10 +75,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // İmzalama yapılandırması — gelecekte kullanılmak üzere hazır
     signingConfigs {
         create("release") {
-            // GitHub Secrets'den environment variable olarak okunur
             storeFile = file(System.getenv("KEYSTORE_PATH") ?: "keystore.jks")
             storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
             keyAlias = System.getenv("KEY_ALIAS") ?: ""
@@ -88,8 +91,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // İmzalama aktifleştirildiğinde:
-            // signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -101,68 +102,38 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 // --- Versiyon Yardımcı Fonksiyonları ---
 
 fun getVersionCode(): Int {
-    // CI'dan gelen değer; yoksa 1
     return (project.findProperty("ciVersionCode") as? String)?.toIntOrNull() ?: 1
 }
 
 fun getVersionName(): String {
-    // CI'dan gelen değer; yoksa "1.0"
     return (project.findProperty("ciVersionName") as? String) ?: "1.0"
 }
-
-// dependencies bloğu aynen kalır...
 ```
+
+> **Not:** `signingConfigs` bloğu tanımlı olsa da `release` build type içinde `signingConfig = ...` atanmamıştır; yani imzalama pasiftir. Keystore hazır olduğunda ilgili atama eklenir (bkz. Bölüm 6).
 
 ### 3.2 `wear/build.gradle.kts`
 
-Aynı değişiklik pattern'i Wear OS modülüne de uygulanır:
+Aynı pattern Wear OS modülünde de uygulanmıştır. **Önemli fark:** `namespace` `co.gorkem.namaz.wear` olsa da `applicationId` mobil modülle **aynıdır**:
 
 ```kotlin
-plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt.android)
-    alias(libs.plugins.ksp)
-}
-
 android {
     namespace = "co.gorkem.namaz.wear"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "co.gorkem.namaz.wear"
+        applicationId = "co.gorkem.namaz"   // mobil modülle AYNI olmalı
         minSdk = 30
         targetSdk = 36
-
-        // CI'dan override edilir
         versionCode = getVersionCode()
         versionName = getVersionName()
-    }
-
-    signingConfigs {
-        create("release") {
-            storeFile = file(System.getenv("KEYSTORE_PATH") ?: "keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-            keyAlias = System.getenv("KEY_ALIAS") ?: ""
-            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
-        }
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            // signingConfig = signingConfigs.getByName("release")
-        }
     }
 
     compileOptions {
@@ -174,19 +145,18 @@ android {
         compose = true
     }
 }
-
-fun getVersionCode(): Int {
-    return (project.findProperty("ciVersionCode") as? String)?.toIntOrNull() ?: 1
-}
-
-fun getVersionName(): String {
-    return (project.findProperty("ciVersionName") as? String) ?: "1.0"
-}
-
-// dependencies bloğu aynen kalır...
 ```
 
-> **Not:** `signingConfigs` bloğu şu an pasiftir (`//` ile yorum satırı olarak değil, sadece `release` build type içinde `signingConfig = ...` atanmamıştır). Keystore hazır olduğunda ilgili satırın yorumu kaldırılır.
+> #### ⚠️ Neden `applicationId` aynı olmalı?
+>
+> Mobil ve Wear OS modülleri **Data Layer API** (`com.google.android.gms.wearable`) üzerinden haberleşir. Data Layer, iki uygulamayı aynı uygulama kimliği altında eşleştirerek veri taşır; farklı `applicationId` değerleri iki modülü iki ayrı uygulama olarak görür ve **saat hiçbir zaman telefondan vakit verisi alamaz**. Ayrıca iki ayrı `applicationId`, aynı cihazda iki ayrı uygulama kaydı ve iki ayrı izin/veri deposu demektir; kullanıcı iki uygulamayı da ayrı ayrı yönetmek zorunda kalır ve senkronizasyon sessizce bozulur.
+>
+> `namespace` ise Kotlin paket yapısını ve `R` sınıfının üretildiği paketi belirlediği için farklı kalabilir ve farklı olması gerekir. Yani doğru kurgu şudur:
+>
+> | Alan | `app` | `wear` |
+> |------|-------|--------|
+> | `namespace` | `co.gorkem.namaz` | `co.gorkem.namaz.wear` |
+> | `applicationId` | `co.gorkem.namaz` | `co.gorkem.namaz` (**aynı olmalı**) |
 
 ---
 
@@ -257,15 +227,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # 4. Gradle wrapper'ı doğrula (opsiyonel, güvenlik)
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v3
+      # 4. (Wrapper doğrulama adımı planda önerilmişti, gerçek workflow'ta YOK)
 
       # 5. Versiyon bilgilerini git tag'den çıkar
       - name: Extract version from git tag
         id: version
         run: |
-          # Tag adı: refs/tags/v1.2.3 → "v1.2.3"
           TAG_NAME="${GITHUB_REF_NAME}"
           echo "Tag: ${TAG_NAME}"
 
@@ -274,14 +241,10 @@ jobs:
           echo "Version name: ${VERSION_NAME}"
           echo "versionName=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
 
-          # versionCode: tag sayısına göre (veya date-based alternatif)
+          # versionCode: TAG SAYISI (kullanılan tek yöntem)
           TAG_COUNT=$(git tag --list | wc -l | xargs)
           echo "Tag count: ${TAG_COUNT}"
           echo "versionCode=${TAG_COUNT}" >> "$GITHUB_OUTPUT"
-
-          # Alternatif (date-based):
-          # VERSION_CODE=$(date -u +"%Y%m%d%H%M")
-          # echo "versionCode=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
 
       # 6. Debug APK'ları derle
       - name: Build debug APKs
@@ -337,9 +300,13 @@ jobs:
           echo "${DELIMITER}" >> "$GITHUB_OUTPUT"
 
       # 9. GitHub Release oluştur ve APK'ları yükle
+      #    NOT: Release, build edilen bu repo'da değil, herkesa açık
+      #    GorkemGuray/Namaz-App reposunda oluşturulur (RELEASE_REPO_TOKEN).
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
+          repository: GorkemGuray/Namaz-App
+          token: ${{ secrets.RELEASE_REPO_TOKEN }}
           name: Namaz ${{ steps.version.outputs.versionName }}
           body: ${{ steps.release_notes.outputs.notes }}
           files: |
@@ -347,8 +314,16 @@ jobs:
             ${{ steps.artifacts.outputs.wearApk }}
           draft: false
           prerelease: false
+
+      # 10. version.json üret ve web sitesiyle birlikte gh-pages'e pushla
+      #     (yalnızca RELEASE_REPO_TOKEN tanımlıysa çalışır)
+      - name: Push version.json to public release repo
+        if: env.RELEASE_REPO_TOKEN != ''
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_REPO_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+        run: |
+          # version.json üretimi → website/* kopyalanır → gh-pages'e commit + push
+          # (tam gövde için .github/workflows/release.yml dosyasına bakınız)
 
   # -----------------------------------------------------------
   # Job 2 (Gelecek): İmzalı Release APK
@@ -374,7 +349,7 @@ Pipeline, versiyon bilgilerini **git tag**'den türetir:
 | Bilgi | Kaynak | Örnek |
 |-------|--------|-------|
 | `versionName` | Git tag (`v` ön eki kaldırılır) | `v1.2.3` → `1.2.3` |
-| `versionCode` | Mevcut tag sayısı (veya date-based) | 10 tag → `10` |
+| `versionCode` | Mevcut tag sayısı | 10 tag → `10` |
 
 ### 5.2 Gradle'a Aktarım
 
@@ -388,20 +363,20 @@ Her iki değer `-P` parametresiyle Gradle build'ine iletilir:
 
 Gradle tarafında `project.findProperty("ciVersionName")` ile okunur.
 
-### 5.3 Tag Sayısı Yöntemi (Önerilen)
+### 5.3 Tag Sayısı Yöntemi (tek aktif yöntem)
 
+- `release.yml` **yalnızca** bu yöntemi kullanır: `TAG_COUNT=$(git tag --list | wc -l | xargs)`
 - Her yeni sürümde `versionCode` bir artar
-- `git tag --list | wc -l` komutu sayar
 - Dezavantaj: Tag silinirse sayı değişir (nadir durum)
 
-### 5.4 Tarih Tabanlı Yöntem (Alternatif)
+### 5.4 Tarih Tabanlı Yöntem (KULLANILMIYOR)
+
+> ⚠️ **Bu yöntem artık kullanılmıyor.** Planın önceki hâlinde `release.yml` içinde yorum satırı olarak bir alternatif olarak geçiyordu; gerçek workflow'tan bu yorum satırları kaldırılmıştır. Aşağıdaki bilgi yalnızca geçmiş yöntemi belgelemek için tutulmaktadır — kod değişikliği gerektirmeden bu yönteme geçmek isterseniz `release.yml` içindeki "Extract version from git tag" adımını güncellemeniz gerekir.
 
 - `versionCode = $(date -u +"%Y%m%d%H%M")` formatı
 - Örnek: `202605261732` (26 Mayıs 2026, 17:32 UTC)
 - Avantaj: Eşsiz ve monoton artan
 - Dezavantaj: 32-bit integer sınırına 2147'de yaklaşılır (Android için sorun değil)
-
-Her iki yöntem de `release.yml` içinde yorum satırı olarak belirtilmiştir. İhtiyaca göre seçim yapılabilir.
 
 ---
 
@@ -599,22 +574,28 @@ Git Tag Push (v1.2.3)
 │ versionName ← v1.2.3 → 1.2.3│
 │ versionCode ← tag count     │
 └──────────┬───────────────────┘
-           ▼
+            ▼
 ┌──────────────────────────────┐
 │ Build Debug APKs             │
 │ ./gradlew :app:assembleDebug │
 │ ./gradlew :wear:assembleDebug│
 └──────────┬───────────────────┘
-           ▼
+            ▼
 ┌──────────────────────────────┐
 │ Rename APKs                  │
 │ Namaz-1.2.3-app-debug.apk   │
 │ Namaz-1.2.3-wear-debug.apk  │
 └──────────┬───────────────────┘
-           ▼
+            ▼
 ┌──────────────────────────────┐
 │ Create GitHub Release        │
+│ (GorkemGuray/Namaz-App)     │
 │ + Upload Assets              │
+└──────────┬───────────────────┘
+            ▼
+┌──────────────────────────────┐
+│ version.json üret + gh-pages │
+│ push (RELEASE_REPO_TOKEN)    │
 └──────────────────────────────┘
 ```
 
@@ -626,19 +607,22 @@ Git Tag Push (v1.2.3)
 Namaz/
 ├── .github/
 │   └── workflows/
-│       └── release.yml              ← YENİ
+│       ├── release.yml            # uygulama release pipeline'ı
+│       └── deploy-website.yml     # web sitesi dağıtımı
 ├── app/
-│   └── build.gradle.kts             ← DEĞİŞİKLİK (signingConfigs + versiyon)
+│   └── build.gradle.kts           # applicationId = co.gorkem.namaz
 ├── wear/
-│   └── build.gradle.kts             ← DEĞİŞİKLİK (signingConfigs + versiyon)
+│   └── build.gradle.kts           # applicationId = co.gorkem.namaz (mobille aynı)
 ├── build.gradle.kts
 ├── settings.gradle.kts
 ├── gradle.properties
 └── gradle/
-    └── libs.versions.toml
+    ├── libs.versions.toml
+    └── wrapper/
+        └── gradle-wrapper.properties   # Gradle 9.6.0
 ```
 
 ---
 
 > **Hazırlayan:** Namaz Geliştirme Ekibi
-> **Son Güncelleme:** 26 Mayıs 2026
+> **Son Güncelleme:** 29 Eylül 2026 — gerçek `build.gradle.kts`, `libs.versions.toml` ve `.github/workflows/release.yml` dosyalarıyla senkronize edildi.
