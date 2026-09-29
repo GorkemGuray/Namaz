@@ -24,5 +24,13 @@
 - Uzun kod snippet'larını kopyalamak yerine "gerçek dosyaya bakınız" referansını tercih ediyor; snippet yalnızca artı değer katıyorsa tutulmalı, dosyanın tek doğruluk kaynağı olduğu notuyla birlikte. Kullanılmayan alternatif bir yaklaşımı silmek yerine "KULLANILMIYOR/geçmiş yöntem" diye işaretlemeyi ve neden öyle olduğunu açıklamayı (örn. neden applicationId'ler aynı olmalı) tercih ediyor. Confidence: 0.8
 - Markdown tabloları, başlık hiyerarşisi ve emoji/uyarı işaretleme stili mevcut dokümanla tutarlı tutulmalı. Confidence: 0.75
 
+# teknik-karar
+- Üretilen çıktıları (ör. Room şema JSON'ları) `.gitignore`'a atmak yerine versiyona commit edilmesini tercih ediyor; migration yazarken şema farkını görmek için referans gerekiyor ve bu dosyalar "build artifact" sayılmıyor. Confidence: 0.7
+- Sürüm/şema gibi sayısal sabitleri tek bir yerden (`const val VERSION = 5`) referanslayıp hem annotation'da hem testlerde kullanmayı tercih ediyor; böylece registry ile annotation'ın birbirinden kayması testlerle yakalanabiliyor. Confidence: 0.7
+- Savunmasız veri kaybını kabul etmeyi reddedip, ileride gerekli olacak deseni bugünden testlenebilir ve saf hâlde hazırlamayı (boş migration registry + yol çözümleyici + dokümana yazılı kural) tercih ediyor; bugün için gereksiz görünse bile kalıcı çözümü önceliklendiriyor. Confidence: 0.7
+
 # is-akisi
 See [is-akisi/taste.md](is-akisi/taste.md)
+
+# dogrulama
+See [dogrulama/taste.md](dogrulama/taste.md)
