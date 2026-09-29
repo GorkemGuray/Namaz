@@ -208,4 +208,6 @@
     <string name="notification_permission_settings_title">Notification Permission Disabled</string>
     <string name="notification_permission_settings_desc">You enabled in-app notifications, but system notifications are disabled. To receive prayer alerts, please manually enable notifications in the system settings.</string>
     <string name="notification_permission_settings_action">Open Settings</string>
+    <string name="home_start_tesbihat">Start Tasbih</string>
+    <string name="home_tesbihat_vakti">Prayer Tasbih</string>
 </resources>

@@ -20,13 +20,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Check
@@ -36,6 +40,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,7 +71,7 @@ fun ZikirmatikScreen(
     val zikirs by viewModel.zikirs.collectAsState()
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
-    val pagerState = rememberPagerState(pageCount = { 2 })
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
 
     // Dialog state for adding custom zikir
@@ -163,15 +168,16 @@ fun ZikirmatikScreen(
             ZikirSelectionBottomSheetContent(
                 zikirs = zikirs,
                 currentZikir = currentZikir,
-                onZikirSelect = { zikir ->
-                    viewModel.selectZikir(zikir)
+                onZikirSelect = {
+                    viewModel.selectZikir(it)
                     expanded = false
                 },
-                onDeleteClick = { zikir ->
-                    viewModel.deleteCustomZikir(zikir)
-                },
                 onAddClick = {
+                    expanded = false
                     showAddDialog = true
+                },
+                onDeleteClick = {
+                    viewModel.deleteCustomZikir(it)
                     expanded = false
                 }
             )
@@ -182,7 +188,7 @@ fun ZikirmatikScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Zikirmatik & Tesbihat", style = MaterialTheme.typography.titleLarge) },
+                title = { Text("Tesbihat & Zikirler", style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
                 )
@@ -196,7 +202,7 @@ fun ZikirmatikScreen(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Mode Toggle TabRow
+            // Mode Toggle TabRow: Tesbihat (Primary) first, Serbest Zikir (Secondary) second
             TabRow(
                 selectedTabIndex = pagerState.currentPage,
                 containerColor = Color.Transparent,
@@ -208,12 +214,12 @@ fun ZikirmatikScreen(
                 Tab(
                     selected = pagerState.currentPage == 0,
                     onClick = { coroutineScope.launch { pagerState.animateScrollToPage(0) } },
-                    text = { Text("Zikirmatik", fontWeight = FontWeight.Bold) }
+                    text = { Text("Namaz Tesbihatı", fontWeight = FontWeight.Bold) }
                 )
                 Tab(
                     selected = pagerState.currentPage == 1,
                     onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } },
-                    text = { Text("Namaz Tesbihatı", fontWeight = FontWeight.Bold) }
+                    text = { Text("Serbest Zikirler", fontWeight = FontWeight.Bold) }
                 )
             }
 
@@ -224,6 +230,10 @@ fun ZikirmatikScreen(
                     .weight(1f)
             ) { page ->
                 if (page == 0) {
+                    // Priority 1: Interactive Namaz Tesbihatı Flow
+                    NamazTesbihatiFlow(viewModel = viewModel, context = context)
+                } else {
+                    // Priority 2: Standalone Zikirmatik
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -372,24 +382,155 @@ fun ZikirmatikScreen(
                             }
                         }
                     }
-                } else {
-                    // Interactive Namaz Tesbihatı Flow
-                    NamazTesbihatiFlow(viewModel = viewModel, context = context)
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NamazTesbihatiFlow(
     viewModel: ZikirmatikViewModel,
     context: Context
 ) {
+    val selectedMode by viewModel.selectedTesbihatMode.collectAsState()
+    val selectedPrayerTime by viewModel.selectedPrayerTime.collectAsState()
+    val activeSteps by viewModel.activeTesbihatSteps.collectAsState()
     val currentStepIndex by viewModel.currentTesbihatStepIndex.collectAsState()
     val currentCount by viewModel.currentTesbihatCount.collectAsState()
-    val step = NamazTesbihatiSteps.steps.getOrNull(currentStepIndex) ?: return
-    val totalSteps = NamazTesbihatiSteps.steps.size
+
+    var showStepsSheet by remember { mutableStateOf(false) }
+
+    val step = activeSteps.getOrNull(currentStepIndex) ?: return
+    val totalSteps = activeSteps.size
+
+    if (showStepsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showStepsSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .navigationBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (selectedMode == TesbihatMode.KISA) "Kısa Tesbihat Adımları" else "${selectedPrayerTime.displayName} Namazı Tesbihatı Adımları",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "$totalSteps Adım",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    itemsIndexed(activeSteps) { index, item ->
+                        val isCurrent = index == currentStepIndex
+                        val isPassed = index < currentStepIndex
+                        Card(
+                            onClick = {
+                                viewModel.jumpToStep(index)
+                                showStepsSheet = false
+                            },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isCurrent) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                }
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .background(
+                                            if (isCurrent) MaterialTheme.colorScheme.primary
+                                            else if (isPassed) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+                                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isPassed) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "${index + 1}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isCurrent) MaterialTheme.colorScheme.onPrimary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = item.title,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        if (item.handGesture != null) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = if (item.handGesture.contains("aşağı") || item.handGesture.contains("yere")) "🫳" else "🤲",
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = when (item.type) {
+                                            StepType.COUNTER -> "Sayaç: ${item.targetCount}x"
+                                            StepType.PRAYER -> "Dua / Okuma"
+                                            StepType.COMPLETED -> "Bitiş"
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (item.type == StepType.COUNTER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -397,24 +538,133 @@ private fun NamazTesbihatiFlow(
             .padding(bottom = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Step Indicators (Instagram Stories style)
+        // Mode Selector (Kısa vs Uzun)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            for (i in 0 until totalSteps) {
-                val color = if (i <= currentStepIndex) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+            FilterChip(
+                selected = selectedMode == TesbihatMode.KISA,
+                onClick = { viewModel.setTesbihatMode(TesbihatMode.KISA) },
+                label = {
+                    Text(
+                        text = "Kısa Tesbihat",
+                        fontWeight = if (selectedMode == TesbihatMode.KISA) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                },
+                modifier = Modifier.weight(1f),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+            FilterChip(
+                selected = selectedMode == TesbihatMode.UZUN,
+                onClick = { viewModel.setTesbihatMode(TesbihatMode.UZUN) },
+                label = {
+                    Text(
+                        text = "Uzun Tesbihat",
+                        fontWeight = if (selectedMode == TesbihatMode.UZUN) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                },
+                modifier = Modifier.weight(1f),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+
+        // Prayer Time Selector (when Uzun is active)
+        if (selectedMode == TesbihatMode.UZUN) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TesbihatPrayerTime.values().forEach { prayer ->
+                    val isSelected = selectedPrayerTime == prayer
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.setPrayerTime(prayer) },
+                        label = {
+                            Text(
+                                text = prayer.displayName,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    )
                 }
-                Box(
+            }
+        }
+
+        // Progress Bar & Step info
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Adım ${currentStepIndex + 1} / $totalSteps",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (step.type == StepType.COUNTER) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = "Sayaç: ${step.targetCount}x",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { (currentStepIndex + 1).toFloat() / totalSteps.toFloat() },
                     modifier = Modifier
-                        .weight(1f)
-                        .height(4.dp)
-                        .background(color, CircleShape)
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(CircleShape),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                )
+            }
+
+            FilledTonalIconButton(
+                onClick = { showStepsSheet = true },
+                modifier = Modifier.size(38.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = "Tüm Adımlar",
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -435,8 +685,8 @@ private fun NamazTesbihatiFlow(
             label = "tesbihat_step_transition",
             modifier = Modifier.weight(1f).fillMaxWidth()
         ) { stepIdx ->
-            val currentStep = NamazTesbihatiSteps.steps.getOrNull(stepIdx) ?: return@AnimatedContent
-            
+            val currentStep = activeSteps.getOrNull(stepIdx) ?: return@AnimatedContent
+
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -444,10 +694,11 @@ private fun NamazTesbihatiFlow(
                 // Step Title
                 Text(
                     text = currentStep.title,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    textAlign = TextAlign.Center
                 )
 
                 if (currentStep.type != StepType.COMPLETED) {
@@ -456,57 +707,135 @@ private fun NamazTesbihatiFlow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 6.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                         ),
                         shape = MaterialTheme.shapes.large
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(20.dp)
+                                .padding(16.dp)
                                 .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            verticalArrangement = Arrangement.Top
                         ) {
+                            // Sünnet Âdâbı / El Durumu (Eğer varsa)
+                            if (currentStep.handGesture != null) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.75f),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = if (currentStep.handGesture.contains("aşağı") || currentStep.handGesture.contains("yere")) "🫳" else "🤲",
+                                            fontSize = 24.sp,
+                                            modifier = Modifier.padding(end = 10.dp)
+                                        )
+                                        Column {
+                                            Text(
+                                                text = "Sünnet Âdâbı / El Durumu",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                            Text(
+                                                text = currentStep.handGesture,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.9f)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Arabic Text
                             if (currentStep.textArabic.isNotEmpty()) {
-                                Text(
-                                    text = currentStep.textArabic,
-                                    style = MaterialTheme.typography.headlineMedium.copy(
-                                        fontSize = 28.sp,
-                                        lineHeight = 44.sp,
-                                        textAlign = TextAlign.Center
-                                    ),
-                                    fontWeight = FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = 16.dp)
-                                )
+                                SelectionContainer {
+                                    Text(
+                                        text = currentStep.textArabic,
+                                        style = MaterialTheme.typography.headlineSmall.copy(
+                                            fontSize = 24.sp,
+                                            lineHeight = 42.sp,
+                                            textAlign = TextAlign.Center
+                                        ),
+                                        fontWeight = FontWeight.Normal,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(bottom = 16.dp)
+                                    )
+                                }
                             }
+
+                            // Turkish Transcription / Pronunciation
                             if (currentStep.textTurkish.isNotEmpty()) {
-                                Text(
-                                    text = currentStep.textTurkish,
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontSize = 18.sp,
-                                        lineHeight = 26.sp,
-                                        textAlign = TextAlign.Center,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(bottom = 12.dp)
-                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = "Okunuşu",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = currentStep.textTurkish,
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontSize = 16.sp,
+                                            lineHeight = 24.sp,
+                                            textAlign = TextAlign.Center,
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
+
+                            // Turkish Meaning / Translation
                             if (currentStep.meaning.isNotEmpty()) {
-                                Text(
-                                    text = currentStep.meaning,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 15.sp,
-                                        lineHeight = 22.sp,
-                                        textAlign = TextAlign.Center
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 4.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f)
                                     ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                )
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(
+                                            text = "Anlamı",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(bottom = 4.dp)
+                                        )
+                                        Text(
+                                            text = currentStep.meaning,
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontSize = 14.sp,
+                                                lineHeight = 20.sp
+                                            ),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -523,9 +852,9 @@ private fun NamazTesbihatiFlow(
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .size(120.dp)
+                                .size(110.dp)
                                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                                .padding(24.dp)
+                                .padding(20.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Check,
@@ -535,11 +864,11 @@ private fun NamazTesbihatiFlow(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
 
                         Text(
                             text = currentStep.textTurkish, // "Kabûl Olsun"
-                            style = MaterialTheme.typography.headlineLarge,
+                            style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -551,163 +880,211 @@ private fun NamazTesbihatiFlow(
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                            modifier = Modifier.padding(horizontal = 20.dp)
                         )
                     }
                 }
 
-                // Interactive Area
-                Box(
+                // Bottom Control & Interaction Bar
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(top = 6.dp, bottom = 4.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
                 ) {
                     when (currentStep.type) {
-                        StepType.PRAYER -> {
-                            Button(
-                                onClick = { viewModel.nextTesbihatStep() },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                shape = CircleShape
-                            ) {
-                                Text(
-                                    text = "Devam Et",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
                         StepType.COUNTER -> {
                             val target = currentStep.targetCount
-                            val progress = (currentCount.toFloat() / target.toFloat()).coerceIn(0f, 1f)
+                            val progress = if (target > 0) {
+                                (currentCount.toFloat() / target.toFloat()).coerceIn(0f, 1f)
+                            } else 0f
                             val animatedProgress by animateFloatAsState(
                                 targetValue = progress,
-                                animationSpec = tween(300),
+                                animationSpec = tween(250),
                                 label = "progress"
                             )
 
-                            Box(
-                                contentAlignment = Alignment.Center,
+                            Row(
                                 modifier = Modifier
-                                    .size(220.dp)
-                                    .clip(CircleShape)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                // Previous step button
+                                FilledTonalIconButton(
+                                    onClick = { viewModel.previousTesbihatStep() },
+                                    enabled = stepIdx > 0,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Geri",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
+                                // Reset button
+                                IconButton(
+                                    onClick = { viewModel.resetCurrentTesbihatStep() },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "Sıfırla",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+
+                                // Interactive Compact Counter Button
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(68.dp)
+                                        .clip(CircleShape)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) {
+                                            vibrate(context, isTargetReached = false)
+                                            viewModel.incrementTesbihat {
+                                                vibrate(context, isTargetReached = true)
+                                            }
+                                        }
+                                ) {
+                                    Canvas(modifier = Modifier.fillMaxSize()) {
+                                        drawCircle(
+                                            color = Color.Gray.copy(alpha = 0.2f),
+                                            style = Stroke(width = 5.dp.toPx())
+                                        )
+                                    }
+
+                                    val primaryColor = MaterialTheme.colorScheme.primary
+                                    Canvas(modifier = Modifier.fillMaxSize()) {
+                                        drawArc(
+                                            color = primaryColor,
+                                            startAngle = -90f,
+                                            sweepAngle = 360f * animatedProgress,
+                                            useCenter = false,
+                                            style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round)
+                                        )
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(6.dp)
+                                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        vibrate(context, isTargetReached = false)
-                                        viewModel.incrementTesbihat {
-                                            vibrate(context, isTargetReached = true)
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = currentCount.toString(),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                            Text(
+                                                text = "/ $target",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                            )
                                         }
                                     }
-                            ) {
-                                Canvas(modifier = Modifier.fillMaxSize()) {
-                                    drawCircle(
-                                        color = Color.Gray.copy(alpha = 0.2f),
-                                        style = Stroke(width = 12.dp.toPx())
-                                    )
                                 }
 
-                                val primaryColor = MaterialTheme.colorScheme.primary
-                                Canvas(modifier = Modifier.fillMaxSize()) {
-                                    drawArc(
-                                        color = primaryColor,
-                                        startAngle = -90f,
-                                        sweepAngle = 360f * animatedProgress,
-                                        useCenter = false,
-                                        style = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round)
-                                    )
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(16.dp)
-                                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                                    contentAlignment = Alignment.Center
+                                // Skip / Next step button
+                                FilledTonalIconButton(
+                                    onClick = { viewModel.nextTesbihatStep() },
+                                    enabled = stepIdx < totalSteps - 1,
+                                    modifier = Modifier.size(40.dp)
                                 ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = currentCount.toString(),
-                                            style = MaterialTheme.typography.displayMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                        Text(
-                                            text = "/ $target",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = "İleri",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                        StepType.PRAYER -> {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                FilledTonalIconButton(
+                                    onClick = { viewModel.previousTesbihatStep() },
+                                    enabled = stepIdx > 0,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Geri",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { viewModel.nextTesbihatStep() },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .padding(horizontal = 12.dp),
+                                    shape = CircleShape
+                                ) {
+                                    Text(
+                                        text = "Devam Et",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { viewModel.resetTesbihat() },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "Başa Dön",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                             }
                         }
                         StepType.COMPLETED -> {
-                            Button(
-                                onClick = { viewModel.resetTesbihat() },
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(56.dp),
-                                shape = CircleShape
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "Başa Dön",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Bottom Navigation Bar for Card (only when not completed)
-                if (currentStep.type != StepType.COMPLETED) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        TextButton(
-                            onClick = { viewModel.previousTesbihatStep() },
-                            enabled = stepIdx > 0
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Geri"
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Geri")
-                        }
-
-                        IconButton(
-                            onClick = {
-                                if (currentStep.type == StepType.COUNTER) {
-                                    viewModel.resetCurrentTesbihatStep()
-                                } else {
-                                    viewModel.resetTesbihat()
+                                Button(
+                                    onClick = { viewModel.resetTesbihat() },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(48.dp),
+                                    shape = CircleShape
+                                ) {
+                                    Text(
+                                        text = "Başa Dön",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Sıfırla"
-                            )
-                        }
-
-                        TextButton(
-                            onClick = { viewModel.nextTesbihatStep() },
-                            enabled = stepIdx < totalSteps - 1
-                        ) {
-                            Text("Atla")
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Default.ArrowForward,
-                                contentDescription = "İleri"
-                            )
                         }
                     }
                 }

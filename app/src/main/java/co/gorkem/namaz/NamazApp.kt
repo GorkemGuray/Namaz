@@ -184,7 +184,8 @@ fun NamazApp() {
             when (tab) {
                 0 -> HomeScreen(
                     modifier = Modifier.padding(paddingValues),
-                    onLocationClick = { showCitySheet = true }
+                    onLocationClick = { showCitySheet = true },
+                    onNavigateToTesbihat = { selectedTab = 2 }
                 )
                 1 -> QiblaScreen(
                     modifier = Modifier.padding(paddingValues),

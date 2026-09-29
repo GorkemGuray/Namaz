@@ -6,13 +6,27 @@ data class NamazTesbihatiStep(
     val textTurkish: String,
     val meaning: String,
     val type: StepType,
-    val targetCount: Int = 0
+    val targetCount: Int = 0,
+    val handGesture: String? = null
 )
 
 enum class StepType {
     PRAYER,     // Text-based prayer step
-    COUNTER,    // 33x counter step
+    COUNTER,    // Counter step
     COMPLETED   // End screen
+}
+
+enum class TesbihatMode(val displayName: String) {
+    KISA("Kısa"),
+    UZUN("Uzun")
+}
+
+enum class TesbihatPrayerTime(val displayName: String) {
+    SABAH("Sabah"),
+    OGLE("Öğle"),
+    IKINDI("İkindi"),
+    AKSAM("Akşam"),
+    YATSI("Yatsı")
 }
 
 object NamazTesbihatiSteps {
@@ -20,7 +34,7 @@ object NamazTesbihatiSteps {
         NamazTesbihatiStep(
             title = "1. İstiğfar ve Selam",
             textArabic = "اَللّٰهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ",
-            textTurkish = "Allâhümme entes-selâmü ve minkes-selâm, tebârakte yâ zel-celâli vel-ikrâm.",
+            textTurkish = "Allâhümme ente’s-selâmü ve minke’s-selâm, tebârakte yâ ze’l-celâli ve’l-ikrâm.",
             meaning = "Allah'ım! Sen kurtuluş merciisin, esenlik ve selamet Sendendir. Ey celal ve ikram sahibi Allah'ım! Sen ne yücesin.",
             type = StepType.PRAYER
         ),
@@ -39,7 +53,7 @@ object NamazTesbihatiSteps {
             type = StepType.PRAYER
         ),
         NamazTesbihatiStep(
-            title = "4. Ayet-el Kürsi",
+            title = "4. Âyet-el Kürsî",
             textArabic = "اَللّٰهُ لَا إِلٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ لَهُ مَا فِي السَّمٰوَاتِ وَمَا فِي الْأَرْضِ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ وَسِعَ كُرْسِيُّهُ السَّمٰوَاتِ وَالْأَرْضَ وَلَا يَؤُدُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ",
             textTurkish = "Allâhü lâ ilâhe illâ hüvel-hayyül-kayyûm. Lâ te'huzühû sinetün ve lâ nevm. Lehû mâ fis-semâvâti vemâ fil-ard. Menzellezî yeşfe'u 'indehû illâ bi-iznih. Ya'lemü mâ beyne eydîhim vemâ halfehüm. Velâ yuhîtûne bi-şey'in min 'ilmihî illâ bimâ şâ'. Vesi'a kürsiyyühüs-semâvâti vel-ard. Velâ ye'ûdühû hıfzuhümâ ve hüvel-aliyyül-azîm.",
             meaning = "Allah, O'ndan başka ilah yoktur; O, hayydir, kayyumdur. Kendisine ne uyku gelir ne de uyuklama. Göklerde ve yerdekilerin hepsi O'nundur. İzni olmadan O'nun katında kim şefaat edebilir? O, kullarının yaptıklarını ve yapacaklarını bilir. O'nun bildirdiklerinin dışında insanlar O'nun ilminden hiçbir şeyi tam olarak bilemezler. O'nun kürsüsü gökleri ve yeri içine alır, onları koruyup gözetmek kendisine zor gelmez. O, yücedir, büyüktür.",
@@ -56,7 +70,7 @@ object NamazTesbihatiSteps {
         NamazTesbihatiStep(
             title = "6. Elhamdülillah",
             textArabic = "سُبْحَانَ الْبَاقِي دَائِمًا الْحَمْدُ للهِ",
-            textTurkish = "Sübhânel-bâgî dâimenil-hamdülillâh.",
+            textTurkish = "Sübhânel-bâkî dâimenil-hamdülillâh.",
             meaning = "Baki ve daimi olan Allah'a hamdolsun.",
             type = StepType.COUNTER,
             targetCount = 33
@@ -84,9 +98,9 @@ object NamazTesbihatiSteps {
             type = StepType.PRAYER
         ),
         NamazTesbihatiStep(
-            title = "10. Fatiha Suresi",
+            title = "10. Fâtiha Sûresi",
             textArabic = "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ ﴿١﴾ اَلْحَمْدُ لِلّٰهِ رَبِّ الْعَالَمِينَ ﴿٢﴾ اَلرَّحْمٰنِ الرَّحِيمِ ﴿٣﴾ مَالِكِ يَوْمِ الدِّينِ ﴿٤﴾ إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ ﴿٥﴾ اِهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ ﴿٦﴾ صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّآلِّينَ ﴿٧﴾",
-            textTurkish = "Bismillâhirrahmânirrahîm. Elhamdü lillâhi rabbil'alemin. Errahmânir'rahim. Mâliki yevmiddin. İyyâke na'büdü ve iyyâke neste'în. İhdinessırâtal müstakîm. Sırâtallezîne en'amte aleyhim gayrilmagdûbi aleyhim veleddâllîn. Âmin.",
+            textTurkish = "Bismillâhirrahmânirrahîm. Elhamdü lillâhi rabbi’l-âlemîn. Er-rahmâni’r-rahîm. Mâliki yevmi’d-dîn. İyyâke na’büdü ve iyyâke neste’în. İhdina’s-sırâta’l-müstakîm. Sırâtallezîne en’amte aleyhim gayri’l-magdûbi aleyhim veleddâllîn. Âmin.",
             meaning = "Rahman ve Rahim olan Allah'ın adıyla. Hamd, Alemlerin Rabbi Allah'a mahsustur. O, Rahman'dır, Rahim'dir. Hesap ve ceza gününün malikidir. Yalnız sana ibadet eder ve yalnız senden yardım dileriz. Bizi doğru yola, kendilerine nimet verdiklerinin yoluna ilet; gazaba uğrayanlarınkine ve sapkınlarınkine değil.",
             type = StepType.PRAYER
         ),

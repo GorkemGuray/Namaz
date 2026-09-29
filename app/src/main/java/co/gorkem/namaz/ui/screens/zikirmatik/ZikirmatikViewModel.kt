@@ -30,11 +30,33 @@ class ZikirmatikViewModel @Inject constructor(
 
     val namazTesbihatPhases = listOf("Sübhanallah", "Elhamdülillah", "Allahuekber")
 
+    private val _selectedTesbihatMode = MutableStateFlow(TesbihatMode.KISA)
+    val selectedTesbihatMode: StateFlow<TesbihatMode> = _selectedTesbihatMode.asStateFlow()
+
+    private val _selectedPrayerTime = MutableStateFlow(getDefaultPrayerTime())
+    val selectedPrayerTime: StateFlow<TesbihatPrayerTime> = _selectedPrayerTime.asStateFlow()
+
+    private val _activeTesbihatSteps = MutableStateFlow<List<NamazTesbihatiStep>>(NamazTesbihatiSteps.steps)
+    val activeTesbihatSteps: StateFlow<List<NamazTesbihatiStep>> = _activeTesbihatSteps.asStateFlow()
+
     private val _currentTesbihatStepIndex = MutableStateFlow(0)
     val currentTesbihatStepIndex: StateFlow<Int> = _currentTesbihatStepIndex.asStateFlow()
 
     private val _currentTesbihatCount = MutableStateFlow(0)
     val currentTesbihatCount: StateFlow<Int> = _currentTesbihatCount.asStateFlow()
+
+    companion object {
+        private fun getDefaultPrayerTime(): TesbihatPrayerTime {
+            val hour = java.time.LocalTime.now().hour
+            return when (hour) {
+                in 5..10 -> TesbihatPrayerTime.SABAH
+                in 11..15 -> TesbihatPrayerTime.OGLE
+                in 16..18 -> TesbihatPrayerTime.IKINDI
+                in 19..20 -> TesbihatPrayerTime.AKSAM
+                else -> TesbihatPrayerTime.YATSI
+            }
+        }
+    }
 
     init {
         viewModelScope.launch {
@@ -123,9 +145,40 @@ class ZikirmatikViewModel @Inject constructor(
         }
     }
 
+    private fun updateActiveSteps() {
+        _activeTesbihatSteps.value = if (_selectedTesbihatMode.value == TesbihatMode.KISA) {
+            NamazTesbihatiSteps.steps
+        } else {
+            LongTesbihatSteps.getSteps(_selectedPrayerTime.value)
+        }
+        _currentTesbihatStepIndex.value = 0
+        _currentTesbihatCount.value = 0
+    }
+
+    fun setTesbihatMode(mode: TesbihatMode) {
+        if (_selectedTesbihatMode.value != mode) {
+            _selectedTesbihatMode.value = mode
+            updateActiveSteps()
+        }
+    }
+
+    fun setPrayerTime(prayerTime: TesbihatPrayerTime) {
+        if (_selectedPrayerTime.value != prayerTime) {
+            _selectedPrayerTime.value = prayerTime
+            updateActiveSteps()
+        }
+    }
+
+    fun jumpToStep(index: Int) {
+        if (index in 0 until _activeTesbihatSteps.value.size) {
+            _currentTesbihatStepIndex.value = index
+            _currentTesbihatCount.value = 0
+        }
+    }
+
     fun nextTesbihatStep() {
         val nextIndex = _currentTesbihatStepIndex.value + 1
-        if (nextIndex < NamazTesbihatiSteps.steps.size) {
+        if (nextIndex < _activeTesbihatSteps.value.size) {
             _currentTesbihatStepIndex.value = nextIndex
             _currentTesbihatCount.value = 0
         }
@@ -140,7 +193,7 @@ class ZikirmatikViewModel @Inject constructor(
     }
 
     fun incrementTesbihat(onTargetReached: () -> Unit) {
-        val currentStep = NamazTesbihatiSteps.steps.getOrNull(_currentTesbihatStepIndex.value) ?: return
+        val currentStep = _activeTesbihatSteps.value.getOrNull(_currentTesbihatStepIndex.value) ?: return
         if (currentStep.type != StepType.COUNTER) return
 
         val newCount = _currentTesbihatCount.value + 1

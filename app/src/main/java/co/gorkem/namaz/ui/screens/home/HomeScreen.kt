@@ -23,11 +23,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.FilterVintage
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -40,8 +46,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
 import co.gorkem.namaz.R
@@ -59,7 +67,8 @@ import java.time.LocalDate
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
-    onLocationClick: () -> Unit
+    onLocationClick: () -> Unit,
+    onNavigateToTesbihat: () -> Unit = {}
 ) {
     val prayerTimes by viewModel.prayerTimes.collectAsState()
     val dashboard by viewModel.dashboardData.collectAsState()
@@ -200,6 +209,13 @@ fun HomeScreen(
                         }
 
                         item {
+                            TesbihatQuickCard(
+                                currentPeriodName = stringResource(dash.currentPeriod.prayerName.nameRes),
+                                onClick = onNavigateToTesbihat
+                            )
+                        }
+
+                        item {
                             Text(
                                 text = stringResource(R.string.home_today_prayers),
                                 style = MaterialTheme.typography.titleSmall,
@@ -241,6 +257,13 @@ fun HomeScreen(
                             if (dash != null) {
                                 KerahatBanner(dashboard = dash)
                             }
+                        }
+
+                        item {
+                            TesbihatQuickCard(
+                                currentPeriodName = null,
+                                onClick = onNavigateToTesbihat
+                            )
                         }
 
                         item {
@@ -340,6 +363,71 @@ private fun KerahatChip(
                 text = subtext,
                 style = MaterialTheme.typography.bodySmall,
                 color = contentColor.copy(alpha = 0.8f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun TesbihatQuickCard(
+    currentPeriodName: String?,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = PillShape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Filled.FilterVintage,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Column {
+                    Text(
+                        text = if (currentPeriodName != null) "$currentPeriodName Tesbihatı" else stringResource(R.string.home_tesbihat_vakti),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = stringResource(R.string.home_start_tesbihat),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = stringResource(R.string.home_start_tesbihat),
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary
             )
         }
     }

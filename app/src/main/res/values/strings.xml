@@ -5,7 +5,7 @@
     <string name="nav_times">Vakitler</string>
     <string name="nav_calendar">Takvim</string>
     <string name="nav_qibla">Kıble</string>
-    <string name="nav_zikirmatik">Zikirmatik</string>
+    <string name="nav_zikirmatik">Tesbihat</string>
     <string name="nav_settings">Ayarlar</string>
     <string name="calendar_title">Aylık Takvim</string>
     <string name="calendar_date_header">Gün</string>
@@ -208,4 +208,6 @@
     <string name="notification_permission_settings_title">Bildirim İzni Devre Dışı</string>
     <string name="notification_permission_settings_desc">Uygulama içi bildirimleri etkinleştirdiniz ancak sistem bildirim izni kapalı. Vakit bildirimlerini alabilmek için lütfen cihaz ayarlarından bildirim iznini etkinleştirin.</string>
     <string name="notification_permission_settings_action">Ayarları Aç</string>
+    <string name="home_start_tesbihat">Tesbihat\'a Başla</string>
+    <string name="home_tesbihat_vakti">Namaz Tesbihatı</string>
 </resources>
