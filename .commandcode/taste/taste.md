@@ -4,6 +4,7 @@
 
 # ui
 - Widget settings sayfalarında safe area/safety zone'lara dikkat edilmeli, tab bar veya status bar ile çakışma olmamalı. Confidence: 0.65
+- Üretim/gerçek cihaz UI yolunda asla mock ya da uydurma veri (sahte vakit, `20:33`, `--:--` gibi) render edilmemeli; veri yoksa dürüst bir yükleniyor/boş durum tercih ediliyor, "düzgün görünen" sahte veri lehine değil. Testlerle de sabitlenmeli (örn. resolved data asla uydurma vakit içermemeli). Confidence: 0.8
 
 # git
 - .commandcode/taste/ öğrenilen tercihler dosyası git'e commit edilmeli, projeye özel kuralların kalıcı olması sağlanmalı. Confidence: 0.65
@@ -11,12 +12,7 @@
 - Çalışma ağacında kendi yazmadığı değişiklikler (ör. otomatik araçların güncellediği dosyalar) görülürse dokunulmamalı, kapsam kanıtında ayrıştırılıp raporda belirtilmeli. Confidence: 0.7
 
 # kod-yazimi
-- Koda yorum satırı (comment) eklememeyi tercih ediyor; niyet isimlendirmeden anlaşılmalı. Confidence: 0.85
-- Kod yazmadan önce repo konvansiyonlarını anlatan brief/dokümanı (ör. .agents/WORKER_BRIEF.md, docs/ altındaki mimari notlar) okumayı bekliyor. Confidence: 0.8
-- Proje veri/yerelleştirme tutarlılığına özen gösteriyor: domain isimleri (namaz vakitleri) Türkçe ve tüm modüllerde aynı tutulmalı, dynamicColor gibi tema ayarlarına dokunulmamalı. Confidence: 0.6
-- Test edilebilirlik için iş mantığını saf bir çekirdek fonksiyona ayırmayı tercih ediyor; Android/Compose'a bağlı katmanlar (Context.getString, stringResource, GPS çağrıları) ince sarmalayıcı olarak kalmalı, eşleme/karar mantığı tek ve saf noktada toplanmalı. Confidence: 0.8
-- Sabit kodlanmış yer/kent yedeklerinden kaçınıyor; nötr bir kullanıcı etiketi (ör. "Konumunuz") ve zaten var olan sabitleri (repository'deki default koordinatlar) tercih ediyor. Confidence: 0.7
-
+See [kod-yazimi/taste.md](kod-yazimi/taste.md)
 # dokumantasyon
 - Dokümandaki her sürüm numarası, applicationId, yol ve komutu gerçek dosyadan (build.gradle.kts, libs.versions.toml, .github/workflows/*.yml gibi tek doğruluk kaynakları) doğrulamayı bekliyor; referans dokümanı (ör. docs/08) doğru kabul edilmiyor ve kendisi de kaymış olabilir. Confidence: 0.85
 - Referans dokümanın hatalı olduğu tespit edilirse hata yayınlamak yerine dokümana düzeltilmiş/kaçınılmış şekilde yansıtılıp koordinatöre "Questions" altında bildirilmeli. Confidence: 0.8

@@ -1,0 +1,9 @@
+# kod-yazimi
+- Koda yorum satırı (comment) eklememeyi tercih ediyor; niyet isimlendirmeden anlaşılmalı. Confidence: 0.85
+- Kod yazmadan önce repo konvansiyonlarını anlatan brief/dokümanı (ör. .agents/WORKER_BRIEF.md, docs/ altındaki mimari notlar) okumayı bekliyor. Confidence: 0.8
+- Proje veri/yerelleştirme tutarlılığına özen gösteriyor: domain isimleri (namaz vakitleri) Türkçe ve tüm modüllerde aynı tutulmalı, dynamicColor gibi tema ayarlarına dokunulmamalı. Confidence: 0.6
+- Test edilebilirlik için iş mantığını saf bir çekirdek fonksiyona ayırmayı tercih ediyor; Android/Compose'a bağlı katmanlar (Context.getString, stringResource, GPS çağrıları, AlarmManager) ince sarmalayıcı olarak kalmalı, eşleme/karar mantığı tek ve saf noktada toplanmalı. Confidence: 0.85
+- Test dosyası adı test edilen konuya göre (ör. `AlarmStrategyResolutionTest`), test fonksiyon adları İngilizce ve senaryo önekli camelCase (ör. `apiS_permissionDenied_...`, `preS_...`, `securityException_...`); döngüsel (for/listOf) senaryolarla parametrik varyantları tek testte toplamayı tercih ediyor. Confidence: 0.7
+- Toplu isim değişikliğinde (rename) regex/python-sed ile toplu düzenleme yerine hedefli edit kullanıyor; regex'in import satırını da yakalayıp bozduğu bir hata yaşandıktan sonra imzayı doğrudan okuyarak düzeltmeyi tercih ediyor. Confidence: 0.75
+- Bir alan null ise, aynı nesnede türetilebilecek alternatif varsa ona düşmeyi tercih ediyor (örn. `data.nextPrayer ?: calculateNextPrayer(data.prayers)`) — tek bir alana bakıp boş ekran göstermek yerine mevcut veriden dürüstçe hesaplamayı seçiyor. Confidence: 0.75
+- Sabit kodlanmış yer/kent yedeklerinden kaçınıyor; nötr bir kullanıcı etiketi (ör. "Konumunuz") ve zaten var olan sabitleri (repository'deki default koordinatlar) tercih ediyor. Confidence: 0.7
