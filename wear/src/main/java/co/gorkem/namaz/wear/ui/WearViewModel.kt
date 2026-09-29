@@ -22,6 +22,41 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
 import kotlin.coroutines.resume
 
+enum class LocationSource { GPS, CACHE, DEFAULT }
+
+data class ResolvedLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val cityName: String,
+    val source: LocationSource
+)
+
+fun resolveStandaloneLocation(
+    gpsLatitude: Double?,
+    gpsLongitude: Double?,
+    cachedLatitude: Double?,
+    cachedLongitude: Double?,
+    cachedCityName: String?
+): ResolvedLocation {
+    if (gpsLatitude != null && gpsLongitude != null) {
+        return ResolvedLocation(gpsLatitude, gpsLongitude, "Konumunuz", LocationSource.GPS)
+    }
+
+    if (cachedLatitude != null && cachedLongitude != null &&
+        cachedLatitude != 0.0 && cachedLongitude != 0.0
+    ) {
+        val city = cachedCityName?.trim()?.takeIf { it.isNotEmpty() } ?: "Konumunuz"
+        return ResolvedLocation(cachedLatitude, cachedLongitude, city, LocationSource.CACHE)
+    }
+
+    return ResolvedLocation(
+        WearPrayerRepository.DEFAULT_LATITUDE,
+        WearPrayerRepository.DEFAULT_LONGITUDE,
+        "Konumunuz",
+        LocationSource.DEFAULT
+    )
+}
+
 @HiltViewModel
 class WearViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -87,9 +122,8 @@ class WearViewModel @Inject constructor(
             if (_isPhoneSource.value) return@launch
             _isLoading.value = true
 
-            var lat = WearPrayerRepository.DEFAULT_LATITUDE
-            var lon = WearPrayerRepository.DEFAULT_LONGITUDE
-            var city = "İstanbul"
+            var gpsLatitude: Double? = null
+            var gpsLongitude: Double? = null
 
             try {
                 val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
@@ -107,24 +141,33 @@ class WearViewModel @Inject constructor(
                     }
                 }
                 if (location != null) {
-                    lat = location.latitude
-                    lon = location.longitude
-                    city = "Konumunuz"
+                    gpsLatitude = location.latitude
+                    gpsLongitude = location.longitude
                 } else {
                     cancellationTokenSource.cancel()
                 }
             } catch (e: SecurityException) {
-                // Permission not granted, fallback to default
             } catch (e: Exception) {
-                // Location fetch failed, fallback to default
             }
+
+            val cached = dataLayerService.prayerData.value
+            val resolved = resolveStandaloneLocation(
+                gpsLatitude = gpsLatitude,
+                gpsLongitude = gpsLongitude,
+                cachedLatitude = cached?.latitude,
+                cachedLongitude = cached?.longitude,
+                cachedCityName = cached?.cityName
+            )
 
             if (_isPhoneSource.value) return@launch
 
-            prayerRepository.getPrayerTimesFromApi(latitude = lat, longitude = lon).collect { result ->
+            prayerRepository.getPrayerTimesFromApi(
+                latitude = resolved.latitude,
+                longitude = resolved.longitude
+            ).collect { result ->
                 result.onSuccess { prayers ->
                     _prayerItems.value = prayers
-                    _cityName.value = city
+                    _cityName.value = resolved.cityName
                     _isLoading.value = false
                     _nextPrayerInfo.value = co.gorkem.namaz.wear.calculateNextPrayer(prayers)
                 }.onFailure {
