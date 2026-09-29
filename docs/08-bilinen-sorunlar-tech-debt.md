@@ -20,8 +20,8 @@
 - `NamazDatabase` v5, `exportSchema=false`, `fallbackToDestructiveMigration(true)`.
 - Risk: schema değişiminde kullanıcı cache/zikir verisi sessizce silinir. Çözüm: export aç + migration yaz veya bilinçli tercih olarak dokümante et.
 
-### 5. `UserPreferencesSerializer` Ölü Kod
-- NO-OP stub, aktif kullanılmıyor (standard Preferences keys kullanılıyor). Kafa karıştırır. Çözüm: sil veya neden durduğunu yorumla (yorum-yok konvansiyonuna istisna notu).
+### 5. `UserPreferencesSerializer` Ölü Kod — ✅ ÇÖZÜLDÜ (T-105)
+- Dosya 23 Mayıs 2026'da `42d5fd93` ile silinmiş (NO-OP stub, hiç kullanılmadı). Kodda referans yok (`grep` ile doğrulandı). AGENTS.md'deki bayat referanslar temizlendi.
 
 ### 6. `generate_static.py` Manuel Adım
 - `deploy-website.yml` bu adımı çalıştırmaz; unutulursa site/sitemap eskir. Çözüm: CI'ya ekle veya pre-push hook.

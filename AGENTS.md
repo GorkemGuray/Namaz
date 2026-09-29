@@ -218,7 +218,6 @@ app/
     │   │       │   └── ZikirEntity.kt          # Room Entity for Zikirs: id, title, arabicText, targetCount, currentCount, isNamazTesbihati, currentPhase
     │   │       └── datastore/
     │   │           ├── UserPreferencesRepository.kt # DataStore: notifications, city, method, school, language, recentCities, appTheme → widget updater. setLastAutoLocation() does NOT update widget (waits for data load).
-    │   │           ├── UserPreferencesSerializer.kt # NO-OP stub (not actively used; standard Preferences keys used)
     │   │           └── UserPreferencesDataStore.kt  # preferencesDataStore extension
     │   │
     │   ├── di/
@@ -440,7 +439,6 @@ wear/
 
 ### DataStore
 - `UserPreferencesRepository`: standard Preferences DataStore keys kullanır.
-- `UserPreferencesSerializer`: NO-OP stub. Aktif olarak kullanılmaz.
 - `recentCities`: Gson ile JSON string olarak saklanır (max 5, deduplicated).
 - `dataSource`: Int. Hangi veri kaynağının aktif olduğunu belirtir (0: Aladhan API, 1: Imsakiyem API, 2: Lokal Hesaplama).
 - `useLocalCalculation`: Boolean. Geriye uyumluluk için tutulur. Açıksa API kullanılmaz, lokal hesaplama yapılır.
