@@ -25,8 +25,8 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 
 | ID | Başlık | Öncelik | Durum | Sahip | Kapsam (dosya) | Kabul |
 |----|--------|---------|-------|-------|----------------|-------|
-| T-201 | `WidgetMinuteReceiver` exact-alarm fallback matriksi (API 31/33/36) | P1 | ASSIGNED | worker-1 | `app/.../service/WidgetMinuteReceiver.kt` (+ test) | İzin kapalı emülatörde tick çalışıyor |
-| T-202 | Complication/Tile null-state UX (son cache + yükleniyor) | P1 | PENDING | — | `wear/.../tile/PrayerTileService.kt`, `wear/.../complication/*.kt` | Mock veri yok, cache gösterimi |
+| T-201 | `WidgetMinuteReceiver` exact-alarm fallback matriksi (API 31/33/36) | P1 | DONE | worker-1 | `app/.../service/WidgetMinuteReceiver.kt` (+ test) | İzin kapalı emülatörde tick çalışıyor |
+| T-202 | Complication/Tile null-state UX (son cache + yükleniyor) | P1 | ASSIGNED | worker-1 | `wear/.../tile/PrayerTileService.kt`, `wear/.../complication/*.kt` | Mock veri yok, cache gösterimi |
 
 ## Faz 3 — UX Parlatma
 
