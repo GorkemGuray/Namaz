@@ -40,8 +40,9 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 |----|--------|---------|-------|-------|----------------|-------|
 | T-401 | İmzalı release altyapısı (keystore docs + workflow eki) | P1 | PENDING | — | `.github/workflows/release.yml`, `*/build.gradle.kts` | Dry-run release yeşil |
 | T-402 | `generate_static.py` adımını `deploy-website.yml`'e ekleme | P1 | DONE | worker-1 | `.github/workflows/deploy-website.yml` | Site deploy'da statik sayfalar üretiliyor |
-| T-403 | `release.yml` RELEASE_REPO_TOKEN guard denetimi (`if: env...` job-seviyesi env'siz) | P2 | ASSIGNED | worker-1 | `.github/workflows/release.yml` | Guard gerçekten çalışıyor veya düzeltilmiş |
+| T-403 | `release.yml` RELEASE_REPO_TOKEN guard denetimi (`if: env...` job-seviyesi env'siz) | P2 | DONE | worker-1 | `.github/workflows/release.yml` | Hüküm: guard çalışıyor, değişiklik yok (resmi docs ile doğrulandı) |
 | T-404 | `release.yml`'e `generate_static.py` üretim adımı (tag'de bayat site riski) | P1 | DONE | worker-1 | `.github/workflows/release.yml` | Tag release'inde site taze üretiliyor |
+| T-405 | Fork'ta guard'sız "Create Release" adımı (secret yoksa erken patlar) | P2 | PENDING | — | `.github/workflows/release.yml` | Fork tag push'unda temiz skip veya bilinçli fail |
 
 ---
 *Yeni görev ekleme: coordinator tabloya satır ekler, ID sıradaki numaradan verilir. Worker kendi görev açamaz.*
