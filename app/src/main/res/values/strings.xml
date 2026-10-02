@@ -215,6 +215,6 @@
     <string name="notification_permission_settings_action">Ayarları Aç</string>
     <string name="home_start_tesbihat">Tesbihat\'a Başla</string>
     <string name="home_tesbihat_vakti">Namaz Tesbihatı</string>
-    <string name="zikirmatik_serbest_sayac">Serbest Sayaç</string>
-    <string name="zikirmatik_serbest_sayac_desc">Özel zikirler ve serbest tesbih sayacı</string>
+    <string name="zikirmatik_show_meaning">Anlamı Göster</string>
+    <string name="zikirmatik_hide_meaning">Anlamı Gizle</string>
 </resources>
