@@ -49,6 +49,8 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 | ID | Başlık | Öncelik | Durum | Sahip | Kapsam (dosya) | Kabul |
 |----|--------|---------|-------|-------|----------------|-------|
 | T-501 | Tesbihat ekranı tek akışa indir (TabRow/HorizontalPager kaldır, varsayılan Uzun) | P0 | DONE | worker-1 | `app/.../ui/screens/zikirmatik/ZikirmatikScreen.kt` (+ ViewModel varsayılanı, TR/EN string) | Sekmesiz tek ekran, varsayılan Uzun, Serbest erişilebilir (K4 ekran görüntüsü ile teyitli) |
+| T-502 | Uzun tesbihat içeriğini Mavera'ya birebir uyarla (okunuş+Arapça, Fâtiha adımları kalkar) | P0 | ASSIGNED | worker-1 | `app/.../ui/screens/zikirmatik/LongTesbihatSteps.kt` (+ kısa tutarlılık, test) | 5 vakit Mavera ile birebir, Fâtiha yok |
+| T-503 | Wear tesbihat içerik paritesi (T-502 sonrası) | P1 | PENDING | — | `wear/.../ui/screens/WearZikirmatikScreen.kt`, `wear/.../ui/screens/WearNamazTesbihatiStep.kt` | Saat içeriği mobil ile aynı kaynak |
 
 ---
 *Yeni görev ekleme: coordinator tabloya satır ekler, ID sıradaki numaradan verilir. Worker kendi görev açamaz.*
