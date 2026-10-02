@@ -215,4 +215,6 @@
     <string name="notification_permission_settings_action">Open Settings</string>
     <string name="home_start_tesbihat">Start Tasbih</string>
     <string name="home_tesbihat_vakti">Prayer Tasbih</string>
+    <string name="zikirmatik_serbest_sayac">Free Counter</string>
+    <string name="zikirmatik_serbest_sayac_desc">Custom tasbih and free counter</string>
 </resources>

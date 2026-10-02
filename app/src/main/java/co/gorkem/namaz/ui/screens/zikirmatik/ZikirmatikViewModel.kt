@@ -30,13 +30,15 @@ class ZikirmatikViewModel @Inject constructor(
 
     val namazTesbihatPhases = listOf("Sübhanallah", "Elhamdülillah", "Allahuekber")
 
-    private val _selectedTesbihatMode = MutableStateFlow(TesbihatMode.KISA)
+    private val _selectedTesbihatMode = MutableStateFlow(TesbihatMode.UZUN)
     val selectedTesbihatMode: StateFlow<TesbihatMode> = _selectedTesbihatMode.asStateFlow()
 
     private val _selectedPrayerTime = MutableStateFlow(getDefaultPrayerTime())
     val selectedPrayerTime: StateFlow<TesbihatPrayerTime> = _selectedPrayerTime.asStateFlow()
 
-    private val _activeTesbihatSteps = MutableStateFlow<List<NamazTesbihatiStep>>(NamazTesbihatiSteps.steps)
+    private val _activeTesbihatSteps = MutableStateFlow<List<NamazTesbihatiStep>>(
+        LongTesbihatSteps.getSteps(_selectedPrayerTime.value)
+    )
     val activeTesbihatSteps: StateFlow<List<NamazTesbihatiStep>> = _activeTesbihatSteps.asStateFlow()
 
     private val _currentTesbihatStepIndex = MutableStateFlow(0)
