@@ -32,14 +32,14 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 
 | ID | Başlık | Öncelik | Durum | Sahip | Kapsam (dosya) | Kabul |
 |----|--------|---------|-------|-------|----------------|-------|
-| T-301 | Kıble kalibrasyon + manyetik bozulma yönlendirmeli dialog | P1 | ASSIGNED | worker-1 | `app/.../ui/screens/qibla/*`, `app/.../ui/components/QiblaDegreeDisplay.kt` | Bozulma durumunda uyarı + yönlendirme |
+| T-301 | Kıble kalibrasyon + manyetik bozulma yönlendirmeli dialog | P1 | DONE | worker-1 | `app/.../ui/components/QiblaDegreeDisplay.kt` (+ strings/test) | Bozulma durumunda uyarı + yönlendirme |
 
 ## Faz 4 — Release Hazırlığı
 
 | ID | Başlık | Öncelik | Durum | Sahip | Kapsam (dosya) | Kabul |
 |----|--------|---------|-------|-------|----------------|-------|
 | T-401 | İmzalı release altyapısı (keystore docs + workflow eki) | P1 | PENDING | — | `.github/workflows/release.yml`, `*/build.gradle.kts` | Dry-run release yeşil |
-| T-402 | `generate_static.py` adımını `deploy-website.yml`'e ekleme | P1 | PENDING | — | `.github/workflows/deploy-website.yml` | Site deploy'da statik sayfalar üretiliyor |
+| T-402 | `generate_static.py` adımını `deploy-website.yml`'e ekleme | P1 | ASSIGNED | worker-1 | `.github/workflows/deploy-website.yml` | Site deploy'da statik sayfalar üretiliyor |
 | T-403 | `release.yml` RELEASE_REPO_TOKEN guard denetimi (`if: env...` job-seviyesi env'siz) | P2 | PENDING | — | `.github/workflows/release.yml` | Guard gerçekten çalışıyor veya düzeltilmiş |
 
 ---
