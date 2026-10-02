@@ -25,4 +25,18 @@ class TesbihatStepInitializationTest {
         assertEquals("Uzun", TesbihatMode.UZUN.displayName)
         assertEquals("Kısa", TesbihatMode.KISA.displayName)
     }
+
+    @Test
+    fun uzunTesbihatSteps_perPrayerStepCountsAndNoFatiha() {
+        assertEquals(18, LongTesbihatSteps.sabahSteps.size)
+        assertEquals(13, LongTesbihatSteps.ogleSteps.size)
+        assertEquals(13, LongTesbihatSteps.ikindiSteps.size)
+        assertEquals(17, LongTesbihatSteps.aksamSteps.size)
+        assertEquals(13, LongTesbihatSteps.yatsiSteps.size)
+
+        TesbihatPrayerTime.values().forEach { prayerTime ->
+            val steps = LongTesbihatSteps.getSteps(prayerTime)
+            assertTrue(steps.none { it.title.contains("Fatiha", ignoreCase = true) || it.title.contains("Fâtiha", ignoreCase = true) })
+        }
+    }
 }

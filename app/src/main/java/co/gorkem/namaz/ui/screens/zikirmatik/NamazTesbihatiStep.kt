@@ -34,7 +34,7 @@ object NamazTesbihatiSteps {
         NamazTesbihatiStep(
             title = "1. İstiğfar ve Selam",
             textArabic = "اَللّٰهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ",
-            textTurkish = "Allâhümme ente’s-selâmü ve minke’s-selâm, tebârakte yâ ze’l-celâli ve’l-ikrâm.",
+            textTurkish = "Allâhümme ente’s-selâmü ve minke’s-selâm, tebârekte yâ ẕe’l-celâli ve’l-ikrâm.",
             meaning = "Allah'ım! Sen kurtuluş merciisin, esenlik ve selamet Sendendir. Ey celal ve ikram sahibi Allah'ım! Sen ne yücesin.",
             type = StepType.PRAYER
         ),
@@ -48,21 +48,21 @@ object NamazTesbihatiSteps {
         NamazTesbihatiStep(
             title = "3. Tevhid ve Tesbih Duası",
             textArabic = "سُبْحَانَ اللهِ وَالْحَمْدُ للهِ وَلَا إِلٰهَ إِلَّا اللهُ وَاللهُ أَكْبَرُ وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللهِ الْعَلِيِّ الْعَظِيمِ",
-            textTurkish = "Subhânallâhi vel-hamdü lillâhi ve lâ ilâhe illallâhü vallâhü ekber. Ve lâ havle ve lâ kuvvete illâ billâhil-aliyyil-azîm.",
+            textTurkish = "Sübḥânallahi ve’l-ḥamdü lillâhi ve lâ ilâhe illâllahü vallahü ekber ve lâ ḥavle ve lâ ḳuvvete illâ billâhi’l-ʿaliyyi’l-ʿaẓîm.",
             meaning = "Allah'ı bütün noksan sıfatlardan tenzih eder, kemal sıfatlarla muttasıf olduğunu kabul ederim. Bütün hamd ve şükürler Allah'adır. Allah'tan başka hiçbir ilah yoktur. İhtiyaçları gideren ve zararları yok eden yalnız yüce ve güçlü olan Allah'tır.",
             type = StepType.PRAYER
         ),
         NamazTesbihatiStep(
             title = "4. Âyet-el Kürsî",
             textArabic = "اَللّٰهُ لَا إِلٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ لَهُ مَا فِي السَّمٰوَاتِ وَمَا فِي الْأَرْضِ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ وَسِعَ كُرْسِيُّهُ السَّمٰوَاتِ وَالْأَرْضَ وَلَا يَؤُدُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ",
-            textTurkish = "Allâhü lâ ilâhe illâ hüvel-hayyül-kayyûm. Lâ te'huzühû sinetün ve lâ nevm. Lehû mâ fis-semâvâti vemâ fil-ard. Menzellezî yeşfe'u 'indehû illâ bi-iznih. Ya'lemü mâ beyne eydîhim vemâ halfehüm. Velâ yuhîtûne bi-şey'in min 'ilmihî illâ bimâ şâ'. Vesi'a kürsiyyühüs-semâvâti vel-ard. Velâ ye'ûdühû hıfzuhümâ ve hüvel-aliyyül-azîm.",
+            textTurkish = "Bismillâhirraḥmânirraḥîm. Allahü lâ ilâhe illâ hüve’l-ḥayyü’l-ḳayyûm. Lâ te’ḫuẕühû sinetün ve lâ nevm. Lehû mâ fi’s-semâvâti vemâ fi’l-arḍı. Menẕelleẕî yeşfeʿu ʿındehû illâ bi-iẕnih. Yâʿlemü mâ beyne eydîhim ve mâ ḫalfehüm ve lâ yuḥîṭûne bi-şey’in min-ʿılmihî illâ bi-mâ şâe. Vesiʿa kürsiyyühü’s-semâvâti ve’l-arḍi. Velâ yeûdühû ḥıfẓuhümâ ve hüve’l-ʿaliyyü’l-ʿaẓîm.",
             meaning = "Allah, O'ndan başka ilah yoktur; O, hayydir, kayyumdur. Kendisine ne uyku gelir ne de uyuklama. Göklerde ve yerdekilerin hepsi O'nundur. İzni olmadan O'nun katında kim şefaat edebilir? O, kullarının yaptıklarını ve yapacaklarını bilir. O'nun bildirdiklerinin dışında insanlar O'nun ilminden hiçbir şeyi tam olarak bilemezler. O'nun kürsüsü gökleri ve yeri içine alır, onları koruyup gözetmek kendisine zor gelmez. O, yücedir, büyüktür.",
             type = StepType.PRAYER
         ),
         NamazTesbihatiStep(
             title = "5. Sübhanallah",
             textArabic = "وَهُوَ الْعَلِيُّ الْعَظِيمُ ذُو الْجَلَالِ سُبْحَانَ اللهِ",
-            textTurkish = "Ve hüvel-aliyyül-azîmü zül-celâli sübhânallâh.",
+            textTurkish = "Ve hüve’l-ʿaliyyü’l-ʿazîmu zü’l-celâli sübḥânellâh.",
             meaning = "O yücedir, büyüktür, celal sahibidir; Allah'ı noksan sıfatlardan tenzih ederim.",
             type = StepType.COUNTER,
             targetCount = 33
@@ -70,7 +70,7 @@ object NamazTesbihatiSteps {
         NamazTesbihatiStep(
             title = "6. Elhamdülillah",
             textArabic = "سُبْحَانَ الْبَاقِي دَائِمًا الْحَمْدُ للهِ",
-            textTurkish = "Sübhânel-bâkî dâimenil-hamdülillâh.",
+            textTurkish = "Sübḥâne’l-bâḳî dâimeni’l-ḥamdülillâh.",
             meaning = "Baki ve daimi olan Allah'a hamdolsun.",
             type = StepType.COUNTER,
             targetCount = 33
@@ -78,7 +78,7 @@ object NamazTesbihatiSteps {
         NamazTesbihatiStep(
             title = "7. Allahuekber",
             textArabic = "رَبِّ الْعَالَمِينَ تَعَالَى شَانُهُ اَللهُ أَكْبَرُ",
-            textTurkish = "Rabbil-âlemîne teâlâ şânühü Allâhü ekber.",
+            textTurkish = "Rabbi’l-ʿâlemîne teʿâlâ şânühü Allâhü Ekber.",
             meaning = "Alemlerin rabbi olan Allah'ın şanı yücedir, O en büyüktür.",
             type = StepType.COUNTER,
             targetCount = 33
@@ -86,7 +86,7 @@ object NamazTesbihatiSteps {
         NamazTesbihatiStep(
             title = "8. Tahlil ve Haşir Duası",
             textArabic = "لَا إِلٰهَ إِلَّا اللّٰهُ وَحْدَهُ لَا شَرِيكَ لَهُ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ\n\nاَللّٰهُمَّ احْشُرْنَا فِي زُمْرَةِ الصَّالِحِينَ",
-            textTurkish = "Lâ ilâhe illallâhü vahdehû lâ şerîke leh. Lehül-mülkü ve lehül-hamdü ve hüve alâ külli şey'in kadîr.\n\nAllâhümmehşurnâ fî zümretis-sâlihîn.",
+            textTurkish = "Lâ ilâhe illallâhü vaḥdehû lâ şerîke leh. Lehü’l-mülkü ve lehü’l-ḥamdü ve hüve ʿalâ külli şey’in ḳadîr.\n\nAllâhümmehşurnâ fî zümretis-sâlihîn.",
             meaning = "Allah Teala'dan başka ilah yoktur, tek ilah sadece odur, ortağı da yoktur. Bütün mülk O'na aittir. Bütün hamdüsenalar O'nadır. O her şeye kadirdir. Allah'ım bizi salihler zümresiyle haşreyle.",
             type = StepType.PRAYER
         ),
