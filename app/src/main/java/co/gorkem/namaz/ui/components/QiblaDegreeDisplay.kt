@@ -29,14 +29,22 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +67,32 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+enum class GuidanceTone { NEUTRAL, WARNING }
+
+enum class CompassGuidance(
+    val tone: GuidanceTone,
+    val showsFigureEight: Boolean,
+    val showsMetalHint: Boolean
+) {
+    NONE(GuidanceTone.NEUTRAL, false, false),
+    CALIBRATION(GuidanceTone.NEUTRAL, true, false),
+    MAGNETIC_INTERFERENCE(GuidanceTone.WARNING, false, true)
+}
+
+fun resolveCompassGuidance(
+    needsCalibration: Boolean,
+    isMagneticDistorted: Boolean,
+    sensorAccuracy: Int
+): CompassGuidance {
+    if (isMagneticDistorted) return CompassGuidance.MAGNETIC_INTERFERENCE
+    if (needsCalibration) return CompassGuidance.CALIBRATION
+    return when (sensorAccuracy) {
+        SensorManager.SENSOR_STATUS_UNRELIABLE,
+        SensorManager.SENSOR_STATUS_ACCURACY_LOW -> CompassGuidance.CALIBRATION
+        else -> CompassGuidance.NONE
+    }
+}
+
 @Composable
 fun QiblaDegreeDisplay(
     bearing: Double,
@@ -73,6 +107,12 @@ fun QiblaDegreeDisplay(
     val primary = MaterialTheme.colorScheme.primary
     val primaryContainer = MaterialTheme.colorScheme.primaryContainer
     val surfaceContainerLow = MaterialTheme.colorScheme.surfaceContainerLow
+
+    val guidance = resolveCompassGuidance(
+        needsCalibration = needsCalibration,
+        isMagneticDistorted = isMagneticDistorted,
+        sensorAccuracy = sensorAccuracy ?: SensorManager.SENSOR_STATUS_NO_CONTACT
+    )
 
     val contentColor by animateColorAsState(
         targetValue = if (isAligned) primary else MaterialTheme.colorScheme.onSurface,
@@ -321,37 +361,13 @@ fun QiblaDegreeDisplay(
                     )
                 }
 
-                if (needsCalibration || isMagneticDistorted) {
+                if (guidance != CompassGuidance.NONE) {
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f))
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.width(16.dp).height(16.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = when {
-                                needsCalibration -> stringResource(R.string.qibla_calibration_needed)
-                                isMagneticDistorted -> stringResource(R.string.qibla_magnetic_distortion)
-                                else -> ""
-                            },
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
+                    CompassGuidanceCard(
+                        guidance = guidance,
+                        sensorAccuracy = sensorAccuracy
+                    )
                 }
 
                 sensorAccuracy?.let { accuracy ->
@@ -391,6 +407,115 @@ fun QiblaDegreeDisplay(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompassGuidanceCard(
+    guidance: CompassGuidance,
+    sensorAccuracy: Int?
+) {
+    var expanded by remember(guidance) { mutableStateOf(true) }
+
+    val isInterference = guidance.tone == GuidanceTone.WARNING
+    val containerColor = if (isInterference) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.tertiaryContainer
+    }
+    val contentColor = if (isInterference) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    }
+    val accentColor = if (isInterference) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.tertiary
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (isInterference) Icons.Default.Warning else Icons.Default.Explore,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = accentColor
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = stringResource(
+                        if (isInterference) R.string.qibla_interference_title
+                        else R.string.qibla_calibration_title
+                    ),
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = contentColor,
+                    modifier = Modifier.weight(1f)
+                )
+                if (!isInterference) {
+                    IconButton(onClick = { expanded = !expanded }) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = stringResource(
+                                if (expanded) R.string.qibla_calibration_collapse
+                                else R.string.qibla_calibration_expand
+                            ),
+                            tint = contentColor
+                        )
+                    }
+                }
+            }
+
+            if (expanded) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = if (guidance.showsFigureEight) {
+                        stringResource(R.string.qibla_calibration_figure_eight)
+                    } else {
+                        stringResource(R.string.qibla_interference_move_away)
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = contentColor
+                )
+
+                if (guidance == CompassGuidance.CALIBRATION) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val progress = when (sensorAccuracy) {
+                        SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> 1f
+                        SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> 0.66f
+                        else -> 0.33f
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = accentColor,
+                        trackColor = accentColor.copy(alpha = 0.18f)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(R.string.qibla_calibration_waiting),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = 0.8f)
+                    )
                 }
             }
         }
