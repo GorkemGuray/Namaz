@@ -45,8 +45,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -432,6 +435,15 @@ private fun NamazTesbihatiFlow(
                                 }
                             }
 
+                            val gestureTriggers = remember(currentStep.handGesture) {
+                                currentStep.handGesture?.let { extractGestureTriggers(it) } ?: emptyList()
+                            }
+                            val triggerMatches = remember(currentStep.textTurkish, gestureTriggers) {
+                                if (gestureTriggers.isNotEmpty()) {
+                                    findTriggerMatches(currentStep.textTurkish, gestureTriggers)
+                                } else emptyList()
+                            }
+
                             if (currentStep.textTurkish.isNotEmpty()) {
                                 Column(
                                     modifier = Modifier
@@ -452,20 +464,43 @@ private fun NamazTesbihatiFlow(
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
                                         )
                                     }
-                                    Text(
-                                        text = currentStep.textTurkish,
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontSize = 16.sp,
-                                            lineHeight = 24.sp,
-                                            textAlign = TextAlign.Center,
-                                            fontWeight = FontWeight.Medium
-                                        ),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
+                                    if (triggerMatches.isNotEmpty()) {
+                                        val highlightColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.65f)
+                                        val onHighlightColor = MaterialTheme.colorScheme.onTertiaryContainer
+                                        val annotatedText = remember(currentStep.textTurkish, triggerMatches, highlightColor, onHighlightColor) {
+                                            buildAnnotatedReading(
+                                                reading = currentStep.textTurkish,
+                                                matches = triggerMatches,
+                                                highlightColor = highlightColor,
+                                                onHighlightColor = onHighlightColor
+                                            )
+                                        }
+                                        Text(
+                                            text = annotatedText,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontSize = 16.sp,
+                                                lineHeight = 24.sp,
+                                                textAlign = TextAlign.Center,
+                                                fontWeight = FontWeight.Medium
+                                            ),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Text(
+                                            text = currentStep.textTurkish,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontSize = 16.sp,
+                                                lineHeight = 24.sp,
+                                                textAlign = TextAlign.Center,
+                                                fontWeight = FontWeight.Medium
+                                            ),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
 
-                            if (currentStep.handGesture != null) {
+                            if (currentStep.handGesture != null && triggerMatches.isEmpty()) {
                                 Row(
                                     modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -820,5 +855,196 @@ private fun vibrate(context: Context, isTargetReached: Boolean) {
         @Suppress("DEPRECATION")
         vibrator.vibrate(if (isTargetReached) 300L else 30L)
     }
+}
+
+data class GestureTrigger(
+    val phrase: String,
+    val isPrefix: Boolean,
+    val emoji: String
+)
+
+data class GestureTriggerMatch(
+    val trigger: GestureTrigger,
+    val range: IntRange
+)
+
+fun extractGestureTriggers(gesture: String): List<GestureTrigger> {
+    if (gesture.isBlank()) return emptyList()
+    val matches = Regex("""["“]([^"”]+)["”]""").findAll(gesture).toList()
+    if (matches.isEmpty()) return emptyList()
+
+    return matches.mapIndexed { index, match ->
+        val rawContent = match.groupValues[1]
+        val isPrefix = rawContent.endsWith("...") || rawContent.endsWith("…")
+        val phrase = rawContent.removeSuffix("...").removeSuffix("…").trim()
+
+        val afterStart = match.range.last + 1
+        val afterEnd = if (index < matches.size - 1) matches[index + 1].range.first else gesture.length
+        val afterText = if (afterStart < afterEnd) gesture.substring(afterStart, afterEnd).lowercase() else ""
+
+        val emoji = when {
+            afterText.contains("yere") || afterText.contains("aşağı") -> "🫳"
+            afterText.contains("yukarı") || afterText.contains("semaya") -> "🤲"
+            else -> "🤲"
+        }
+
+        GestureTrigger(
+            phrase = phrase,
+            isPrefix = isPrefix,
+            emoji = emoji
+        )
+    }
+}
+
+fun findTriggerMatches(reading: String, triggers: List<GestureTrigger>): List<GestureTriggerMatch> {
+    if (reading.isBlank() || triggers.isEmpty()) return emptyList()
+
+    val normalizedReading = normalizeForMatching(reading)
+    if (normalizedReading.text.isEmpty()) return emptyList()
+
+    val result = mutableListOf<GestureTriggerMatch>()
+    var searchFromNormIdx = 0
+
+    for (trigger in triggers) {
+        val normPhrase = normalizePhrase(trigger.phrase)
+        if (normPhrase.isEmpty()) continue
+
+        val matchNormStart = normalizedReading.text.indexOf(normPhrase, searchFromNormIdx)
+        if (matchNormStart == -1) continue
+
+        val matchNormEnd = matchNormStart + normPhrase.length - 1
+        val origStart = normalizedReading.origIndices[matchNormStart]
+        val phraseEndOrig = normalizedReading.origIndices[matchNormEnd]
+
+        val origEnd = if (trigger.isPrefix) {
+            minOf(reading.length - 1, maxOf(phraseEndOrig, origStart + 23))
+        } else {
+            phraseEndOrig
+        }
+
+        result.add(GestureTriggerMatch(trigger, origStart..origEnd))
+        searchFromNormIdx = matchNormEnd + 1
+    }
+
+    return result
+}
+
+fun findTriggerRanges(reading: String, triggers: List<GestureTrigger>): List<IntRange> {
+    return findTriggerMatches(reading, triggers).map { it.range }
+}
+
+fun buildAnnotatedReading(
+    reading: String,
+    matches: List<GestureTriggerMatch>,
+    highlightColor: Color,
+    onHighlightColor: Color
+): AnnotatedString {
+    if (matches.isEmpty()) return AnnotatedString(reading)
+
+    val sortedMatches = matches.sortedBy { it.range.first }
+    val builder = AnnotatedString.Builder()
+    var cursor = 0
+
+    for (match in sortedMatches) {
+        if (match.range.first > cursor) {
+            builder.append(reading.substring(cursor, match.range.first))
+        }
+
+        val spanStart = maxOf(cursor, match.range.first)
+        val spanEnd = minOf(reading.length, match.range.last + 1)
+        if (spanStart < spanEnd) {
+            builder.withStyle(
+                SpanStyle(
+                    fontWeight = FontWeight.Bold,
+                    background = highlightColor,
+                    color = onHighlightColor
+                )
+            ) {
+                builder.append(reading.substring(spanStart, spanEnd))
+            }
+            builder.append(" ${match.trigger.emoji}")
+            cursor = spanEnd
+        }
+    }
+
+    if (cursor < reading.length) {
+        builder.append(reading.substring(cursor))
+    }
+
+    return builder.toAnnotatedString()
+}
+
+private data class NormalizedString(
+    val text: String,
+    val origIndices: IntArray
+)
+
+private fun isStrippedChar(c: Char): Boolean = when (c) {
+    '-', '‐', '‑', '‒', '–', '—', '\u00AD' -> true
+    '\'', '’', '‘', 'ʻ', 'ʼ', 'ʿ', 'ʾ', '`' -> true
+    '"', '“', '”', '«', '»' -> true
+    '^', '~', '´' -> true
+    else -> false
+}
+
+private fun foldChar(c: Char): Char = when (c) {
+    'â', 'Â' -> 'a'
+    'î', 'Î' -> 'i'
+    'û', 'Û' -> 'u'
+    'ḥ', 'Ḥ', 'ḫ', 'Ḫ' -> 'h'
+    'ḳ', 'Ḳ' -> 'k'
+    'š', 'Š' -> 's'
+    'ḍ', 'Ḍ' -> 'd'
+    'ẓ', 'Ẓ', 'ẕ', 'Ẕ' -> 'z'
+    'ṭ', 'Ṭ' -> 't'
+    'İ', 'I' -> 'i'
+    'ı' -> 'i'
+    else -> c.lowercaseChar()
+}
+
+private fun normalizeForMatching(input: String): NormalizedString {
+    val sb = StringBuilder(input.length)
+    val indices = ArrayList<Int>(input.length)
+    var lastWasSpace = false
+
+    for (i in input.indices) {
+        val c = input[i]
+        if (c.isWhitespace()) {
+            if (!lastWasSpace && sb.isNotEmpty()) {
+                sb.append(' ')
+                indices.add(i)
+                lastWasSpace = true
+            }
+        } else if (isStrippedChar(c)) {
+            continue
+        } else {
+            sb.append(foldChar(c))
+            indices.add(i)
+            lastWasSpace = false
+        }
+    }
+
+    return NormalizedString(sb.toString(), indices.toIntArray())
+}
+
+private fun normalizePhrase(phrase: String): String {
+    val sb = StringBuilder(phrase.length)
+    var lastWasSpace = false
+
+    for (c in phrase) {
+        if (c.isWhitespace()) {
+            if (!lastWasSpace && sb.isNotEmpty()) {
+                sb.append(' ')
+                lastWasSpace = true
+            }
+        } else if (isStrippedChar(c)) {
+            continue
+        } else {
+            sb.append(foldChar(c))
+            lastWasSpace = false
+        }
+    }
+
+    return sb.toString().trim()
 }
 
