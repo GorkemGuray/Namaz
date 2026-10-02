@@ -106,6 +106,14 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate static SEO pages
+        run: python3 website/generate_static.py
+
       - name: Push version.json to public release repo
         if: env.RELEASE_REPO_TOKEN != ''
         env:
