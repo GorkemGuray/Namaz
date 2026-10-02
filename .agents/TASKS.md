@@ -44,5 +44,11 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 | T-404 | `release.yml`'e `generate_static.py` üretim adımı (tag'de bayat site riski) | P1 | DONE | worker-1 | `.github/workflows/release.yml` | Tag release'inde site taze üretiliyor |
 | T-405 | Fork'ta guard'sız "Create Release" adımı (secret yoksa erken patlar) | P2 | PENDING | — | `.github/workflows/release.yml` | Fork tag push'unda temiz skip veya bilinçli fail |
 
+## Faz 5 — Tesbihat Sadeleştirme (kullanıcı kararı 2026-10-02: tek akış, sekmesiz; öncelik Uzun → Kısa)
+
+| ID | Başlık | Öncelik | Durum | Sahip | Kapsam (dosya) | Kabul |
+|----|--------|---------|-------|-------|----------------|-------|
+| T-501 | Tesbihat ekranı tek akışa indir (TabRow/HorizontalPager kaldır, varsayılan Uzun) | P0 | ASSIGNED | worker-1 | `app/.../ui/screens/zikirmatik/ZikirmatikScreen.kt` (+ ViewModel varsayılanı, TR/EN string) | Sekmesiz tek ekran, varsayılan Uzun, Serbest erişilebilir |
+
 ---
 *Yeni görev ekleme: coordinator tabloya satır ekler, ID sıradaki numaradan verilir. Worker kendi görev açamaz.*
