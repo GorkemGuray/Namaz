@@ -5,6 +5,14 @@
 # ui
 - Widget settings sayfalarında safe area/safety zone'lara dikkat edilmeli, tab bar veya status bar ile çakışma olmamalı. Confidence: 0.65
 - Üretim/gerçek cihaz UI yolunda asla mock ya da uydurma veri (sahte vakit, `20:33`, `--:--` gibi) render edilmemeli; veri yoksa dürüst bir yükleniyor/boş durum tercih ediliyor, "düzgün görünen" sahte veri lehine değil. Testlerle de sabitlenmeli (örn. resolved data asla uydurma vakit içermemeli). Confidence: 0.8
+- Sensör tabanlı uyarı durumlarında iki farklı hâl tek bir hata bandında birleştirilmemeli: kullanıcının eylemiyle kendiliğinden düzelen kalibrasyon rehberi collapsible olup doğruluk toparlanınca kompozisyondan tamamen kalkmalı, kullanıcı hemen müdahale etmeden geçmeyecek parazit/bozulma uyarısı ise kapanmaz (kapatma butonu olmadan) görünür kalmalı. İkisi farklı container rengi, ikon ve "tone" ile görsel olarak ayrışmalı. Confidence: 0.75
+- Açılır/kapanır UI'da ikon butonları için aç/kapa `contentDescription` metinlerini ayrı string anahtarlarıyla tanımlamayı ve zorunlu kılmayı bekliyor (erişilebilirlik). Aynı zamanda canlı doğruluk göstergesi isteniyorsa (LinearProgressIndicator vb.) doğruluk seviyesini görsel ilerlemeye çevirmek kabul; ana ölçütlü kural "kullanıcı iyileşmeyi ekranda görebilmeli". Confidence: 0.7
+
+# yerellestirme
+- Kullanıcıya görünen her yeni metin `res/values/strings.xml` ve `res/values-en/strings.xml` dosyalarına birebir aynı anahtarla eklenmeli; TR/EN senkronluğu gözle değil, iki dosyanın `<string name="...">` anahtar kümelerini karşılaştıran programatik bir kontrol ile kanıtlanmalı (yeni anahtarların ikisinde de bulunduğu ayrıca teyit edilmeli). Confidence: 0.85
+- Yeni string'ler mevcut kaynaklara komşu/ilgili bir anahtarın hemen altına ekleniyor (ilgisiz bir yere yapıştırmak yerine). Confidence: 0.7
+- Mevcut string'ler yeni ihtiyacı tam karşılamıyorsa (örn. net bir "Son veri / Last update" etiketi) dosyalar kapsam dışıysa yeni anahtar uydurmak yerine var olan en yakın string'i dürüstçe kullanmayı ve daha iyi etiket için koordinatöre soru sormayı tercih ediyor. Confidence: 0.7
+- Bir değişiklik eski bir string'i kullanılmaz hale getiriyorsa (orphan) o anahtarı kendiliğinden silmiyor, başka yerde kullanılıp kullanılmadığını sorup koordinatöre bırakıyor. Confidence: 0.7
 
 # git
 - .commandcode/taste/ öğrenilen tercihler dosyası git'e commit edilmeli, projeye özel kuralların kalıcı olması sağlanmalı. Confidence: 0.65
