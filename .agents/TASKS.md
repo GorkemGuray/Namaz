@@ -51,7 +51,7 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 | T-501 | Tesbihat ekranı tek akışa indir (TabRow/HorizontalPager kaldır, varsayılan Uzun) | P0 | DONE | worker-1 | `app/.../ui/screens/zikirmatik/ZikirmatikScreen.kt` (+ ViewModel varsayılanı, TR/EN string) | Sekmesiz tek ekran, varsayılan Uzun, Serbest erişilebilir (K4 ekran görüntüsü ile teyitli) |
 | T-502 | Uzun tesbihat içeriğini Mavera'ya birebir uyarla (okunuş+Arapça, Fâtiha adımları kalkar) | P0 | DONE | worker-1 | `app/.../ui/screens/zikirmatik/LongTesbihatSteps.kt` (+ kısa tutarlılık, test) | 5 vakit Mavera ile birebir, uzunlarda Fâtiha yok (K4 teyitli). Karar: kısa listedeki Fâtiha adımı KALIYOR (kullanıcı 2026-10-02) |
 | T-503 | Wear tesbihat içerik paritesi (T-502 sonrası) | P1 | PENDING | — | `wear/.../ui/screens/WearZikirmatikScreen.kt`, `wear/.../ui/screens/WearNamazTesbihatiStep.kt` | Saat içeriği mobil ile aynı kaynak |
-| T-504 | Tesbihat kartı rötuş: Serbest kalkar, Anlam isteğe bağlı (varsayılan kapalı), el notu metin içine | P0 | ASSIGNED | worker-1 | `app/.../ui/screens/zikirmatik/ZikirmatikScreen.kt` (+ TR/EN string temizliği) | Sekmesiz akış sadeleşir, anlam kapalı, el notu satır içinde |
+| T-504 | Tesbihat kartı rötuş: Serbest kalkar, Anlam isteğe bağlı (varsayılan kapalı), el notu metin içine | P0 | DONE | worker-1 | `app/.../ui/screens/zikirmatik/ZikirmatikScreen.kt` (+ TR/EN string temizliği) | Sekmesiz akış sadeleşir, anlam kapalı, el notu satır içinde (K4 teyitli) |
 
 ---
 *Yeni görev ekleme: coordinator tabloya satır ekler, ID sıradaki numaradan verilir. Worker kendi görev açamaz.*
