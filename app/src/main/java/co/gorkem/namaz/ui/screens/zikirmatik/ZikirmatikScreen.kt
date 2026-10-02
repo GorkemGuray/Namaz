@@ -88,7 +88,7 @@ fun ZikirmatikScreen(
                 context = context
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
@@ -120,13 +120,13 @@ private fun NamazTesbihatiFlow(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(12.dp)
                     .navigationBarsPadding()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.dp),
+                        .padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -146,7 +146,7 @@ private fun NamazTesbihatiFlow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     itemsIndexed(activeSteps) { index, item ->
                         val isCurrent = index == currentStepIndex
@@ -168,7 +168,7 @@ private fun NamazTesbihatiFlow(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
@@ -200,7 +200,7 @@ private fun NamazTesbihatiFlow(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -244,7 +244,7 @@ private fun NamazTesbihatiFlow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp),
+                .padding(vertical = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilterChip(
@@ -288,7 +288,7 @@ private fun NamazTesbihatiFlow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TesbihatPrayerTime.values().forEach { prayer ->
@@ -314,11 +314,11 @@ private fun NamazTesbihatiFlow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp),
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -345,7 +345,7 @@ private fun NamazTesbihatiFlow(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 LinearProgressIndicator(
                     progress = { (currentStepIndex + 1).toFloat() / totalSteps.toFloat() },
                     modifier = Modifier
@@ -397,7 +397,7 @@ private fun NamazTesbihatiFlow(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(vertical = 4.dp),
+                    modifier = Modifier.padding(vertical = 2.dp),
                     textAlign = TextAlign.Center
                 )
 
@@ -405,8 +405,8 @@ private fun NamazTesbihatiFlow(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .defaultMinSize(minHeight = 180.dp)
-                            .padding(vertical = 6.dp),
+                            .defaultMinSize(minHeight = 120.dp)
+                            .padding(vertical = 4.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                         ),
@@ -415,7 +415,7 @@ private fun NamazTesbihatiFlow(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Top
                         ) {
@@ -430,7 +430,7 @@ private fun NamazTesbihatiFlow(
                                         ),
                                         fontWeight = FontWeight.Normal,
                                         color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.padding(bottom = 16.dp)
+                                        modifier = Modifier.padding(bottom = 10.dp)
                                     )
                                 }
                             }
@@ -448,13 +448,13 @@ private fun NamazTesbihatiFlow(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(bottom = 12.dp),
+                                        .padding(bottom = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Surface(
                                         shape = CircleShape,
                                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                        modifier = Modifier.padding(bottom = 6.dp)
+                                        modifier = Modifier.padding(bottom = 4.dp)
                                     ) {
                                         Text(
                                             text = "Okunuşu",
@@ -502,7 +502,7 @@ private fun NamazTesbihatiFlow(
 
                             if (currentStep.handGesture != null && triggerMatches.isEmpty()) {
                                 Row(
-                                    modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
+                                    modifier = Modifier.padding(top = 2.dp, bottom = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
@@ -519,8 +519,8 @@ private fun NamazTesbihatiFlow(
                             if (currentStep.meaning.isNotEmpty()) {
                                 TextButton(
                                     onClick = { showMeaning = !showMeaning },
-                                    modifier = Modifier.padding(top = 4.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                    modifier = Modifier.padding(top = 2.dp),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (showMeaning) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -546,7 +546,7 @@ private fun NamazTesbihatiFlow(
                                         ),
                                         shape = MaterialTheme.shapes.medium
                                     ) {
-                                        Column(modifier = Modifier.padding(12.dp)) {
+                                        Column(modifier = Modifier.padding(8.dp)) {
                                             Text(
                                                 text = "Anlamı",
                                                 style = MaterialTheme.typography.labelSmall,
@@ -572,16 +572,16 @@ private fun NamazTesbihatiFlow(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 24.dp),
+                            .padding(vertical = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .size(110.dp)
+                                .size(88.dp)
                                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                                .padding(20.dp)
+                                .padding(16.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Check,
@@ -591,7 +591,7 @@ private fun NamazTesbihatiFlow(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
                             text = currentStep.textTurkish,
@@ -601,11 +601,11 @@ private fun NamazTesbihatiFlow(
                         )
 
                         if (currentStep.meaning.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             TextButton(
                                 onClick = { showMeaning = !showMeaning },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
                             ) {
                                 Icon(
                                     imageVector = if (showMeaning) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -622,13 +622,13 @@ private fun NamazTesbihatiFlow(
                             }
 
                             if (showMeaning) {
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = currentStep.meaning,
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(horizontal = 20.dp)
+                                    modifier = Modifier.padding(horizontal = 16.dp)
                                 )
                             }
                         }
@@ -638,7 +638,7 @@ private fun NamazTesbihatiFlow(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 6.dp, bottom = 4.dp),
+                        .padding(top = 4.dp, bottom = 2.dp),
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
                 ) {
@@ -657,7 +657,7 @@ private fun NamazTesbihatiFlow(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -721,7 +721,7 @@ private fun NamazTesbihatiFlow(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .padding(6.dp)
+                                            .padding(4.dp)
                                             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -759,7 +759,7 @@ private fun NamazTesbihatiFlow(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -779,8 +779,8 @@ private fun NamazTesbihatiFlow(
                                     onClick = { viewModel.nextTesbihatStep() },
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(44.dp)
-                                        .padding(horizontal = 12.dp),
+                                        .height(40.dp)
+                                        .padding(horizontal = 8.dp),
                                     shape = CircleShape
                                 ) {
                                     Text(
@@ -813,14 +813,14 @@ private fun NamazTesbihatiFlow(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(8.dp),
+                                    .padding(6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Button(
                                     onClick = { viewModel.resetTesbihat() },
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(48.dp),
+                                        .height(42.dp),
                                     shape = CircleShape
                                 ) {
                                     Text(
