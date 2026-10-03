@@ -59,8 +59,8 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 
 | ID | Başlık | Öncelik | Durum | Sahip | Kapsam (dosya) | Kabul |
 |----|--------|---------|-------|-------|----------------|-------|
-| T-507 | Font altyapısı + tesbihat kartı tipografisi (Amiri + serif başlık) | P0 | ASSIGNED | worker-1 | `app/.../res/font/*`, `ui/theme/Type.kt`, `ui/screens/zikirmatik/*` | Arapça Amiri, başlıklar serif, circumflex glif kanıtlı (K4) |
-| T-508 | Hero derinliği + bölüm başlığı deseni + kırmızı vurgular | P1 | PENDING | — | `ui/theme/*`, `ui/screens/home/*`, `ui/screens/zikirmatik/*` | 4 temada tutarlı, hassasiyet notlu |
+| T-507 | Font altyapısı + tesbihat kartı tipografisi (Amiri + serif başlık, kırmızı lafız) | P0 | ASSIGNED | worker-1 | `app/.../res/font/*`, `ui/theme/Type.kt`, `ui/screens/zikirmatik/*` | Arapça Amiri, başlıklar serif, Allah lafızları kırmızı, circumflex glif kanıtlı (K4) |
+| T-508 | Hero derinliği + bölüm başlığı deseni + tema önizlemeli seçici (+kâğıt tema kararı) | P1 | PENDING | — | `ui/theme/*`, `ui/screens/home/*`, `ui/screens/settings/*`, `ui/screens/zikirmatik/*` | 4 temada tutarlı, hassasiyet notlu |
 
 ---
 *Yeni görev ekleme: coordinator tabloya satır ekler, ID sıradaki numaradan verilir. Worker kendi görev açamaz.*
