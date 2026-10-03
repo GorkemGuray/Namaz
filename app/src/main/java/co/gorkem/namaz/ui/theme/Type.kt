@@ -2,9 +2,11 @@ package co.gorkem.namaz.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import co.gorkem.namaz.R
 
 /**
  * M3 Expressive Typography Scale
@@ -127,3 +129,32 @@ val ExpressiveTypography = Typography(
  * Legacy typography (for backward compatibility during transition)
  */
 val Typography = ExpressiveTypography
+
+val AmiriFontFamily = FontFamily(
+    Font(R.font.amiri_regular, FontWeight.Normal),
+    Font(R.font.amiri_bold, FontWeight.Bold)
+)
+
+val PlayfairDisplayFontFamily = FontFamily(
+    Font(R.font.playfair_display, FontWeight.Normal),
+    Font(R.font.playfair_display, FontWeight.Bold)
+)
+
+val Typography.arabicText: TextStyle
+    get() = TextStyle(
+        fontFamily = AmiriFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 24.sp,
+        lineHeight = 46.sp,
+        letterSpacing = 0.sp
+    )
+
+val Typography.serifTitle: TextStyle
+    get() = TextStyle(
+        fontFamily = PlayfairDisplayFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.sp
+    )
+

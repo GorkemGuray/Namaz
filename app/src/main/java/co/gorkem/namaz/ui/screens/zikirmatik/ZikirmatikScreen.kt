@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import co.gorkem.namaz.R
+import co.gorkem.namaz.ui.theme.arabicText
+import co.gorkem.namaz.ui.theme.serifTitle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -394,8 +396,7 @@ private fun NamazTesbihatiFlow(
             ) {
                 Text(
                     text = currentStep.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.serifTitle,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(vertical = 2.dp),
                     textAlign = TextAlign.Center
@@ -420,16 +421,21 @@ private fun NamazTesbihatiFlow(
                             verticalArrangement = Arrangement.Top
                         ) {
                             if (currentStep.textArabic.isNotEmpty()) {
+                                val redColor = MaterialTheme.colorScheme.error
+                                val baseColor = MaterialTheme.colorScheme.onSurface
+                                val annotatedArabic = remember(currentStep.textArabic, redColor, baseColor) {
+                                    annotateSacredWords(
+                                        arabic = currentStep.textArabic,
+                                        redColor = redColor,
+                                        baseColor = baseColor
+                                    )
+                                }
                                 SelectionContainer {
                                     Text(
-                                        text = currentStep.textArabic,
-                                        style = MaterialTheme.typography.headlineSmall.copy(
-                                            fontSize = 24.sp,
-                                            lineHeight = 42.sp,
+                                        text = annotatedArabic,
+                                        style = MaterialTheme.typography.arabicText.copy(
                                             textAlign = TextAlign.Center
                                         ),
-                                        fontWeight = FontWeight.Normal,
-                                        color = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.padding(bottom = 10.dp)
                                     )
                                 }
@@ -1047,4 +1053,54 @@ private fun normalizePhrase(phrase: String): String {
 
     return sb.toString().trim()
 }
+
+private const val ARABIC_COMBINING_MARKS = "[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]"
+private const val ARABIC_LETTERS = "[\\u0621-\\u064A\\u0671-\\u06D3]"
+private val ALLAH_SACRED_WORD_REGEX = Regex(
+    "(?:[\\u0627\\u0671\\u0625\\u0623\\u0622]$ARABIC_COMBINING_MARKS*\\u0644$ARABIC_COMBINING_MARKS*\\u0644$ARABIC_COMBINING_MARKS*\\u0647$ARABIC_COMBINING_MARKS*|\\uFDF2$ARABIC_COMBINING_MARKS*)(?!$ARABIC_COMBINING_MARKS*$ARABIC_LETTERS)"
+)
+
+fun annotateSacredWords(
+    arabic: String,
+    redColor: Color,
+    baseColor: Color
+): AnnotatedString {
+    if (arabic.isEmpty()) return AnnotatedString("")
+
+    val matches = ALLAH_SACRED_WORD_REGEX.findAll(arabic).toList()
+    if (matches.isEmpty()) {
+        val builder = AnnotatedString.Builder(arabic)
+        builder.addStyle(SpanStyle(color = baseColor), 0, arabic.length)
+        return builder.toAnnotatedString()
+    }
+
+    val builder = AnnotatedString.Builder()
+    var cursor = 0
+
+    for (match in matches) {
+        val start = match.range.first
+        val end = match.range.last + 1
+
+        if (start > cursor) {
+            builder.pushStyle(SpanStyle(color = baseColor))
+            builder.append(arabic.substring(cursor, start))
+            builder.pop()
+        }
+
+        builder.pushStyle(SpanStyle(color = redColor))
+        builder.append(match.value)
+        builder.pop()
+
+        cursor = end
+    }
+
+    if (cursor < arabic.length) {
+        builder.pushStyle(SpanStyle(color = baseColor))
+        builder.append(arabic.substring(cursor))
+        builder.pop()
+    }
+
+    return builder.toAnnotatedString()
+}
+
 
