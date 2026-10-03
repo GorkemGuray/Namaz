@@ -233,6 +233,7 @@ object AppThemeUtils {
                     scrim = Color(0xFF000000)
                 )
             )
+            else -> getGlanceColors(AppThemeSelection.EMERALD_OASIS)
         }
     }
 }

@@ -202,6 +202,13 @@
     <string name="theme_sapphire_night">Sapphire Night</string>
     <string name="theme_amber_sands">Amber Sands</string>
     <string name="theme_monochrome_platinum">Monochrome Platinum</string>
+    <string name="theme_yumusak_aydinlik">Soft Light</string>
+    <string name="theme_tam_aydinlik">Pure White</string>
+    <string name="theme_saman_kagidi">Parchment Paper</string>
+    <string name="theme_karanlik">Dark Theme</string>
+    <string name="theme_galaksi">Galaxy Theme</string>
+    <string name="theme_gun_batimi">Sunset</string>
+    <string name="theme_amber_gece">Amber Night</string>
 
     <!-- Notification Permission Rationale -->
     <string name="notification_permission_rationale_title">Notification Permission Required</string>

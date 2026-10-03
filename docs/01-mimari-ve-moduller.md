@@ -101,7 +101,7 @@ DataStore anahtarları:
 | `use_local_calculation` | Bool | false | true → dataSource=2 |
 | `data_source` | Int | 0 | 0 Aladhan / 1 İmsakiyem / 2 Lokal |
 | `language` | String | tr | + LocaleManager mirror |
-| `app_theme` | Int | 0 | 0 Emerald / 1 Sapphire / 2 Amber / 3 Mono |
+| `app_theme` | Int | 0 | 0-3 Dinamik (Emerald/Sapphire/Amber/Mono), 4-10 Sabit Görünümlü (Yumuşak Aydınlık..Amber Gece) |
 | `manual_city/district/district_id/lat/lon/timezone` | String | ""/Europe/Istanbul | manuel seçim |
 | `last_auto_*` | String | "" | GPS (lat/lon String) |
 | `recent_cities` | String JSON | [] | Gson max 5 dedup |
@@ -139,7 +139,7 @@ Her `set*` (hariç `setLastAutoLocation`) → `NamazWidgetUpdater.update()`.
 ## 7. UI Katmanı (app, ~35 dosya)
 
 - `ui/state/`: `HomeUiState(Loading/Success/Error/PermissionRequired)`, `QiblaUiState(Loading/CompassActive/StaticDirection/Error/LocationRequired)`.
-- `ui/theme/`: `AppThemeSelection` enum + `ThemeTokens` + light/dark scheme (`Color.kt`); `NamazTheme(dynamicColor=false)` (`Theme.kt`); `prayerHeroGradient/prayerAmbientColor/countdownAccentColor` (`PrayerColors.kt`); `ExpressiveShapes/Type/AppThemeUtils`.
+- `ui/theme/`: `AppThemeSelection` enum (11 tema: 0-3 sistem `darkTheme` takip eden dinamik çiftler; 4-10 sistem karanlık modundan bağımsız tek ve sabit palet render eden fixed-look temalar — Yumuşak Aydınlık, Tam Aydınlık, Saman Kâğıdı, Karanlık, Galaksi, Gün Batımı, Amber Gece) + `ThemeTokens` + light/dark & sabit `ColorScheme`'ler (`Color.kt`); `NamazTheme(dynamicColor=false, fixed-look desteği)` (`Theme.kt`); `prayerHeroGradient/prayerAmbientColor/countdownAccentColor` (`PrayerColors.kt`); `ExpressiveShapes/Type/AppThemeUtils`.
 - `ui/components/`: `PrayerHeroCard` (+`CountdownDisplay`), `PrayerTimesList`, `PrayerIcon`, `CountdownTimer` (epoch recompute), `QiblaCompass` (shortest-path + glow), `QiblaDegreeDisplay` (doğruluk + kalibrasyon banner), `UpdateBanner/UpdateCheckButton`.
 - `ui/screens/`: home (dashboard + `prayerTimesJob` race fix + prefs collect reload), calendar (ay navigasyonu), cityselection (400ms debounce + TR-uppercase), settings (bildirim/metod/mezhep/tema/dil), qibla (histeresis + titreşim + `QiblaMap` MapLibre GreatCircle), zikirmatik (preset + custom + tesbihat fazları).
 

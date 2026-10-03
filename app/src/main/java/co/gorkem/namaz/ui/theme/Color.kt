@@ -9,8 +9,28 @@ enum class AppThemeSelection {
     EMERALD_OASIS,
     SAPPHIRE_NIGHT,
     AMBER_SANDS,
-    MONOCHROME_PLATINUM
+    MONOCHROME_PLATINUM,
+    YUMUSAK_AYDINLIK,
+    TAM_AYDINLIK,
+    SAMAN_KAGIDI,
+    KARANLIK,
+    GALAKSI,
+    GUN_BATIMI,
+    AMBER_GECE
 }
+
+val AppThemeSelection.isFixedLook: Boolean
+    get() = ordinal >= 4
+
+val AppThemeSelection.isDarkFixed: Boolean
+    get() = when (this) {
+        AppThemeSelection.KARANLIK,
+        AppThemeSelection.GALAKSI,
+        AppThemeSelection.GUN_BATIMI,
+        AppThemeSelection.AMBER_GECE -> true
+        else -> false
+    }
+
 
 private data class ThemeTokens(
     val lightPrimary: Color, val lightOnPrimary: Color,
@@ -384,9 +404,294 @@ private val themeTokens = mapOf(
     AppThemeSelection.MONOCHROME_PLATINUM to MonochromeTokens
 )
 
+val YumusakAydinlikScheme = lightColorScheme(
+    primary = Color(0xFFB3261E),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFF9DEDC),
+    onPrimaryContainer = Color(0xFF410E0B),
+    inversePrimary = Color(0xFFFFB4AB),
+    secondary = Color(0xFF4A635D),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFE0EAE6),
+    onSecondaryContainer = Color(0xFF19332D),
+    tertiary = Color(0xFF7A5930),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFF7E4CF),
+    onTertiaryContainer = Color(0xFF2D1E08),
+    error = Color(0xFFB3261E),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFF9DEDC),
+    onErrorContainer = Color(0xFF410E0B),
+    background = Color(0xFFF7F6F2),
+    onBackground = Color(0xFF1F1E1B),
+    surface = Color(0xFFF7F6F2),
+    onSurface = Color(0xFF1F1E1B),
+    surfaceVariant = Color(0xFFEDEBE4),
+    onSurfaceVariant = Color(0xFF5C5A54),
+    surfaceTint = Color(0xFFB3261E),
+    inverseSurface = Color(0xFF31302D),
+    inverseOnSurface = Color(0xFFF5F4F0),
+    surfaceDim = Color(0xFFDDDCD6),
+    surfaceBright = Color(0xFFF7F6F2),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF4F2EB),
+    surfaceContainer = Color(0xFFF0EEE7),
+    surfaceContainerHigh = Color(0xFFEAE8E0),
+    surfaceContainerHighest = Color(0xFFE4E2D9),
+    outline = Color(0xFF7D7A72),
+    outlineVariant = Color(0xFFCBC8BF),
+    scrim = Color(0xFF000000)
+)
+
+val TamAydinlikScheme = lightColorScheme(
+    primary = Color(0xFFC62828),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFFFEBEE),
+    onPrimaryContainer = Color(0xFF5C0000),
+    inversePrimary = Color(0xFFFF8A80),
+    secondary = Color(0xFF00695C),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFE0F2F1),
+    onSecondaryContainer = Color(0xFF00251A),
+    tertiary = Color(0xFF37474F),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFECEFF1),
+    onTertiaryContainer = Color(0xFF102027),
+    error = Color(0xFFC62828),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFEBEE),
+    onErrorContainer = Color(0xFF5C0000),
+    background = Color(0xFFFFFFFF),
+    onBackground = Color(0xFF111111),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF111111),
+    surfaceVariant = Color(0xFFF2F2F2),
+    onSurfaceVariant = Color(0xFF555555),
+    surfaceTint = Color(0xFFC62828),
+    inverseSurface = Color(0xFF2E2E2E),
+    inverseOnSurface = Color(0xFFF5F5F5),
+    surfaceDim = Color(0xFFE0E0E0),
+    surfaceBright = Color(0xFFFFFFFF),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFAFAFA),
+    surfaceContainer = Color(0xFFF5F5F5),
+    surfaceContainerHigh = Color(0xFFEBEBEB),
+    surfaceContainerHighest = Color(0xFFE0E0E0),
+    outline = Color(0xFF757575),
+    outlineVariant = Color(0xFFBDBDBD),
+    scrim = Color(0xFF000000)
+)
+
+val SamanKagidiScheme = lightColorScheme(
+    primary = Color(0xFFB83A2E),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFF7DDD9),
+    onPrimaryContainer = Color(0xFF420D08),
+    inversePrimary = Color(0xFFFFB4AB),
+    secondary = Color(0xFF3A695B),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFDCE8E3),
+    onSecondaryContainer = Color(0xFF133027),
+    tertiary = Color(0xFF7A5528),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFF7E5CF),
+    onTertiaryContainer = Color(0xFF2D1B06),
+    error = Color(0xFFB83A2E),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFF7DDD9),
+    onErrorContainer = Color(0xFF420D08),
+    background = Color(0xFFF5EFDD),
+    onBackground = Color(0xFF2C2218),
+    surface = Color(0xFFF5EFDD),
+    onSurface = Color(0xFF2C2218),
+    surfaceVariant = Color(0xFFEAE2CE),
+    onSurfaceVariant = Color(0xFF5D5345),
+    surfaceTint = Color(0xFFB83A2E),
+    inverseSurface = Color(0xFF362C22),
+    inverseOnSurface = Color(0xFFF7F2E6),
+    surfaceDim = Color(0xFFDCD4BF),
+    surfaceBright = Color(0xFFF5EFDD),
+    surfaceContainerLowest = Color(0xFFFCF9EE),
+    surfaceContainerLow = Color(0xFFF3EDDC),
+    surfaceContainer = Color(0xFFEFE8D4),
+    surfaceContainerHigh = Color(0xFFE9E1CD),
+    surfaceContainerHighest = Color(0xFFE2DAC4),
+    outline = Color(0xFF7E7364),
+    outlineVariant = Color(0xFFCBC0B0),
+    scrim = Color(0xFF000000)
+)
+
+val KaranlikScheme = darkColorScheme(
+    primary = Color(0xFFE06D53),
+    onPrimary = Color(0xFF2D1007),
+    primaryContainer = Color(0xFF4D2015),
+    onPrimaryContainer = Color(0xFFFFDBCF),
+    inversePrimary = Color(0xFF9E432D),
+    secondary = Color(0xFF5C9EAD),
+    onSecondary = Color(0xFF082229),
+    secondaryContainer = Color(0xFF1D3B42),
+    onSecondaryContainer = Color(0xFFBCE6EF),
+    tertiary = Color(0xFFD4A373),
+    onTertiary = Color(0xFF36210A),
+    tertiaryContainer = Color(0xFF4E341B),
+    onTertiaryContainer = Color(0xFFFFE1BF),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF14171A),
+    onBackground = Color(0xFFE4E7EB),
+    surface = Color(0xFF14171A),
+    onSurface = Color(0xFFE4E7EB),
+    surfaceVariant = Color(0xFF1E2328),
+    onSurfaceVariant = Color(0xFF9AA3AD),
+    surfaceTint = Color(0xFFE06D53),
+    inverseSurface = Color(0xFFE2E5E9),
+    inverseOnSurface = Color(0xFF14171A),
+    surfaceDim = Color(0xFF14171A),
+    surfaceBright = Color(0xFF383E46),
+    surfaceContainerLowest = Color(0xFF0F1214),
+    surfaceContainerLow = Color(0xFF161A1E),
+    surfaceContainer = Color(0xFF1A1E23),
+    surfaceContainerHigh = Color(0xFF22272E),
+    surfaceContainerHighest = Color(0xFF2C323B),
+    outline = Color(0xFF68737D),
+    outlineVariant = Color(0xFF3E464E),
+    scrim = Color(0xFF000000)
+)
+
+val GalaksiScheme = darkColorScheme(
+    primary = Color(0xFFC060A8),
+    onPrimary = Color(0xFF2D0825),
+    primaryContainer = Color(0xFF4A153D),
+    onPrimaryContainer = Color(0xFFAFA5EE),
+    inversePrimary = Color(0xFF7E2A6C),
+    secondary = Color(0xFF8E7CC3),
+    onSecondary = Color(0xFF1B1033),
+    secondaryContainer = Color(0xFF332554),
+    onSecondaryContainer = Color(0xFFE5DAFA),
+    tertiary = Color(0xFF5D8AA8),
+    onTertiary = Color(0xFF082130),
+    tertiaryContainer = Color(0xFF1C3B4E),
+    onTertiaryContainer = Color(0xFFCDE5F6),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF13141F),
+    onBackground = Color(0xFFE5E3F0),
+    surface = Color(0xFF13141F),
+    onSurface = Color(0xFFE5E3F0),
+    surfaceVariant = Color(0xFF1C1D2C),
+    onSurfaceVariant = Color(0xFF9B98B0),
+    surfaceTint = Color(0xFFC060A8),
+    inverseSurface = Color(0xFFE5E3F0),
+    inverseOnSurface = Color(0xFF13141F),
+    surfaceDim = Color(0xFF13141F),
+    surfaceBright = Color(0xFF393B52),
+    surfaceContainerLowest = Color(0xFF0E0F17),
+    surfaceContainerLow = Color(0xFF151622),
+    surfaceContainer = Color(0xFF181926),
+    surfaceContainerHigh = Color(0xFF202132),
+    surfaceContainerHighest = Color(0xFF2A2C40),
+    outline = Color(0xFF69667E),
+    outlineVariant = Color(0xFF3F3C50),
+    scrim = Color(0xFF000000)
+)
+
+val GunBatimiScheme = darkColorScheme(
+    primary = Color(0xFFCC4E33),
+    onPrimary = Color(0xFF2E0A03),
+    primaryContainer = Color(0xFF4C1A10),
+    onPrimaryContainer = Color(0xFFFFD8D0),
+    inversePrimary = Color(0xFF8C2915),
+    secondary = Color(0xFFB8684A),
+    onSecondary = Color(0xFF2B1207),
+    secondaryContainer = Color(0xFF452417),
+    onSecondaryContainer = Color(0xFFF5D6C9),
+    tertiary = Color(0xFFD48D3B),
+    onTertiary = Color(0xFF341C03),
+    tertiaryContainer = Color(0xFF50300D),
+    onTertiaryContainer = Color(0xFFFFDFB8),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF0E1013),
+    onBackground = Color(0xFFEAE6E1),
+    surface = Color(0xFF0E1013),
+    onSurface = Color(0xFFEAE6E1),
+    surfaceVariant = Color(0xFF181B20),
+    onSurfaceVariant = Color(0xFFA39E96),
+    surfaceTint = Color(0xFFCC4E33),
+    inverseSurface = Color(0xFFEAE6E1),
+    inverseOnSurface = Color(0xFF0E1013),
+    surfaceDim = Color(0xFF0E1013),
+    surfaceBright = Color(0xFF363940),
+    surfaceContainerLowest = Color(0xFF0A0C0E),
+    surfaceContainerLow = Color(0xFF101317),
+    surfaceContainer = Color(0xFF14171C),
+    surfaceContainerHigh = Color(0xFF1D2128),
+    surfaceContainerHighest = Color(0xFF272B33),
+    outline = Color(0xFF706B64),
+    outlineVariant = Color(0xFF423E38),
+    scrim = Color(0xFF000000)
+)
+
+val AmberGeceScheme = darkColorScheme(
+    primary = Color(0xFFE68A2E),
+    onPrimary = Color(0xFF301600),
+    primaryContainer = Color(0xFF4F2B07),
+    onPrimaryContainer = Color(0xFFFFE1C2),
+    inversePrimary = Color(0xFF9C5209),
+    secondary = Color(0xFFD96B43),
+    onSecondary = Color(0xFF311003),
+    secondaryContainer = Color(0xFF4E2313),
+    onSecondaryContainer = Color(0xFFFFD8C7),
+    tertiary = Color(0xFF5897A6),
+    onTertiary = Color(0xFF062128),
+    tertiaryContainer = Color(0xFF183B43),
+    onTertiaryContainer = Color(0xFFBEE5F0),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF121721),
+    onBackground = Color(0xFFE2E8F0),
+    surface = Color(0xFF121721),
+    onSurface = Color(0xFFE2E8F0),
+    surfaceVariant = Color(0xFF1A2230),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    surfaceTint = Color(0xFFE68A2E),
+    inverseSurface = Color(0xFFE2E8F0),
+    inverseOnSurface = Color(0xFF121721),
+    surfaceDim = Color(0xFF121721),
+    surfaceBright = Color(0xFF374154),
+    surfaceContainerLowest = Color(0xFF0D121A),
+    surfaceContainerLow = Color(0xFF131925),
+    surfaceContainer = Color(0xFF161D2B),
+    surfaceContainerHigh = Color(0xFF20293C),
+    surfaceContainerHighest = Color(0xFF2B364E),
+    outline = Color(0xFF64748B),
+    outlineVariant = Color(0xFF334155),
+    scrim = Color(0xFF000000)
+)
+
 fun AppThemeSelection.toColorScheme(darkTheme: Boolean): ColorScheme {
-    val tokens = themeTokens[this] ?: EmeraldTokens
-    return if (darkTheme) tokens.buildDarkColorScheme() else tokens.buildLightColorScheme()
+    val tokens = themeTokens[this]
+    if (tokens != null) {
+        return if (darkTheme) tokens.buildDarkColorScheme() else tokens.buildLightColorScheme()
+    }
+    return when (this) {
+        AppThemeSelection.YUMUSAK_AYDINLIK -> YumusakAydinlikScheme
+        AppThemeSelection.TAM_AYDINLIK -> TamAydinlikScheme
+        AppThemeSelection.SAMAN_KAGIDI -> SamanKagidiScheme
+        AppThemeSelection.KARANLIK -> KaranlikScheme
+        AppThemeSelection.GALAKSI -> GalaksiScheme
+        AppThemeSelection.GUN_BATIMI -> GunBatimiScheme
+        AppThemeSelection.AMBER_GECE -> AmberGeceScheme
+        else -> EmeraldTokens.buildLightColorScheme()
+    }
 }
 
 // ========== Prayer-Specific Tint Colors ==========

@@ -467,6 +467,7 @@ private fun CompactLayout(
                 AppThemeSelection.SAPPHIRE_NIGHT -> R.layout.widget_chronometer_sapphire
                 AppThemeSelection.AMBER_SANDS -> R.layout.widget_chronometer_amber
                 AppThemeSelection.MONOCHROME_PLATINUM -> R.layout.widget_chronometer_monochrome
+                else -> R.layout.widget_chronometer_emerald
             }
         }
         val rv = RemoteViews(context.packageName, layoutRes)
@@ -663,6 +664,7 @@ private fun ExpandedLayout(
                 AppThemeSelection.SAPPHIRE_NIGHT -> R.layout.widget_chronometer_sapphire
                 AppThemeSelection.AMBER_SANDS -> R.layout.widget_chronometer_amber
                 AppThemeSelection.MONOCHROME_PLATINUM -> R.layout.widget_chronometer_monochrome
+                else -> R.layout.widget_chronometer_emerald
             }
         }
         val rv = RemoteViews(context.packageName, layoutRes)

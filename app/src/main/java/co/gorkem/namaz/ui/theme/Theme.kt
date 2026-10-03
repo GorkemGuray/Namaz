@@ -75,16 +75,17 @@ fun NamazTheme(
     currentTheme: AppThemeSelection = AppThemeSelection.EMERALD_OASIS,
     content: @Composable () -> Unit
 ) {
-    val baseColorScheme = currentTheme.toColorScheme(darkTheme)
+    val effectiveDarkTheme = if (currentTheme.isFixedLook) currentTheme.isDarkFixed else darkTheme
+    val baseColorScheme = currentTheme.toColorScheme(effectiveDarkTheme)
     val prayer = LocalPrayerContext.current
-    val colorScheme = prayerColorScheme(baseColorScheme, prayer, darkTheme)
+    val colorScheme = prayerColorScheme(baseColorScheme, prayer, effectiveDarkTheme)
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !effectiveDarkTheme
         }
     }
 

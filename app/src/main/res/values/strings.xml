@@ -202,6 +202,13 @@
     <string name="theme_sapphire_night">Sapphire Night</string>
     <string name="theme_amber_sands">Amber Sands</string>
     <string name="theme_monochrome_platinum">Monochrome Platinum</string>
+    <string name="theme_yumusak_aydinlik">Yumuşak Aydınlık</string>
+    <string name="theme_tam_aydinlik">Tam Aydınlık</string>
+    <string name="theme_saman_kagidi">Saman Kâğıdı</string>
+    <string name="theme_karanlik">Karanlık Tema</string>
+    <string name="theme_galaksi">Galaksi Teması</string>
+    <string name="theme_gun_batimi">Gün Batımı</string>
+    <string name="theme_amber_gece">Amber Gece</string>
 
     <!-- Notification Permission Rationale -->
     <string name="notification_permission_rationale_title">Bildirim İzni Gerekli</string>
