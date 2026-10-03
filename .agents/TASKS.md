@@ -61,8 +61,8 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 |----|--------|---------|-------|-------|----------------|-------|
 | T-507 | Font altyapısı + tesbihat kartı tipografisi (Amiri + serif başlık, kırmızı lafız) | P0 | DONE | worker-1 | `app/.../res/font/*`, `ui/theme/Type.kt`, `ui/screens/zikirmatik/*` | Arapça Amiri, başlıklar serif, Allah lafızları kırmızı, circumflex glif kanıtlı (K4 teyitli) |
 | T-508 | 7 referans tema paleti (ID 4-10, mevcut 4 korunur) | P0 | DONE | worker-1 | `app/.../ui/theme/Color.kt`, `Theme.kt` (+ TR/EN tema adları, docs/01) | 11 tema, eski ID'ler sabit, yeni temalar sabit görünümlü (derleme+test teyitli; görsel T-509'da) |
-| T-509 | Canlı önizlemeli tema seçici + Ayarlar entegrasyonu (11 tema) | P1 | ASSIGNED | worker-1 | `app/.../ui/screens/settings/*` | Her satır kendi temasının minyatürü |
-| T-510 | Widget + Wear yeni tema senkronu (7 palet) | P1 | PENDING | — | `app/.../service/NamazWidget*.kt`, `wear/.../ui/theme/*` | Saat ve widget 11 temayı gösterir |
+| T-509 | Canlı önizlemeli tema seçici + Ayarlar entegrasyonu (11 tema) | P1 | DONE | worker-1 | `app/.../ui/screens/settings/*` | Her satır kendi temasının minyatürü (K4: 11 satır + Saman repaint teyitli) |
+| T-510 | Widget + Wear yeni tema senkronu (7 palet) | P1 | ASSIGNED | worker-1 | `app/.../service/NamazWidget*.kt`, `wear/.../ui/theme/*` | Saat ve widget 11 temayı gösterir |
 
 ---
 *Yeni görev ekleme: coordinator tabloya satır ekler, ID sıradaki numaradan verilir. Worker kendi görev açamaz.*
