@@ -55,5 +55,12 @@ Durumlar: `PENDING` → `ASSIGNED` → `IN_PROGRESS` → `REVIEW` → `DONE` / `
 | T-505 | El hareketi tetik cümlesinde işaretlensin (alıntı eşleşmeli satır-içi vurgu + emoji) | P0 | DONE | worker-1 | `app/.../ui/screens/zikirmatik/ZikirmatikScreen.kt` (+ test) | İlgili cümlede 🫳/🤲 vurgusu, eşleşmezse geri dönüş satırı (K4 teyitli) |
 | T-506 | Tesbihat kartı boşlukları sıkıştır (fontlara dokunmadan) | P1 | DONE | worker-1 | `app/.../ui/screens/zikirmatik/ZikirmatikScreen.kt` | Aynı içerik daha az kaydırma, fontlar aynı (K4 karşılaştırmalı) |
 
+## Faz 6 — Okuma Deneyimi (Kur'an Kütüphanesi esinlenmesi, kullanıcı kararı 2026-10-02: tam paket)
+
+| ID | Başlık | Öncelik | Durum | Sahip | Kapsam (dosya) | Kabul |
+|----|--------|---------|-------|-------|----------------|-------|
+| T-507 | Font altyapısı + tesbihat kartı tipografisi (Amiri + serif başlık) | P0 | ASSIGNED | worker-1 | `app/.../res/font/*`, `ui/theme/Type.kt`, `ui/screens/zikirmatik/*` | Arapça Amiri, başlıklar serif, circumflex glif kanıtlı (K4) |
+| T-508 | Hero derinliği + bölüm başlığı deseni + kırmızı vurgular | P1 | PENDING | — | `ui/theme/*`, `ui/screens/home/*`, `ui/screens/zikirmatik/*` | 4 temada tutarlı, hassasiyet notlu |
+
 ---
 *Yeni görev ekleme: coordinator tabloya satır ekler, ID sıradaki numaradan verilir. Worker kendi görev açamaz.*
