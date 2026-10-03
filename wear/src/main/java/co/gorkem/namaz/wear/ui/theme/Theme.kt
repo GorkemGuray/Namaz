@@ -14,6 +14,13 @@ fun WearTheme(
         1 -> SapphireColorScheme
         2 -> AmberColorScheme
         3 -> MonochromeColorScheme
+        4 -> YumusakAydinlikColorScheme
+        5 -> TamAydinlikColorScheme
+        6 -> SamanKagidiColorScheme
+        7 -> KaranlikColorScheme
+        8 -> GalaksiColorScheme
+        9 -> GunBatimiColorScheme
+        10 -> AmberGeceColorScheme
         else -> EmeraldColorScheme
     }
 

@@ -233,6 +233,34 @@ object AppThemeUtils {
                     scrim = Color(0xFF000000)
                 )
             )
+            AppThemeSelection.YUMUSAK_AYDINLIK -> ColorProviders(
+                light = YumusakAydinlikScheme,
+                dark = YumusakAydinlikScheme
+            )
+            AppThemeSelection.TAM_AYDINLIK -> ColorProviders(
+                light = TamAydinlikScheme,
+                dark = TamAydinlikScheme
+            )
+            AppThemeSelection.SAMAN_KAGIDI -> ColorProviders(
+                light = SamanKagidiScheme,
+                dark = SamanKagidiScheme
+            )
+            AppThemeSelection.KARANLIK -> ColorProviders(
+                light = KaranlikScheme,
+                dark = KaranlikScheme
+            )
+            AppThemeSelection.GALAKSI -> ColorProviders(
+                light = GalaksiScheme,
+                dark = GalaksiScheme
+            )
+            AppThemeSelection.GUN_BATIMI -> ColorProviders(
+                light = GunBatimiScheme,
+                dark = GunBatimiScheme
+            )
+            AppThemeSelection.AMBER_GECE -> ColorProviders(
+                light = AmberGeceScheme,
+                dark = AmberGeceScheme
+            )
             else -> getGlanceColors(AppThemeSelection.EMERALD_OASIS)
         }
     }

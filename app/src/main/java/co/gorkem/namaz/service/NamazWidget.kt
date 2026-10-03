@@ -421,6 +421,24 @@ private fun WidgetContent(state: NamazWidgetState, appWidgetId: Int, appTheme: A
 
 
 
+internal fun getChronometerLayoutRes(appTheme: AppThemeSelection, isKerahatActive: Boolean): Int {
+    if (isKerahatActive) return R.layout.widget_chronometer_kerahat
+    return when (appTheme) {
+        AppThemeSelection.EMERALD_OASIS -> R.layout.widget_chronometer_emerald
+        AppThemeSelection.SAPPHIRE_NIGHT -> R.layout.widget_chronometer_sapphire
+        AppThemeSelection.AMBER_SANDS -> R.layout.widget_chronometer_amber
+        AppThemeSelection.MONOCHROME_PLATINUM -> R.layout.widget_chronometer_monochrome
+        AppThemeSelection.YUMUSAK_AYDINLIK -> R.layout.widget_chronometer_yumusak
+        AppThemeSelection.TAM_AYDINLIK -> R.layout.widget_chronometer_tam
+        AppThemeSelection.SAMAN_KAGIDI -> R.layout.widget_chronometer_saman
+        AppThemeSelection.KARANLIK -> R.layout.widget_chronometer_karanlik
+        AppThemeSelection.GALAKSI -> R.layout.widget_chronometer_galaksi
+        AppThemeSelection.GUN_BATIMI -> R.layout.widget_chronometer_gun_batimi
+        AppThemeSelection.AMBER_GECE -> R.layout.widget_chronometer_amber_gece
+        else -> R.layout.widget_chronometer_emerald
+    }
+}
+
 @Composable
 private fun CompactLayout(
     cityName: String,
@@ -459,17 +477,7 @@ private fun CompactLayout(
     }
 
     val chronometerRemoteViews = remember(targetEpochMillis, appTheme, isKerahatActive, chronometerFormat) {
-        val layoutRes = if (isKerahatActive) {
-            R.layout.widget_chronometer_kerahat
-        } else {
-            when (appTheme) {
-                AppThemeSelection.EMERALD_OASIS -> R.layout.widget_chronometer_emerald
-                AppThemeSelection.SAPPHIRE_NIGHT -> R.layout.widget_chronometer_sapphire
-                AppThemeSelection.AMBER_SANDS -> R.layout.widget_chronometer_amber
-                AppThemeSelection.MONOCHROME_PLATINUM -> R.layout.widget_chronometer_monochrome
-                else -> R.layout.widget_chronometer_emerald
-            }
-        }
+        val layoutRes = getChronometerLayoutRes(appTheme, isKerahatActive)
         val rv = RemoteViews(context.packageName, layoutRes)
         val nowElapsed = SystemClock.elapsedRealtime()
         val nowWall = System.currentTimeMillis()
@@ -656,17 +664,7 @@ private fun ExpandedLayout(
     }
 
     val chronometerRemoteViews = remember(targetEpochMillis, appTheme, isKerahatActive, chronometerFormat) {
-        val layoutRes = if (isKerahatActive) {
-            R.layout.widget_chronometer_kerahat
-        } else {
-            when (appTheme) {
-                AppThemeSelection.EMERALD_OASIS -> R.layout.widget_chronometer_emerald
-                AppThemeSelection.SAPPHIRE_NIGHT -> R.layout.widget_chronometer_sapphire
-                AppThemeSelection.AMBER_SANDS -> R.layout.widget_chronometer_amber
-                AppThemeSelection.MONOCHROME_PLATINUM -> R.layout.widget_chronometer_monochrome
-                else -> R.layout.widget_chronometer_emerald
-            }
-        }
+        val layoutRes = getChronometerLayoutRes(appTheme, isKerahatActive)
         val rv = RemoteViews(context.packageName, layoutRes)
         val nowElapsed = SystemClock.elapsedRealtime()
         val nowWall = System.currentTimeMillis()
