@@ -209,6 +209,12 @@
     <string name="theme_galaksi">Galaxy Theme</string>
     <string name="theme_gun_batimi">Sunset</string>
     <string name="theme_amber_gece">Amber Night</string>
+    <string name="theme_picker_desc">Choose and apply your preferred theme.</string>
+    <string name="theme_picker_close">Close</string>
+    <string name="theme_sample_prefix">"This is a "</string>
+    <string name="theme_sample_accent1">"sample "</string>
+    <string name="theme_sample_middle">""</string>
+    <string name="theme_sample_accent2">"sentence."</string>
 
     <!-- Notification Permission Rationale -->
     <string name="notification_permission_rationale_title">Notification Permission Required</string>

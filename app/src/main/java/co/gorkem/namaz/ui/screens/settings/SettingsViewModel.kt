@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.R
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
+import co.gorkem.namaz.ui.theme.AppThemeSelection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,12 +28,22 @@ class SettingsViewModel @Inject constructor(
         Pair(0, R.string.school_shafi)
     )
 
-    val themeOptions: List<Pair<Int, Int>> = listOf(
-        Pair(0, R.string.theme_emerald_oasis),
-        Pair(1, R.string.theme_sapphire_night),
-        Pair(2, R.string.theme_amber_sands),
-        Pair(3, R.string.theme_monochrome_platinum)
-    )
+    val themeOptions: List<Pair<Int, Int>> = AppThemeSelection.entries.map { selection ->
+        val nameRes = when (selection) {
+            AppThemeSelection.EMERALD_OASIS -> R.string.theme_emerald_oasis
+            AppThemeSelection.SAPPHIRE_NIGHT -> R.string.theme_sapphire_night
+            AppThemeSelection.AMBER_SANDS -> R.string.theme_amber_sands
+            AppThemeSelection.MONOCHROME_PLATINUM -> R.string.theme_monochrome_platinum
+            AppThemeSelection.YUMUSAK_AYDINLIK -> R.string.theme_yumusak_aydinlik
+            AppThemeSelection.TAM_AYDINLIK -> R.string.theme_tam_aydinlik
+            AppThemeSelection.SAMAN_KAGIDI -> R.string.theme_saman_kagidi
+            AppThemeSelection.KARANLIK -> R.string.theme_karanlik
+            AppThemeSelection.GALAKSI -> R.string.theme_galaksi
+            AppThemeSelection.GUN_BATIMI -> R.string.theme_gun_batimi
+            AppThemeSelection.AMBER_GECE -> R.string.theme_amber_gece
+        }
+        Pair(selection.ordinal, nameRes)
+    }
 
     init {
         viewModelScope.launch {

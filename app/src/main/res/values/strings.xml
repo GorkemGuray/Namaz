@@ -209,6 +209,12 @@
     <string name="theme_galaksi">Galaksi Teması</string>
     <string name="theme_gun_batimi">Gün Batımı</string>
     <string name="theme_amber_gece">Amber Gece</string>
+    <string name="theme_picker_desc">Beğendiğiniz temayı seçerek uygulayabilirsiniz.</string>
+    <string name="theme_picker_close">Kapat</string>
+    <string name="theme_sample_prefix">"Bu "</string>
+    <string name="theme_sample_accent1">"örnek "</string>
+    <string name="theme_sample_middle">"bir "</string>
+    <string name="theme_sample_accent2">"metindir."</string>
 
     <!-- Notification Permission Rationale -->
     <string name="notification_permission_rationale_title">Bildirim İzni Gerekli</string>
