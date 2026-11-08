@@ -886,7 +886,7 @@ fun extractGestureTriggers(gesture: String): List<GestureTrigger> {
 
         val afterStart = match.range.last + 1
         val afterEnd = if (index < matches.size - 1) matches[index + 1].range.first else gesture.length
-        val afterText = if (afterStart < afterEnd) gesture.substring(afterStart, afterEnd).lowercase() else ""
+        val afterText = if (afterStart < afterEnd) gesture.substring(afterStart, afterEnd).lowercase(java.util.Locale.forLanguageTag("tr")) else ""
 
         val emoji = when {
             afterText.contains("yere") || afterText.contains("aşağı") -> "🫳"

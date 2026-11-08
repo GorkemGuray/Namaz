@@ -17,17 +17,15 @@ import co.gorkem.namaz.domain.model.PrayerName
 
 object NotificationHelper {
     const val CHANNEL_ID = "namaz_prayer_times"
-    const val CHANNEL_NAME = "Namaz Vakitleri"
-    const val CHANNEL_DESCRIPTION = "Namaz vakti bildirimleri"
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                context.getString(R.string.notification_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = CHANNEL_DESCRIPTION
+                description = context.getString(R.string.notification_channel_desc)
                 setShowBadge(true)
             }
             val notificationManager =

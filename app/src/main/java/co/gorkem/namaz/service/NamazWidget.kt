@@ -258,7 +258,7 @@ private suspend fun loadWidgetState(
                         targetEpochMillis = null,
                         currentPrayerName = null,
                         layoutPreference = layoutPreference,
-                        error = "Bugünün vakitleri bulunamadı"
+                        error = context.getString(R.string.error_today_times_not_found)
                     )
                 }
                 true
@@ -291,11 +291,11 @@ private suspend fun loadWidgetState(
             targetEpochMillis = null,
             currentPrayerName = null,
             layoutPreference = layoutPreference,
-            error = "Yükleniyor..."
+            error = context.getString(R.string.loading)
         )
     } catch (e: Exception) {
         NamazWidgetState(
-            cityName = "İstanbul",
+            cityName = context.getString(R.string.default_city),
             language = "tr",
             todayPrayerTimes = emptyList(),
             nextPrayerName = null,
@@ -304,7 +304,7 @@ private suspend fun loadWidgetState(
             targetEpochMillis = null,
             currentPrayerName = null,
             layoutPreference = layoutPreference,
-            error = e.localizedMessage ?: "Bilinmeyen hata"
+            error = e.localizedMessage ?: context.getString(R.string.error_unknown)
         )
     }
 }
@@ -499,9 +499,9 @@ private fun CompactLayout(
         ) {
             val headerText = when {
                 isKerahatActive && stackVertically -> cityName
-                isKerahatActive -> "Kerahat Vakti • $cityName"
+                isKerahatActive -> "${context.getString(R.string.kerahat_vakti)} • $cityName"
                 stackVertically -> cityName
-                else -> "Namaz Vakitleri • $cityName"
+                else -> "${context.getString(R.string.home_title)} • $cityName"
             }
             Text(
                 text = headerText,
@@ -515,7 +515,7 @@ private fun CompactLayout(
             )
             Image(
                 provider = ImageProvider(R.drawable.ic_widget_refresh),
-                contentDescription = "Yenile",
+                contentDescription = context.getString(R.string.refresh),
                 modifier = GlanceModifier
                     .size(20.dp)
                     .clickable(actionRunCallback<RefreshActionCallback>()),
@@ -684,7 +684,7 @@ private fun ExpandedLayout(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val headerText = if (isKerahatActive) "Kerahat Vakti • $cityName" else "Namaz Vakitleri • $cityName"
+            val headerText = if (isKerahatActive) "${context.getString(R.string.kerahat_vakti)} • $cityName" else "${context.getString(R.string.home_title)} • $cityName"
             Text(
                 text = headerText,
                 style = TextStyle(
@@ -697,7 +697,7 @@ private fun ExpandedLayout(
             )
             Image(
                 provider = ImageProvider(R.drawable.ic_widget_refresh),
-                contentDescription = "Yenile",
+                contentDescription = context.getString(R.string.refresh),
                 modifier = GlanceModifier
                     .size(20.dp)
                     .clickable(actionRunCallback<RefreshActionCallback>()),

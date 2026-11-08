@@ -230,4 +230,22 @@
     <string name="home_tesbihat_vakti">Namaz Tesbihatı</string>
     <string name="zikirmatik_show_meaning">Anlamı Göster</string>
     <string name="zikirmatik_hide_meaning">Anlamı Gizle</string>
+    <string name="error_local_calculation_failed">Lokal hesaplama yapılamadı</string>
+    <string name="error_prayer_times_fetch_failed">Vakitler alınamadı</string>
+    <string name="error_no_internet_offline">İnternet bağlantısı yok (Çevrimdışı)</string>
+    <string name="error_unknown">Bilinmeyen hata</string>
+    <string name="error_today_times_not_found">Bugünün vakitleri bulunamadı</string>
+    <string name="loading">Yükleniyor...</string>
+    <string name="refresh">Yenile</string>
+    <string name="country_turkey">Türkiye</string>
+    <string name="zikir_namaz_tesbihati">Namaz Tesbihatı</string>
+    <string name="zikir_subhanallah">Sübhanallah</string>
+    <string name="zikir_elhamdulillah">Elhamdülillah</string>
+    <string name="zikir_allahuekber">Allahuekber</string>
+    <string name="zikir_allahu_ekber">Allahu ekber</string>
+    <string name="zikir_estagfirullah">Estağfirullah</string>
+    <string name="zikir_kelime_i_tevhid">Kelime-i Tevhid</string>
+    <string name="zikir_salavat">Salavat</string>
+    <string name="hijri_month_short_shaban">Şab</string>
+    <string name="hijri_month_short_shawwal">Şev</string>
 </resources>

@@ -230,4 +230,22 @@
     <string name="home_tesbihat_vakti">Prayer Tasbih</string>
     <string name="zikirmatik_show_meaning">Show Meaning</string>
     <string name="zikirmatik_hide_meaning">Hide Meaning</string>
+    <string name="error_local_calculation_failed">Local calculation failed</string>
+    <string name="error_prayer_times_fetch_failed">Failed to fetch prayer times</string>
+    <string name="error_no_internet_offline">No internet connection (Offline)</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_today_times_not_found">Today\'s prayer times not found</string>
+    <string name="loading">Loading...</string>
+    <string name="refresh">Refresh</string>
+    <string name="country_turkey">Turkey</string>
+    <string name="zikir_namaz_tesbihati">Prayer Tasbih</string>
+    <string name="zikir_subhanallah">Subhanallah</string>
+    <string name="zikir_elhamdulillah">Alhamdulillah</string>
+    <string name="zikir_allahuekber">Allahu Akbar</string>
+    <string name="zikir_allahu_ekber">Allahu Akbar</string>
+    <string name="zikir_estagfirullah">Astaghfirullah</string>
+    <string name="zikir_kelime_i_tevhid">Kalima Tawhid</string>
+    <string name="zikir_salavat">Salawat</string>
+    <string name="hijri_month_short_shaban">Sha</string>
+    <string name="hijri_month_short_shawwal">Shaw</string>
 </resources>

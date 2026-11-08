@@ -2,6 +2,7 @@ package co.gorkem.namaz.domain.model
 
 import androidx.annotation.StringRes
 import co.gorkem.namaz.R
+import java.util.Locale
 
 enum class PrayerName(@StringRes val nameRes: Int) {
     IMSAK(R.string.prayer_imsak),
@@ -13,7 +14,7 @@ enum class PrayerName(@StringRes val nameRes: Int) {
 
     companion object {
         fun fromName(name: String): PrayerName {
-            return when (name.lowercase()) {
+            return when (name.lowercase(Locale.forLanguageTag("tr"))) {
                 "imsak" -> IMSAK
                 "sunrise" -> GUNES
                 "dhuhr" -> OGLE

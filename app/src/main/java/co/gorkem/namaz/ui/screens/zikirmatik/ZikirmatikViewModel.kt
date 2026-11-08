@@ -1,12 +1,15 @@
 package co.gorkem.namaz.ui.screens.zikirmatik
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.gorkem.namaz.R
 import co.gorkem.namaz.data.local.room.ZikirEntity
 import co.gorkem.namaz.domain.usecase.GetNamazTesbihatiUseCase
 import co.gorkem.namaz.domain.usecase.GetZikirsUseCase
 import co.gorkem.namaz.domain.usecase.ManageZikirUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +20,8 @@ import javax.inject.Inject
 class ZikirmatikViewModel @Inject constructor(
     private val getZikirsUseCase: GetZikirsUseCase,
     private val getNamazTesbihatiUseCase: GetNamazTesbihatiUseCase,
-    private val manageZikirUseCase: ManageZikirUseCase
+    private val manageZikirUseCase: ManageZikirUseCase,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _zikirs = MutableStateFlow<List<ZikirEntity>>(emptyList())
@@ -28,7 +32,11 @@ class ZikirmatikViewModel @Inject constructor(
 
     private val _namazTesbihati = MutableStateFlow<ZikirEntity?>(null)
 
-    val namazTesbihatPhases = listOf("Sübhanallah", "Elhamdülillah", "Allahuekber")
+    val namazTesbihatPhases = listOf(
+        context.getString(R.string.zikir_subhanallah),
+        context.getString(R.string.zikir_elhamdulillah),
+        context.getString(R.string.zikir_allahuekber)
+    )
 
     private val _selectedTesbihatMode = MutableStateFlow(TesbihatMode.UZUN)
     val selectedTesbihatMode: StateFlow<TesbihatMode> = _selectedTesbihatMode.asStateFlow()
@@ -81,17 +89,17 @@ class ZikirmatikViewModel @Inject constructor(
                 if (tesbihat == null) {
                     // Initialize Namaz Tesbihati if it doesn't exist
                     manageZikirUseCase.addZikir(
-                        title = "Namaz Tesbihatı",
+                        title = context.getString(R.string.zikir_namaz_tesbihati),
                         targetCount = 33,
                         isNamazTesbihati = true
                     )
                     // Pre-populate popular default zikirs
-                    manageZikirUseCase.addZikir(title = "Sübhanallah", targetCount = 33, isNamazTesbihati = false)
-                    manageZikirUseCase.addZikir(title = "Elhamdülillah", targetCount = 33, isNamazTesbihati = false)
-                    manageZikirUseCase.addZikir(title = "Allahu ekber", targetCount = 33, isNamazTesbihati = false)
-                    manageZikirUseCase.addZikir(title = "Estağfirullah", targetCount = 99, isNamazTesbihati = false)
-                    manageZikirUseCase.addZikir(title = "Kelime-i Tevhid", targetCount = 99, isNamazTesbihati = false)
-                    manageZikirUseCase.addZikir(title = "Salavat", targetCount = 0, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = context.getString(R.string.zikir_subhanallah), targetCount = 33, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = context.getString(R.string.zikir_elhamdulillah), targetCount = 33, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = context.getString(R.string.zikir_allahu_ekber), targetCount = 33, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = context.getString(R.string.zikir_estagfirullah), targetCount = 99, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = context.getString(R.string.zikir_kelime_i_tevhid), targetCount = 99, isNamazTesbihati = false)
+                    manageZikirUseCase.addZikir(title = context.getString(R.string.zikir_salavat), targetCount = 0, isNamazTesbihati = false)
                 }
             }
         }
