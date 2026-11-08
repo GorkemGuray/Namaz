@@ -77,7 +77,7 @@ fun SettingsScreen(
             )
 
             SettingsSection(title = stringResource(R.string.qada_tracker_title)) {
-                QadaSettingsGroup()
+                QadaSettingsGroup(viewModel = viewModel)
             }
 
             SettingsSection(title = stringResource(R.string.settings_data_source)) {

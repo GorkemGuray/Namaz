@@ -5,18 +5,32 @@ import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.R
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
+import co.gorkem.namaz.domain.model.PrayerName
+import co.gorkem.namaz.domain.usecase.GetQadaCountsUseCase
+import co.gorkem.namaz.domain.usecase.ToggleQadaUseCase
 import co.gorkem.namaz.ui.theme.AppThemeSelection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val preferencesRepository: UserPreferencesRepository
+    private val preferencesRepository: UserPreferencesRepository,
+    getQadaCountsUseCase: GetQadaCountsUseCase,
+    private val toggleQadaUseCase: ToggleQadaUseCase
 ) : ViewModel() {
+
+    val qadaCounts: StateFlow<Map<PrayerName, Int>> = getQadaCountsUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PrayerName.values().associateWith { 0 }
+        )
 
     private val _preferences = MutableStateFlow(UserPreferences())
     val preferences: StateFlow<UserPreferences> = _preferences.asStateFlow()
@@ -110,6 +124,18 @@ class SettingsViewModel @Inject constructor(
     fun setAppTheme(theme: Int) {
         viewModelScope.launch {
             preferencesRepository.setAppTheme(theme)
+        }
+    }
+
+    fun incrementQada(prayerName: PrayerName) {
+        viewModelScope.launch {
+            toggleQadaUseCase.increment(prayerName.name)
+        }
+    }
+
+    fun decrementQada(prayerName: PrayerName) {
+        viewModelScope.launch {
+            toggleQadaUseCase.decrement(prayerName.name)
         }
     }
 }

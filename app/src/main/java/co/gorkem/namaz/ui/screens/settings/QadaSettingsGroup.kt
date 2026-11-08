@@ -20,11 +20,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.ui.screens.qada.QadaPrayerRow
-import co.gorkem.namaz.ui.screens.qada.QadaViewModel
 
 @Composable
 fun QadaSettingsGroup(
-    viewModel: QadaViewModel = hiltViewModel(),
+    viewModel: SettingsViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     val qadaCounts by viewModel.qadaCounts.collectAsState()
@@ -66,8 +65,8 @@ fun QadaSettingsGroup(
                 QadaPrayerRow(
                     prayer = prayer,
                     count = count,
-                    onIncrement = { viewModel.increment(prayer) },
-                    onDecrement = { viewModel.decrement(prayer) }
+                    onIncrement = { viewModel.incrementQada(prayer) },
+                    onDecrement = { viewModel.decrementQada(prayer) }
                 )
 
                 if (index < prayers.lastIndex) {
