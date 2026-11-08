@@ -63,12 +63,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         school: Int
     ): Flow<NetworkResult<List<PrayerTime>>> = flow {
         val activeDataSource = getActiveDataSource()
-        val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
-        val recordCount = prayerTimeDao.getMonthRecordCount(location.cityName, month, year, method, school, activeDataSource)
-        
-        val cached = if (recordCount > 0) {
-            prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)
-        } else emptyList()
+        val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)
 
         if (cached.isNotEmpty()) {
             emit(NetworkResult.Success(cached.map { it.toDomainModel() }))

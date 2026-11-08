@@ -15,6 +15,7 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.provideContent
+import co.gorkem.namaz.BuildConfig
 import co.gorkem.namaz.R
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
@@ -68,6 +69,27 @@ data class NamazWidgetState(
 class NamazWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
+    companion object {
+        @Volatile
+        private var memoryCacheKey: String? = null
+        @Volatile
+        private var memoryCacheTimes: List<PrayerTime>? = null
+
+        fun getCachedMonthTimes(key: String): List<PrayerTime>? {
+            return if (memoryCacheKey == key) memoryCacheTimes else null
+        }
+
+        fun setCachedMonthTimes(key: String, times: List<PrayerTime>) {
+            memoryCacheKey = key
+            memoryCacheTimes = times
+        }
+
+        fun clearMemoryCache() {
+            memoryCacheKey = null
+            memoryCacheTimes = null
+        }
+    }
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entryPoint = EntryPointAccessors.fromApplication(
             context.applicationContext,
@@ -76,7 +98,7 @@ class NamazWidget : GlanceAppWidget() {
 
         val appWidgetId = try {
             val resolvedId = GlanceAppWidgetManager(context).getAppWidgetId(id)
-            android.util.Log.d("NamazWidget", "provideGlance: resolved appWidgetId = $resolvedId for GlanceId: $id")
+            if (BuildConfig.DEBUG) android.util.Log.d("NamazWidget", "provideGlance: resolved appWidgetId = $resolvedId for GlanceId: $id")
             resolvedId
         } catch (e: Exception) {
             android.util.Log.e("NamazWidget", "provideGlance: failed to resolve appWidgetId for GlanceId: $id", e)
@@ -102,7 +124,7 @@ class NamazWidget : GlanceAppWidget() {
                 val currentPrefs = prefsState
                 if (currentPrefs != null) {
                     val loadedState = loadWidgetState(ctx, entryPoint, currentPrefs, layoutPreference)
-                    android.util.Log.d("NamazWidget", "provideContent: loaded state layout=$layoutPreference: $loadedState")
+                    if (BuildConfig.DEBUG) android.util.Log.d("NamazWidget", "provideContent: loaded state layout=$layoutPreference: $loadedState")
                     value = loadedState
                     val nextAlarmEpoch = when {
                         loadedState.nextKerahatStartEpochMillis != null && loadedState.targetEpochMillis != null ->
@@ -146,80 +168,82 @@ private suspend fun loadWidgetState(
         val getPrayerDashboardUseCase = entryPoint.getPrayerDashboardUseCase()
 
         val language = prefs.language
-
         val location = prefs.getLocationInfo()
 
         val today = LocalDate.now()
         val todayKey = today.format(DateTimeUtils.DATE_FORMATTER)
         val tomorrowKey = today.plusDays(1).format(DateTimeUtils.DATE_FORMATTER)
 
-        var widgetState: NamazWidgetState? = null
+        val cacheKey = "${location.cityName}_${location.districtName}_${today.year}_${today.monthValue}_${prefs.calculationMethod}_${prefs.school}_${prefs.dataSource}"
+        val memoryTimes = NamazWidget.getCachedMonthTimes(cacheKey)
 
-        getPrayerTimesUseCase(
-            location = location,
-            month = today.monthValue,
-            year = today.year,
-            method = prefs.calculationMethod,
-            school = prefs.school
-        ).first { result ->
-            if (result is NetworkResult.Success) {
-                val todayPrayer = result.data.find { it.date == todayKey }
-                if (todayPrayer != null) {
-                    val nextInfo = getNextPrayerUseCase(todayPrayer)
-                    val nextPrayerName = nextInfo?.prayerName
-                    val currentPrayerName = nextPrayerName?.let { getCurrentPrayer(it) }
-
-                    val tomorrowPrayer = result.data.find { it.date == tomorrowKey }
-                    val dashboard = getPrayerDashboardUseCase.execute(todayPrayer, tomorrowPrayer)
-                    val kerahatInfo = dashboard?.kerahatInfo
-                    val nextKerahatInfo = dashboard?.nextKerahatInfo
-
-                    val targetEpoch = if (kerahatInfo?.isCurrentlyKerahat == true) {
-                        val targetDateTime = LocalDateTime.of(today, kerahatInfo.endTime)
-                        targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    } else {
-                        nextInfo?.targetPrayerTimeInMillis
-                    }
-
-                    val nextKerahatStartEpoch = if (kerahatInfo?.isCurrentlyKerahat != true && nextKerahatInfo != null) {
-                        val kerahatStart = LocalDateTime.of(today, nextKerahatInfo.startTime)
-                        kerahatStart.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    } else {
-                        null
-                    }
-
-                    widgetState = NamazWidgetState(
-                        cityName = if (location.districtName.isNotEmpty()) location.districtName else location.cityName,
-                        language = language,
-                        todayPrayerTimes = todayPrayer.getAllPrayers(),
-                        nextPrayerName = nextPrayerName,
-                        nextPrayerTime = nextInfo?.prayerTime,
-                        remainingMinutes = nextInfo?.remainingMinutes,
-                        targetEpochMillis = targetEpoch,
-                        currentPrayerName = currentPrayerName,
-                        layoutPreference = layoutPreference,
-                        isKerahat = kerahatInfo?.isCurrentlyKerahat == true,
-                        kerahatPrayerName = kerahatInfo?.prayerName?.name,
-                        kerahatRemainingMinutes = kerahatInfo?.remainingToEndMinutes ?: 0,
-                        nextKerahatStartEpochMillis = nextKerahatStartEpoch
-                    )
+        val prayerTimesList: List<PrayerTime>? = if (memoryTimes != null && memoryTimes.any { it.date == todayKey }) {
+            memoryTimes
+        } else {
+            var fetched: List<PrayerTime>? = null
+            getPrayerTimesUseCase(
+                location = location,
+                month = today.monthValue,
+                year = today.year,
+                method = prefs.calculationMethod,
+                school = prefs.school
+            ).first { result ->
+                if (result is NetworkResult.Success) {
+                    fetched = result.data
+                    NamazWidget.setCachedMonthTimes(cacheKey, result.data)
+                    true
+                } else if (result is NetworkResult.Error) {
+                    true
                 } else {
-                    widgetState = NamazWidgetState(
-                        cityName = location.cityName,
-                        language = language,
-                        todayPrayerTimes = emptyList(),
-                        nextPrayerName = null,
-                        nextPrayerTime = null,
-                        remainingMinutes = null,
-                        targetEpochMillis = null,
-                        currentPrayerName = null,
-                        layoutPreference = layoutPreference,
-                        error = context.getString(R.string.error_today_times_not_found)
-                    )
+                    false
                 }
-                true
-            } else if (result is NetworkResult.Error) {
-                widgetState = NamazWidgetState(
+            }
+            fetched
+        }
+
+        if (prayerTimesList != null) {
+            val todayPrayer = prayerTimesList.find { it.date == todayKey }
+            if (todayPrayer != null) {
+                val nextInfo = getNextPrayerUseCase(todayPrayer)
+                val nextPrayerName = nextInfo?.prayerName
+                val currentPrayerName = nextPrayerName?.let { getCurrentPrayer(it) }
+
+                val tomorrowPrayer = prayerTimesList.find { it.date == tomorrowKey }
+                val dashboard = getPrayerDashboardUseCase.execute(todayPrayer, tomorrowPrayer)
+                val kerahatInfo = dashboard?.kerahatInfo
+                val nextKerahatInfo = dashboard?.nextKerahatInfo
+
+                val targetEpoch = if (kerahatInfo?.isCurrentlyKerahat == true) {
+                    val targetDateTime = LocalDateTime.of(today, kerahatInfo.endTime)
+                    targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                } else {
+                    nextInfo?.targetPrayerTimeInMillis
+                }
+
+                val nextKerahatStartEpoch = if (kerahatInfo?.isCurrentlyKerahat != true && nextKerahatInfo != null) {
+                    val kerahatStart = LocalDateTime.of(today, nextKerahatInfo.startTime)
+                    kerahatStart.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                } else {
+                    null
+                }
+
+                NamazWidgetState(
+                    cityName = if (location.districtName.isNotEmpty()) location.districtName else location.cityName,
+                    language = language,
+                    todayPrayerTimes = todayPrayer.getAllPrayers(),
+                    nextPrayerName = nextPrayerName,
+                    nextPrayerTime = nextInfo?.prayerTime,
+                    remainingMinutes = nextInfo?.remainingMinutes,
+                    targetEpochMillis = targetEpoch,
+                    currentPrayerName = currentPrayerName,
+                    layoutPreference = layoutPreference,
+                    isKerahat = kerahatInfo?.isCurrentlyKerahat == true,
+                    kerahatPrayerName = kerahatInfo?.prayerName?.name,
+                    kerahatRemainingMinutes = kerahatInfo?.remainingToEndMinutes ?: 0,
+                    nextKerahatStartEpochMillis = nextKerahatStartEpoch
+                )
+            } else {
+                NamazWidgetState(
                     cityName = location.cityName,
                     language = language,
                     todayPrayerTimes = emptyList(),
@@ -229,26 +253,23 @@ private suspend fun loadWidgetState(
                     targetEpochMillis = null,
                     currentPrayerName = null,
                     layoutPreference = layoutPreference,
-                    error = result.message
+                    error = context.getString(R.string.error_today_times_not_found)
                 )
-                true
-            } else {
-                false
             }
+        } else {
+            NamazWidgetState(
+                cityName = location.cityName,
+                language = language,
+                todayPrayerTimes = emptyList(),
+                nextPrayerName = null,
+                nextPrayerTime = null,
+                remainingMinutes = null,
+                targetEpochMillis = null,
+                currentPrayerName = null,
+                layoutPreference = layoutPreference,
+                error = context.getString(R.string.loading)
+            )
         }
-
-        widgetState ?: NamazWidgetState(
-            cityName = location.cityName,
-            language = language,
-            todayPrayerTimes = emptyList(),
-            nextPrayerName = null,
-            nextPrayerTime = null,
-            remainingMinutes = null,
-            targetEpochMillis = null,
-            currentPrayerName = null,
-            layoutPreference = layoutPreference,
-            error = context.getString(R.string.loading)
-        )
     } catch (e: Exception) {
         NamazWidgetState(
             cityName = context.getString(R.string.default_city),

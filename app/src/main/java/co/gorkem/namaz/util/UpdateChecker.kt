@@ -1,6 +1,7 @@
 package co.gorkem.namaz.util
 
 import android.util.Log
+import co.gorkem.namaz.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +60,7 @@ class UpdateChecker(private val gson: Gson = Gson()) {
             val downloadUrl = "$GITHUB_DOWNLOAD_BASE/v$latestVersion/Namaz-$latestVersion-app-debug.apk"
             val releaseUrl = versionInfo.releaseUrl.ifEmpty { GITHUB_RELEASES_URL }
 
-            Log.d(TAG, "Current: $currentVersion, Latest: $latestVersion, Update available: $updateAvailable")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Current: $currentVersion, Latest: $latestVersion, Update available: $updateAvailable")
 
             UpdateCheckResult(
                 updateAvailable = updateAvailable,

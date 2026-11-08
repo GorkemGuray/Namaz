@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import co.gorkem.namaz.BuildConfig
 import androidx.glance.appwidget.updateAll
 import co.gorkem.namaz.util.alarmManager
 import co.gorkem.namaz.util.LocationMath
@@ -77,19 +78,19 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
                 val prefs = prefsRepo.preferences.first()
                 
                 if (prefs.manualCityName.isNotEmpty()) {
-                    Log.d(TAG, "Manual city set, skipping location check")
+                    if (BuildConfig.DEBUG) Log.d(TAG, "Manual city set, skipping location check")
                     return
                 }
 
                 val fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(context)
                 val locationTracker = co.gorkem.namaz.service.LocationTracker(fusedLocationClient, context)
                 if (!locationTracker.hasLocationPermission()) {
-                    Log.d(TAG, "No location permission, skipping location check")
+                    if (BuildConfig.DEBUG) Log.d(TAG, "No location permission, skipping location check")
                     return
                 }
 
                 if (prefs.lastAutoLatitude == 0.0 && prefs.lastAutoLongitude == 0.0) {
-                    Log.d(TAG, "Saved auto-location uninitialized, triggering worker")
+                    if (BuildConfig.DEBUG) Log.d(TAG, "Saved auto-location uninitialized, triggering worker")
                     co.gorkem.namaz.service.LocationSyncWorker.executeNow(context)
                     return
                 }
@@ -105,7 +106,7 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
                 if (currentLocation == null) {
                     val nowMs = System.currentTimeMillis()
                     if (nowMs - lastGetCurrentLocationFailMs >= GET_CURRENT_LOCATION_BACKOFF_MS) {
-                        Log.d(TAG, "lastLocation is null, falling back to getCurrentLocation")
+                        if (BuildConfig.DEBUG) Log.d(TAG, "lastLocation is null, falling back to getCurrentLocation")
                         currentLocation = try {
                             kotlinx.coroutines.withTimeout(25_000L) {
                                 suspendCancellableCoroutine<android.location.Location?> { cont ->
@@ -127,7 +128,7 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
                             Log.w(TAG, "getCurrentLocation failed, backing off for 5 minutes")
                         }
                     } else {
-                        Log.d(TAG, "Still in getCurrentLocation backoff (${(GET_CURRENT_LOCATION_BACKOFF_MS - (nowMs - lastGetCurrentLocationFailMs)) / 1000}s remaining), skipping")
+                        if (BuildConfig.DEBUG) Log.d(TAG, "Still in getCurrentLocation backoff (${(GET_CURRENT_LOCATION_BACKOFF_MS - (nowMs - lastGetCurrentLocationFailMs)) / 1000}s remaining), skipping")
                     }
                 }
                 
@@ -144,7 +145,7 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
                         Log.i(TAG, "Location changed >10km: (${prefs.lastAutoLatitude},${prefs.lastAutoLongitude}) → (${currentLocation.latitude},${currentLocation.longitude}), triggering worker")
                         co.gorkem.namaz.service.LocationSyncWorker.executeNow(context, currentLocation.latitude, currentLocation.longitude)
                     } else {
-                        Log.d(TAG, "Location within 10km, skipping")
+                        if (BuildConfig.DEBUG) Log.d(TAG, "Location within 10km, skipping")
                     }
                 } else {
                     Log.w(TAG, "Could not obtain location (both lastLocation and getCurrentLocation failed), skipping")
