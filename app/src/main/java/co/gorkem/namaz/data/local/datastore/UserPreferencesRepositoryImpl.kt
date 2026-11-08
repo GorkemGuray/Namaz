@@ -28,6 +28,7 @@ class UserPreferencesRepositoryImpl @Inject constructor(
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val NOTIFICATION_PERMISSION_REQUESTED = booleanPreferencesKey("notification_permission_requested")
         val NOTIFICATION_MINUTES_BEFORE = intPreferencesKey("notification_minutes_before")
+        val PRAYER_VOICE_ENABLED = booleanPreferencesKey("prayer_voice_enabled")
         val CALCULATION_METHOD = intPreferencesKey("calculation_method")
         val SCHOOL = intPreferencesKey("school")
         val USE_LOCAL_CALCULATION = booleanPreferencesKey("use_local_calculation")
@@ -65,6 +66,7 @@ class UserPreferencesRepositoryImpl @Inject constructor(
                 notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
                 notificationPermissionRequested = prefs[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
                 notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
+                prayerVoiceEnabled = prefs[PRAYER_VOICE_ENABLED] ?: false,
                 calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
                 school = prefs[SCHOOL] ?: 0,
                 useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
@@ -98,6 +100,10 @@ class UserPreferencesRepositoryImpl @Inject constructor(
 
     override suspend fun setNotificationMinutesBefore(minutes: Int) {
         dataStore.edit { prefs -> prefs[NOTIFICATION_MINUTES_BEFORE] = minutes }
+    }
+
+    override suspend fun setPrayerVoiceEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[PRAYER_VOICE_ENABLED] = enabled }
     }
 
     override suspend fun setCalculationMethod(method: Int) {

@@ -12,6 +12,7 @@ data class UserPreferences(
     val notificationsEnabled: Boolean = true,
     val notificationPermissionRequested: Boolean = false,
     val notificationMinutesBefore: Int = 15,
+    val prayerVoiceEnabled: Boolean = false,
     val calculationMethod: Int = 13,
     val school: Int = 0,
     val useLocalCalculation: Boolean = false,

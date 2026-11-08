@@ -8,6 +8,7 @@ interface UserPreferencesRepository {
     suspend fun setNotificationsEnabled(enabled: Boolean)
     suspend fun setNotificationPermissionRequested(requested: Boolean)
     suspend fun setNotificationMinutesBefore(minutes: Int)
+    suspend fun setPrayerVoiceEnabled(enabled: Boolean)
     suspend fun setCalculationMethod(method: Int)
     suspend fun setSchool(school: Int)
     suspend fun setUseLocalCalculation(enabled: Boolean)

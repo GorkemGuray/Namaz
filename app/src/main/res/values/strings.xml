@@ -145,6 +145,10 @@
     <!-- Notifications -->
     <string name="notification_channel_name">Namaz Vakitleri</string>
     <string name="notification_channel_desc">Namaz vakti bildirimleri</string>
+    <string name="notification_channel_prayer_voice_name">Ezan Sesi ile Bildirim</string>
+    <string name="notification_channel_prayer_voice_desc">Sesli ezan vakti bildirimleri</string>
+    <string name="settings_prayer_voice">Ezan Sesi</string>
+    <string name="settings_prayer_voice_desc">Vakit girdiğinde sesli bildirim ver</string>
     <string name="notification_title_format">%1$s Vakti</string>
     <string name="notification_text_format">%1$s - %2$s</string>
     <string name="notification_big_text_format">%1$s için namaz vakti geldi. %2$s - %3$s</string>

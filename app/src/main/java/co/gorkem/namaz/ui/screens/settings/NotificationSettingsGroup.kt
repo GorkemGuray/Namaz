@@ -246,6 +246,40 @@ fun NotificationSettingsGroup(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            text = stringResource(R.string.settings_prayer_voice),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            text = stringResource(R.string.settings_prayer_voice_desc),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Rounded.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = preferences.prayerVoiceEnabled,
+                            onCheckedChange = { viewModel.setPrayerVoiceEnabled(it) }
+                        )
+                    },
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    modifier = Modifier.clip(MaterialTheme.shapes.large)
+                )
             }
         }
     }

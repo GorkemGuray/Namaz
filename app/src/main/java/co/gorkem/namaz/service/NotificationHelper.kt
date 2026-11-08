@@ -17,9 +17,17 @@ import co.gorkem.namaz.domain.model.PrayerName
 
 object NotificationHelper {
     const val CHANNEL_ID = "namaz_prayer_times"
+    const val VOICE_CHANNEL_ID = "namaz_prayer_times_voice"
+
+    fun resolveNotificationChannelId(prayerVoiceEnabled: Boolean): String {
+        return if (prayerVoiceEnabled) VOICE_CHANNEL_ID else CHANNEL_ID
+    }
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 context.getString(R.string.notification_channel_name),
@@ -28,9 +36,17 @@ object NotificationHelper {
                 description = context.getString(R.string.notification_channel_desc)
                 setShowBadge(true)
             }
-            val notificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+
+            val voiceChannel = NotificationChannel(
+                VOICE_CHANNEL_ID,
+                context.getString(R.string.notification_channel_prayer_voice_name),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = context.getString(R.string.notification_channel_prayer_voice_desc)
+                setShowBadge(true)
+            }
+            notificationManager.createNotificationChannel(voiceChannel)
         }
     }
 
@@ -39,7 +55,8 @@ object NotificationHelper {
         prayerName: PrayerName,
         prayerTime: String,
         cityName: String,
-        notificationId: Int
+        notificationId: Int,
+        voiceEnabled: Boolean = false
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
@@ -67,7 +84,8 @@ object NotificationHelper {
         val prayerColor = getPrayerColor(prayerName)
         val largeIconBitmap = getBitmapFromVectorDrawable(context, getIconResId(prayerName), prayerColor)
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val channelId = resolveNotificationChannelId(voiceEnabled)
+        val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(getIconResId(prayerName))
             .setLargeIcon(largeIconBitmap)
             .setColor(prayerColor)

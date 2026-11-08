@@ -194,6 +194,7 @@ class CitySelectionViewModelTest {
         override suspend fun setNotificationsEnabled(enabled: Boolean) {}
         override suspend fun setNotificationPermissionRequested(requested: Boolean) {}
         override suspend fun setNotificationMinutesBefore(minutes: Int) {}
+        override suspend fun setPrayerVoiceEnabled(enabled: Boolean) {}
         override suspend fun setCalculationMethod(method: Int) {}
         override suspend fun setSchool(school: Int) {}
         override suspend fun setUseLocalCalculation(enabled: Boolean) {}

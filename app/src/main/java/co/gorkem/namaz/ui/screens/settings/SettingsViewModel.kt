@@ -71,6 +71,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setPrayerVoiceEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setPrayerVoiceEnabled(enabled)
+        }
+    }
+
     fun setCalculationMethod(method: Int) {
         viewModelScope.launch {
             preferencesRepository.setCalculationMethod(method)

@@ -5,14 +5,17 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import co.gorkem.namaz.domain.model.PrayerName
+import co.gorkem.namaz.domain.repository.UserPreferencesRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.flow.first
 
 @HiltWorker
 class PrayerNotificationWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
-    private val notificationScheduler: PrayerNotificationScheduler
+    private val notificationScheduler: PrayerNotificationScheduler,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -27,12 +30,15 @@ class PrayerNotificationWorker @AssistedInject constructor(
             return Result.failure()
         }
 
+        val voiceEnabled = userPreferencesRepository.preferences.first().prayerVoiceEnabled
+
         NotificationHelper.showPrayerNotification(
             context = applicationContext,
             prayerName = prayerName,
             prayerTime = prayerTime,
             cityName = cityName,
-            notificationId = notificationId
+            notificationId = notificationId,
+            voiceEnabled = voiceEnabled
         )
 
         NamazWidgetUpdater.update(applicationContext)
