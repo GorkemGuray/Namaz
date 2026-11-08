@@ -11,7 +11,8 @@ import dagger.assisted.AssistedInject
 @HiltWorker
 class PrayerNotificationWorker @AssistedInject constructor(
     @Assisted appContext: Context,
-    @Assisted workerParams: WorkerParameters
+    @Assisted workerParams: WorkerParameters,
+    private val notificationScheduler: PrayerNotificationScheduler
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -35,6 +36,8 @@ class PrayerNotificationWorker @AssistedInject constructor(
         )
 
         NamazWidgetUpdater.update(applicationContext)
+
+        runCatching { notificationScheduler.rescheduleFromCache(cancelExisting = false) }
 
         return Result.success()
     }

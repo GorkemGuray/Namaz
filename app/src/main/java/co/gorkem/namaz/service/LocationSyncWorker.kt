@@ -120,9 +120,10 @@ class LocationSyncWorker @AssistedInject constructor(
 
             // Step 2: Completeness Check
             val today = LocalDate.now()
+            val tomorrow = today.plusDays(1)
             val activeDataSource = prayerTimeRepository.getActiveDataSource()
             val daysInMonth = today.lengthOfMonth()
-            
+
             if (!locationChanged) {
                 val recordCount = prayerTimeDao.getMonthRecordCount(
                     currentLocationInfo.cityName,
@@ -132,8 +133,22 @@ class LocationSyncWorker @AssistedInject constructor(
                     prefs.school,
                     activeDataSource
                 )
-                if (recordCount >= daysInMonth) {
-                    return Result.success() // TERMINATE THE WORKER IMMEDIATELY
+                val tomorrowMonthCount = if (tomorrow.monthValue != today.monthValue || tomorrow.year != today.year) {
+                    prayerTimeDao.getMonthRecordCount(
+                        currentLocationInfo.cityName,
+                        tomorrow.monthValue,
+                        tomorrow.year,
+                        prefs.calculationMethod,
+                        prefs.school,
+                        activeDataSource
+                    )
+                } else {
+                    recordCount
+                }
+
+                if (recordCount >= daysInMonth && tomorrowMonthCount > 0) {
+                    notificationScheduler.rescheduleFromCache()
+                    return Result.success()
                 }
             }
 
@@ -166,6 +181,8 @@ class LocationSyncWorker @AssistedInject constructor(
                     getNextPrayerUseCase = getNextPrayerUseCase,
                     getPrayerDashboardUseCase = getPrayerDashboardUseCase
                 )
+            } else {
+                notificationScheduler.rescheduleFromCache()
             }
 
             co.gorkem.namaz.service.NamazWidgetUpdater.update(appContext)

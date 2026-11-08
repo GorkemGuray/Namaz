@@ -2,6 +2,7 @@ package co.gorkem.namaz.domain.repository
 
 import co.gorkem.namaz.data.remote.NetworkResult
 import co.gorkem.namaz.domain.model.LocationInfo
+import co.gorkem.namaz.domain.model.LocationSearchResult
 import co.gorkem.namaz.domain.model.PrayerTime
 import kotlinx.coroutines.flow.Flow
 
@@ -13,4 +14,8 @@ interface PrayerTimeRepository {
         method: Int = 13,
         school: Int = 1
     ): Flow<NetworkResult<List<PrayerTime>>>
+
+    suspend fun findDistrictId(cityName: String, districtName: String = ""): String?
+
+    suspend fun searchLocations(query: String): List<LocationSearchResult>
 }

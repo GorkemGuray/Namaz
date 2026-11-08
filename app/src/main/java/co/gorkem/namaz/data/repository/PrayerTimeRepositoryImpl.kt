@@ -4,16 +4,22 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
+import co.gorkem.namaz.data.local.datastore.activeDataSource
 import co.gorkem.namaz.data.local.room.PrayerTimeDao
 import co.gorkem.namaz.data.local.room.PrayerTimeEntity
+import co.gorkem.namaz.data.local.room.toDomainModel
+import co.gorkem.namaz.data.local.room.toEntity
 import co.gorkem.namaz.data.remote.NetworkResult
 import co.gorkem.namaz.data.remote.api.AladhanApiService
 import co.gorkem.namaz.data.remote.api.ImsakiyemApiService
+import co.gorkem.namaz.data.remote.api.NominatimApiService
 import co.gorkem.namaz.domain.calculator.CalculationMethod
 import co.gorkem.namaz.domain.calculator.PrayerTimeCalculator
 import co.gorkem.namaz.domain.model.LocationInfo
+import co.gorkem.namaz.domain.model.LocationSearchResult
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.repository.PrayerTimeRepository
+import co.gorkem.namaz.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -22,6 +28,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 import co.gorkem.namaz.service.NamazWidgetUpdater
 
@@ -30,6 +37,7 @@ import co.gorkem.namaz.service.NamazWidgetUpdater
 class PrayerTimeRepositoryImpl @Inject constructor(
     private val apiService: ImsakiyemApiService,
     private val aladhanApiService: AladhanApiService,
+    @Named("nominatim") private val nominatimApiService: NominatimApiService,
     private val prayerTimeDao: PrayerTimeDao,
     private val calculator: PrayerTimeCalculator,
     private val preferencesRepository: UserPreferencesRepository,
@@ -38,8 +46,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
 
     internal suspend fun getActiveDataSource(): Int {
         val prefs = preferencesRepository.preferences.first()
-        if (prefs.useLocalCalculation) return 2
-        return prefs.dataSource
+        return prefs.activeDataSource
     }
 
     private fun isNetworkAvailable(): Boolean {
@@ -79,7 +86,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 NamazWidgetUpdater.update(context)
                 emit(NetworkResult.Success(localTimes))
             } else {
-                emit(NetworkResult.Error("Lokal hesaplama yapılamadı"))
+                emit(NetworkResult.Error(context.getString(R.string.error_local_calculation_failed)))
             }
         } else {
             try {
@@ -96,15 +103,15 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                     NamazWidgetUpdater.update(context)
                     emit(NetworkResult.Success(prayerTimes))
                 } else if (cached.isEmpty()) {
-                    emit(NetworkResult.Error("Vakitler alınamadı"))
+                    emit(NetworkResult.Error(context.getString(R.string.error_prayer_times_fetch_failed)))
                 }
             } catch (e: java.net.UnknownHostException) {
                 if (cached.isEmpty()) {
-                    emit(NetworkResult.Error("İnternet bağlantısı yok (Çevrimdışı)"))
+                    emit(NetworkResult.Error(context.getString(R.string.error_no_internet_offline)))
                 }
             } catch (e: Exception) {
                 if (cached.isEmpty()) {
-                    emit(NetworkResult.Error(e.message ?: "Bilinmeyen hata"))
+                    emit(NetworkResult.Error(e.message ?: context.getString(R.string.error_unknown)))
                 }
             }
         }
@@ -239,7 +246,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         return timeStr.substringBefore(" ").trim()
     }
 
-    suspend fun findDistrictId(cityName: String, districtName: String): String? {
+    override suspend fun findDistrictId(cityName: String, districtName: String): String? {
         val candidates = listOfNotNull(
             districtName.takeIf { it.isNotBlank() },
             cityName.takeIf { it.isNotBlank() }
@@ -268,6 +275,32 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         return null
     }
 
+    override suspend fun searchLocations(query: String): List<LocationSearchResult> {
+        return try {
+            val response = nominatimApiService.search(query = query.trim())
+            response.map { place ->
+                val lat = place.lat.toDoubleOrNull() ?: 0.0
+                val lon = place.lon.toDoubleOrNull() ?: 0.0
+                val cityName = place.address?.cityName ?: ""
+                val districtName = place.address?.districtName ?: ""
+                val countryName = place.address?.country ?: ""
+                val finalCityName = if (cityName.isNotEmpty()) cityName else place.displayName.substringBefore(",")
+
+                LocationSearchResult(
+                    displayName = place.displayName,
+                    cityName = finalCityName,
+                    districtName = districtName,
+                    countryName = countryName,
+                    latitude = lat,
+                    longitude = lon,
+                    districtId = ""
+                )
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     suspend fun refreshPrayerTimes(location: LocationInfo, month: Int, year: Int, method: Int, school: Int): Result<List<PrayerTime>> {
         val activeDataSource = getActiveDataSource()
         val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
@@ -287,7 +320,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 NamazWidgetUpdater.update(context)
                 Result.success(localTimes)
             } else {
-                Result.failure(Exception("Lokal hesaplama yapılamadı"))
+                Result.failure(Exception(context.getString(R.string.error_local_calculation_failed)))
             }
         }
 
@@ -309,7 +342,7 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 if (cached.isNotEmpty()) {
                     Result.success(cached.map { it.toDomainModel() })
                 } else {
-                    Result.failure(Exception("Vakitler alınamadı"))
+                    Result.failure(Exception(context.getString(R.string.error_prayer_times_fetch_failed)))
                 }
             }
         } catch (e: Exception) {
@@ -332,40 +365,4 @@ class PrayerTimeRepositoryImpl @Inject constructor(
         val minutes = totalMinutes % 60
         return String.format("%02d:%02d", hours, minutes)
     }
-
-    private fun PrayerTime.toEntity(cityName: String, month: Int, year: Int, method: Int, school: Int, dataSource: Int) = PrayerTimeEntity(
-        date = date,
-        cityName = cityName,
-        gregorianDate = gregorianDate,
-        hijriDay = hijriDay,
-        hijriMonthNumber = hijriMonthNumber,
-        hijriYear = hijriYear,
-        imsak = imsak,
-        gunes = gunes,
-        ogle = ogle,
-        ikindi = ikindi,
-        aksam = aksam,
-        yatsi = yatsi,
-        timezone = timezone,
-        cacheMonth = month,
-        cacheYear = year,
-        cacheMethod = method,
-        cacheSchool = school,
-        cacheDataSource = dataSource
-    )
-
-    private fun PrayerTimeEntity.toDomainModel() = PrayerTime(
-        date = date,
-        gregorianDate = gregorianDate,
-        hijriDay = hijriDay,
-        hijriMonthNumber = hijriMonthNumber,
-        hijriYear = hijriYear,
-        imsak = imsak,
-        gunes = gunes,
-        ogle = ogle,
-        ikindi = ikindi,
-        aksam = aksam,
-        yatsi = yatsi,
-        timezone = timezone
-    )
 }

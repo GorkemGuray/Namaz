@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,6 +51,9 @@ data class UserPreferences(
     val lastUpdateCheckMs: Long = 0L
 )
 
+val UserPreferences.activeDataSource: Int
+    get() = if (useLocalCalculation) 2 else dataSource
+
 fun UserPreferences.getLocationInfo(): LocationInfo {
     return if (manualCityName.isNotEmpty()) {
         LocationInfo(
@@ -75,10 +79,18 @@ fun UserPreferences.getLocationInfo(): LocationInfo {
 }
 
 @Singleton
-class UserPreferencesRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+open class UserPreferencesRepository private constructor(
+    private val context: Context?,
+    @Suppress("UNUSED_PARAMETER") marker: Unit?
 ) {
-    private val dataStore = context.userPreferencesDataStore
+    @Inject
+    constructor(@ApplicationContext context: Context) : this(context, null)
+
+    internal constructor() : this(null, null)
+
+    private val dataStore by lazy {
+        checkNotNull(context) { "Context is required for DataStore operations" }.userPreferencesDataStore
+    }
     private val gson = Gson()
 
     companion object Keys {
@@ -107,42 +119,43 @@ class UserPreferencesRepository @Inject constructor(
         val LAST_UPDATE_CHECK_MS = stringPreferencesKey("last_update_check_ms")
     }
 
-    val preferences: Flow<UserPreferences> = dataStore.data.map { prefs ->
-        val recentCitiesJson = prefs[RECENT_CITIES] ?: "[]"
-        val recentCities: List<RecentCity> = try {
-            val type = object : TypeToken<List<RecentCity>>() {}.type
-            val cities = gson.fromJson<List<RecentCity>>(recentCitiesJson, type) ?: emptyList()
-            cities.map { it.copy(districtId = it.districtId ?: "") }
-        } catch (_: Exception) {
-            emptyList()
-        }
+    open val preferences: Flow<UserPreferences>
+        get() = dataStore.data.map { prefs ->
+            val recentCitiesJson = prefs[RECENT_CITIES] ?: "[]"
+            val recentCities: List<RecentCity> = try {
+                val type = object : TypeToken<List<RecentCity>>() {}.type
+                val cities = gson.fromJson<List<RecentCity>>(recentCitiesJson, type) ?: emptyList()
+                cities.map { it.copy(districtId = it.districtId ?: "") }
+            } catch (_: Exception) {
+                emptyList()
+            }
 
-        UserPreferences(
-            notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
-            notificationPermissionRequested = prefs[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
-            notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
-            calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
-            school = prefs[SCHOOL] ?: 0,
-            useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
-            dataSource = prefs[DATA_SOURCE] ?: 0,
-            language = prefs[LANGUAGE] ?: "tr",
-            appTheme = prefs[APP_THEME] ?: 0,
-            manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
-            manualDistrictName = prefs[MANUAL_DISTRICT_NAME] ?: "",
-            manualDistrictId = prefs[MANUAL_DISTRICT_ID] ?: "",
-            manualLatitude = (prefs[MANUAL_LATITUDE] ?: "0.0").toDouble(),
-            manualLongitude = (prefs[MANUAL_LONGITUDE] ?: "0.0").toDouble(),
-            recentCities = recentCities,
-            lastAutoLatitude = (prefs[LAST_AUTO_LATITUDE] ?: "0.0").toDouble(),
-            lastAutoLongitude = (prefs[LAST_AUTO_LONGITUDE] ?: "0.0").toDouble(),
-            lastAutoCityName = prefs[LAST_AUTO_CITY_NAME] ?: "",
-            lastAutoDistrictName = prefs[LAST_AUTO_DISTRICT_NAME] ?: "",
-            lastAutoDistrictId = prefs[LAST_AUTO_DISTRICT_ID] ?: "",
-            lastAutoTimezone = prefs[LAST_AUTO_TIMEZONE] ?: "Europe/Istanbul",
-            manualTimezone = prefs[MANUAL_TIMEZONE] ?: "Europe/Istanbul",
-            lastUpdateCheckMs = (prefs[LAST_UPDATE_CHECK_MS] ?: "0").toLongOrNull() ?: 0L
-        )
-    }
+            UserPreferences(
+                notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
+                notificationPermissionRequested = prefs[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
+                notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
+                calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
+                school = prefs[SCHOOL] ?: 0,
+                useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
+                dataSource = prefs[DATA_SOURCE] ?: 0,
+                language = prefs[LANGUAGE] ?: "tr",
+                appTheme = prefs[APP_THEME] ?: 0,
+                manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
+                manualDistrictName = prefs[MANUAL_DISTRICT_NAME] ?: "",
+                manualDistrictId = prefs[MANUAL_DISTRICT_ID] ?: "",
+                manualLatitude = (prefs[MANUAL_LATITUDE] ?: "0.0").toDouble(),
+                manualLongitude = (prefs[MANUAL_LONGITUDE] ?: "0.0").toDouble(),
+                recentCities = recentCities,
+                lastAutoLatitude = (prefs[LAST_AUTO_LATITUDE] ?: "0.0").toDouble(),
+                lastAutoLongitude = (prefs[LAST_AUTO_LONGITUDE] ?: "0.0").toDouble(),
+                lastAutoCityName = prefs[LAST_AUTO_CITY_NAME] ?: "",
+                lastAutoDistrictName = prefs[LAST_AUTO_DISTRICT_NAME] ?: "",
+                lastAutoDistrictId = prefs[LAST_AUTO_DISTRICT_ID] ?: "",
+                lastAutoTimezone = prefs[LAST_AUTO_TIMEZONE] ?: "Europe/Istanbul",
+                manualTimezone = prefs[MANUAL_TIMEZONE] ?: "Europe/Istanbul",
+                lastUpdateCheckMs = (prefs[LAST_UPDATE_CHECK_MS] ?: "0").toLongOrNull() ?: 0L
+            )
+        }
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[NOTIFICATIONS_ENABLED] = enabled }
@@ -196,7 +209,7 @@ class UserPreferencesRepository @Inject constructor(
         updateWidget()
     }
 
-    suspend fun setManualCity(
+    open suspend fun setManualCity(
         name: String,
         districtName: String = "",
         latitude: Double,
@@ -214,7 +227,7 @@ class UserPreferencesRepository @Inject constructor(
         updateWidget()
     }
 
-    suspend fun clearManualCity() {
+    open suspend fun clearManualCity() {
         dataStore.edit { prefs ->
             prefs.remove(MANUAL_CITY_NAME)
             prefs.remove(MANUAL_DISTRICT_NAME)
@@ -243,7 +256,7 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    suspend fun clearRecentCities() {
+    open suspend fun clearRecentCities() {
         dataStore.edit { prefs -> prefs[RECENT_CITIES] = "[]" }
     }
 
@@ -279,6 +292,6 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     private fun updateWidget() {
-        NamazWidgetUpdater.update(context)
+        context?.let { NamazWidgetUpdater.update(it) }
     }
 }

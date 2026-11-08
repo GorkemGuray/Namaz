@@ -4,9 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.gorkem.namaz.wear.data.QiblaDirection
+import co.gorkem.namaz.core.QiblaDirection
+import co.gorkem.namaz.core.QiblaUseCase
 import co.gorkem.namaz.wear.data.QiblaSensorManager
-import co.gorkem.namaz.wear.data.QiblaUseCase
 import co.gorkem.namaz.wear.data.WearDataLayerService
 import co.gorkem.namaz.wear.ui.state.QiblaUiState
 import com.google.android.gms.location.LocationServices

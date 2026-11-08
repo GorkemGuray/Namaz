@@ -1,6 +1,6 @@
 package co.gorkem.namaz.wear.ui.state
 
-import co.gorkem.namaz.wear.data.QiblaDirection
+import co.gorkem.namaz.core.QiblaDirection
 
 sealed class QiblaUiState {
     data object Loading : QiblaUiState()

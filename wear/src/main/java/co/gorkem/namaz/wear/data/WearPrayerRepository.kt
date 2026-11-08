@@ -1,6 +1,6 @@
 package co.gorkem.namaz.wear.data
 
-import co.gorkem.namaz.wear.data.remote.api.AladhanApiService
+import co.gorkem.namaz.core.AladhanApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.time.LocalDate

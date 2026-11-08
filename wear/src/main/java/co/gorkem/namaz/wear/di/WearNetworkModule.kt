@@ -1,6 +1,6 @@
 package co.gorkem.namaz.wear.di
 
-import co.gorkem.namaz.wear.data.remote.api.AladhanApiService
+import co.gorkem.namaz.core.AladhanApiService
 import co.gorkem.namaz.wear.data.remote.api.ImsakiyemApiService
 import dagger.Module
 import dagger.Provides

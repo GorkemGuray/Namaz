@@ -53,7 +53,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import co.gorkem.namaz.wear.data.QiblaDirection
+import co.gorkem.namaz.core.QiblaDirection
 import co.gorkem.namaz.wear.ui.WearQiblaViewModel
 import co.gorkem.namaz.wear.ui.state.QiblaUiState
 import kotlin.math.abs
