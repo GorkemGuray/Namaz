@@ -54,6 +54,10 @@
 
     <!-- Settings -->
     <string name="settings_title">Ayarlar</string>
+    <string name="qada_tracker_title">Kaza Takibi</string>
+    <string name="qada_total_debt">Toplam Kaza Borcu</string>
+    <string name="qada_decrease">Borcu Azalt</string>
+    <string name="qada_increase">Borcu Artır</string>
     <string name="settings_notifications">Bildirimler</string>
     <string name="settings_enable_notifications">Bildirimleri Aç</string>
     <string name="settings_notifications_desc">Vakit geldiğinde bildirim al</string>

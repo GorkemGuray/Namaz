@@ -54,6 +54,10 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
+    <string name="qada_tracker_title">Missed Prayers Tracker</string>
+    <string name="qada_total_debt">Total Missed Prayers</string>
+    <string name="qada_decrease">Decrease Debt</string>
+    <string name="qada_increase">Increase Debt</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_enable_notifications">Enable Notifications</string>
     <string name="settings_notifications_desc">Receive notification when prayer time arrives</string>

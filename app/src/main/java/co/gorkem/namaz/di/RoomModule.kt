@@ -38,4 +38,10 @@ object RoomModule {
     fun provideZikirDao(database: NamazDatabase): co.gorkem.namaz.data.local.room.ZikirDao {
         return database.zikirDao()
     }
+
+    @Provides
+    @Singleton
+    fun provideQadaPrayerDao(database: NamazDatabase): co.gorkem.namaz.data.local.room.QadaPrayerDao {
+        return database.qadaPrayerDao()
+    }
 }

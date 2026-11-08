@@ -6,16 +6,17 @@ import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 
 @Database(
-    entities = [PrayerTimeEntity::class, ZikirEntity::class],
+    entities = [PrayerTimeEntity::class, ZikirEntity::class, QadaPrayerEntity::class],
     version = NamazDatabase.VERSION,
     exportSchema = true
 )
 abstract class NamazDatabase : RoomDatabase() {
     abstract fun prayerTimeDao(): PrayerTimeDao
     abstract fun zikirDao(): ZikirDao
+    abstract fun qadaPrayerDao(): QadaPrayerDao
 
     companion object {
-        const val VERSION = 5
+        const val VERSION = 6
     }
 }
 

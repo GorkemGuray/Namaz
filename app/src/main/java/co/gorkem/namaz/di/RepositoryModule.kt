@@ -2,8 +2,10 @@ package co.gorkem.namaz.di
 
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepositoryImpl
 import co.gorkem.namaz.data.repository.PrayerTimeRepositoryImpl
+import co.gorkem.namaz.data.repository.QadaRepositoryImpl
 import co.gorkem.namaz.data.repository.ZikirRepositoryImpl
 import co.gorkem.namaz.domain.repository.PrayerTimeRepository
+import co.gorkem.namaz.domain.repository.QadaRepository
 import co.gorkem.namaz.domain.repository.UserPreferencesRepository
 import co.gorkem.namaz.domain.repository.ZikirRepository
 import dagger.Binds
@@ -33,4 +35,10 @@ abstract class RepositoryModule {
     abstract fun bindUserPreferencesRepository(
         impl: UserPreferencesRepositoryImpl
     ): UserPreferencesRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindQadaRepository(
+        impl: QadaRepositoryImpl
+    ): QadaRepository
 }

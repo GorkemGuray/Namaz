@@ -76,6 +76,10 @@ fun SettingsScreen(
                 viewModel = viewModel
             )
 
+            SettingsSection(title = stringResource(R.string.qada_tracker_title)) {
+                QadaSettingsGroup()
+            }
+
             SettingsSection(title = stringResource(R.string.settings_data_source)) {
                 Surface(
                     shape = MaterialTheme.shapes.large,

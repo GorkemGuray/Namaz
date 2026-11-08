@@ -89,7 +89,7 @@ class NamazDatabaseMigrationTest {
     @Test
     fun currentRegistry_coversEveryVersionFromZikirIntroduction() {
         val registry = NamazDatabaseMigrations.registry
-        val firstUserDataVersion = 5
+        val firstUserDataVersion = NamazDatabaseMigrations.currentVersion
         for (version in firstUserDataVersion until NamazDatabaseMigrations.currentVersion) {
             assertTrue(
                 "v$version -> v${NamazDatabaseMigrations.currentVersion} için migration yok",
