@@ -18,8 +18,9 @@ GET https://api.aladhan.com/v1/calendar/{year}/{month}
   ?latitude={lat}&longitude={lon}&method={method}&school={school}
 ```
 - `method=13` Diyanet yöntemi (varsayılan `calculation_method`).
-- `school`: 0 Şafii / 1 Hanefi.
+- `school`: 0 Şafii / 1 Hanefi (DataStore default 0 — Şafii; lokal motor notu Hanefi varsayımıyla çelişiyordu, T-213 sonrası tek kaynak DataStore'dur).
 - Response: `AladhanResponse(code/status/data: List<AladhanDayData>)`; timings `fajr/sunrise/dhuhr/asr/maghrib/isha` ("HH:mm (EET)" suffixli → `cleanTime()` ile temizlenir).
+- Retrofit interface + DTO `:core`'da yaşar (`co.gorkem.namaz.core`), app/wear typealias ile kullanır (T-211/211b).
 
 ### 2.2 İmsakiyem (Diyanet resmi)
 ```
@@ -53,8 +54,8 @@ GET https://gorkemguray.github.io/Namaz-App/version.json
 
 ```
 getPrayerTimes(location, month, year, method, school)
-  → Room cache var mı? (getPrayerTimesForMonth + getMonthRecordCount)
-  → varsa Success(cache), yoksa refreshPrayerTimes()
+  → Room: getPrayerTimesForMonth() tek sorgu (T-222; ayrı count sorgusu kaldırıldı)
+  → cache doluysa Success(cache), boşsa refreshPrayerTimes()
         ↓
 refreshPrayerTimes()
   → getActiveDataSource() (data_source + useLocalCalculation)
@@ -62,7 +63,7 @@ refreshPrayerTimes()
   → dataSource==1 → fetchFromImsakiyem(districtId via findDistrictId)
   → dataSource==0 → fetchFromAladhan(lat/lon/method/school)
   → API hatası → otomatik lokal fallback
-  → insertAll(REPLACE) + NamazWidgetUpdater.update() + cleanupOldData(30)
+  → insertAll(REPLACE) + NamazWidgetUpdater.update() (cache invalidation dahil) + cleanupOldData(30)
 ```
 
 - Cache key: `cityName + month + year + method + school + cacheDataSource`.
@@ -75,7 +76,8 @@ refreshPrayerTimes()
 İmsakiyem ilçe arama büyük/küçük harf + Türkçe karakter hassastır. Çözüm:
 - İstek öncesi: `query.uppercase(Locale.forLanguageTag("tr"))` (örn. `kırklareli` → `KIRKLARELİ`).
 - Eşleştirme: `name.lowercase(Locale.forLanguageTag("tr"))` karşılaştırma.
-- Uygulanan yerler: `CitySelectionViewModel` + `PrayerTimeRepositoryImpl.findDistrictId()`.
+- Uygulanan yerler: `PrayerTimeRepositoryImpl.findDistrictId()` + `searchLocations()` (T-212). `CitySelectionViewModel` API görmez — aramayı repository üzerinden yapar.
+- Ek kapsam (T-201): `PrayerName.fromName()` ve jest-eşleştirme de TR-locale kullanır; locale'siz `lowercase()/uppercase()` codebase'de kalmadı.
 
 ## 5. Konum → Veri Zinciri
 

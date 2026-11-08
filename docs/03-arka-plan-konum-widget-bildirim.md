@@ -32,11 +32,13 @@
 Konum 10km değişti
   → setLastAutoLocation()       [widget GÜNCELLENMEZ]
   → refreshPrayerTimes()         [API veya lokal]
-  → NamazWidgetUpdater.update()  [her zaman, hata dahil]
-  → NamazWidget.provideGlance()  [DB'den okur, render eder]
+  → NamazWidgetUpdater.update()  [önce clearMemoryCache(), sonra update — her zaman]
+  → NamazWidget.provideGlance()  [ay cache hit ise Room okumaz (T-222), render eder]
   → schedulePrayerTransitionAlarm() [sonraki vakit/kerahat için alarm]
-  → WearSyncManager.syncData()   [sadece success]
+  → WearSyncManager.syncData()   [sadece success; districtId + dataSource dahil (T-234)]
 ```
+
+- **Ay Cache (T-222/222b)**: aynı ay/konum/yöntem anahtarıyla in-memory liste; dakikalık tick'lerde Room sorgusu atlanır. Invalidation tek funnel: `NamazWidgetUpdater.update()`.
 
 - **Native Chronometer**: `AndroidRemoteViews` + `Chronometer`, `elapsedRealtime()` tabanlı countdown. Launcher/SystemUI işletir — %0 CPU/wake lock, Doze geçirmez.
 - **Kerahat sync**: `NamazWidgetState(isKerahat/kerahatPrayerName/kerahatRemainingMinutes)`; `GetPrayerDashboardUseCase.execute()` widget state'e taşınır. Kerahatta kart `errorContainer` + `error` badge, Chronometer hedefi kerahat bitişi.
@@ -45,10 +47,12 @@ Konum 10km değişti
 
 ## 3. Bildirimler
 
-- `PrayerNotificationScheduler.schedulePrayerNotifications(times, minutesBefore, city)`: 6 vakit için ayrı `OneTimeWorkRequest` (unique `prayer_{NAME}_{date}`, tag `prayer_notification`), delay = `vakit − minutesBefore`.
-- `PrayerNotificationWorker.doWork()`: `NotificationHelper.showPrayerNotification()` + widget update.
+- `PrayerNotificationScheduler.schedulePrayerNotifications(times, minutesBefore, city)`: 6 vakit için ayrı `OneTimeWorkRequest` (unique `prayer_{NAME}_{date}`, tag `prayer_notification`), delay = `vakit − minutesBefore`. Saf hesaplama `resolveNotificationSchedules()` içinde, test edilebilir (T-233).
+- `PrayerNotificationWorker.doWork()`: `prayerVoiceEnabled` ise voice kanal (`VOICE_CHANNEL_ID`), değilse normal kanal (T-230) + widget update.
+- Özel gün (T-233): `special_day_{date}` work name ile sabah 09:00 tek seferlik `SpecialDayNotificationWorker`.
 - `cancelAllNotifications()`: tag ile iptal.
-- `NotificationHelper`: kanal oluşturma + tek/hatırlatma bildirimi + renk/ikon.
+- `NotificationHelper`: kanal oluşturma + tek/hatırlatma/özel-gün bildirimi + renk/ikon.
+- Release log hijyeni (T-222): `service/` + `UpdateChecker` içindeki `Log.d` çağrıları `BuildConfig.DEBUG` guard'lı.
 
 ## 4. Logcat ve Test
 

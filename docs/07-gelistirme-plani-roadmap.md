@@ -1,54 +1,49 @@
 # 07 — Geliştirme Planı (Roadmap)
 
-> İlke: her faz TDD ile (önce test), her faz sonunda `./gradlew assembleDebug + test` yeşil. Mimari: Clean + MVVM + Hilt korunur.
+> İlke: her faz TDD ile (önce test), her görev commit ile biter, her faz sonunda `./gradlew assembleDebug + test` yeşil. Mimari: Clean + MVVM + Hilt + `:core` korunur.
 
-## Faz 0 — Dokümantasyon Temeli (bu set) ✅
-- `docs/00–08` oluşturuldu, gap analizi kapatıldı.
-- Sonraki adım: `CI-CD-PLAN.md` güncelleme + README versiyon düzeltmeleri (AGP 9.4.0, KSP 2.3.6) — Faz 1'e alındı.
+## Tamamlanan Fazlar (Kas 2026 — T-200 → T-234 ✅)
 
-## Faz 1 — Teknik Borç Temizliği (1–2 hafta)
-1. **Duplicate `PrayerNameHelper` birleştir**: `wear/PrayerNameHelper.kt` (Context) + `wear/ui/PrayerNameHelper.kt` (@Composable) → tek dosya. Test: derleme + Wear smoke.
-2. **Wear hardcoded fallback kaldır**: `WearViewModel.loadFromStandalone()` İstanbul/Silivri 9548 → önce saat GPS (timeout'lu), yoksa son DataStore konumu, en son DEFAULT. Test: GPS kapalı senaryo.
-3. **CI-CD-PLAN senkronu**: applicationId, JDK, versionCode gerçekle eşitle; README rozetleri düzelt.
-4. **Room exportSchema kararı**: `exportSchema=false` + `fallbackToDestructiveMigration` → ya schema export aç ya da migration stratejisi dokümante et (veri kaybı riski).
-5. **Kabul**: `./gradlew test` yeşil, lint temiz.
+| Faz | Görevler | Durum |
+|-----|----------|-------|
+| **A — Risksiz temizlik** | T-200 string'ler, T-201 TR-locale, T-202 build borcu | ✅ 3 commit |
+| **B — Mimari** | T-210 `:core` modül, T-211 taşıma, T-211b wear dedup, T-212 CitySelection repo, T-213 domain/data ayrışması, T-214 dosya parçalama | ✅ 5 commit |
+| **C — Performans** | T-220 wear polling kaldırma, T-221 parse tekleştirme, T-222 widget sorgu+log, T-222b cache invalidation | ✅ 4 commit |
+| **D — Yeni özellikler** | T-230 ezan sesi toggle, T-231/231b kaza takibi, T-232 ramazan, T-233 cuma/kandil, T-234 wear Diyanet | ✅ 5 commit |
 
-## Faz 2 — Güvenilirlik ve Pil (2–3 hafta)
-1. `WidgetMinuteReceiver` 5dk backoff + exact-alarm izni yoksa inexact fallback matriksi (API 31/33/36) — test: izin kapalı emülatör.
-2. `LocationSyncWorker` eksik-ay kontrolü genişlet (takvim önceden yükleme), `cleanupOldData` periyodu ayarlara bağla.
-3. Bildirim scheduler: `minutesBefore` değişiminde reschedule doğrulama + Doze testi.
-4. Complication/Tile null-state UX: `NoData` yerine son cache + "güncelleniyor" gösterimi.
-5. Kabul: 24 saat pil ölçümü (mevcut tabloyla karşılaştır), logcat hatasız.
+Detay + kontrol modeli: `09-icra-plani-ve-kontrol.md` (tümü DONE).
 
-## Faz 3 — UX Parlatma (2–4 hafta)
-1. Kıble kalibrasyon akışı: `needsCalibration` + manyetik bozulma (±20–70 μT dışı) için yönlendirmeli dialog.
-2. Zikirmatik: `08`'deki tamamlanmamış superpowers planlarını kapat (HorizontalPager/BottomSheet/AnimatedContent doğrulama).
-3. Takvim: yıl geçişi + hızlı bugün butonu.
-4. Tema: `themeToColorProviders()` widget eşlemesini 4 tema için görsel test.
-5. Kabul: `android layout --pretty` + screenshot incelemesi.
+## Faz E — Yeni İşler (öneri, öncelik sırasız)
 
-## Faz 4 — Release Hazırlığı (1–2 hafta)
-1. Keystore + GitHub Secrets (`KEYSTORE_BASE64/PASSWORD/ALIAS/KEY_PASSWORD`) → imzalı release APK (CI-CD-PLAN Bölüm 6).
-2. `release.yml`'e lint+test gate ekle (`:app:lintDebug`, `test`).
-3. `version.json` şeması dokümante et + `UpdateDownloader` install-permission akışını Android 14+ ile test et.
-4. Play Store yolu kararı: Gradle Play Publisher vs GitHub Action (CI-CD-PLAN 8.2).
-5. Kabul: `v*` tag dry-run ile GitHub Release + site güncellemesi.
+### E1. Gerçek ezan sesi (T-230 devamı)
+- `res/raw/` altına ezan mp3 + `MediaPlayer`/ses-servisi ile kademeli ses artırma. Voice kanalına `setSound()` bağlama. Telif/dosya boyutu kararı gerekli (APK +~3MB).
 
-## Faz 5 — Uzun Vade (backlog)
-- R8/ProGuard küçültme (`r8-analyzer` skill) + `isMinifyEnabled` açma.
-- `navigation-3` geçişi, `edge-to-edge` insets denetimi, `appfunctions` kısayolları.
-- Website `generate_static.py` adımını `deploy-website.yml`'e ekleme (manuel unutma riskini kaldırır).
-- EN/TR string mirror denetimi otomasyonu.
-- Wear Tile'da kerahat rozeti.
+### E2. R8/ProGuard küçültme
+- `r8-analyzer` skill ile keep kuralları, `isMinifyEnabled=true` denemesi, release APK boyut ölçümü. Glance + Hilt + Room keep kurallarına dikkat.
 
-## Öncelik Matrisi
+### E3. Navigation-3 geçişi
+- `navigation-3` skill: `NavHost` → Navigation 3 sahne modeli. Qada ekranını ayrı route yapma fırsatı (T-231b'de silindi, ihtiyaç olursa geri gelir).
 
-| İş | Etki | Efor | Öncelik |
-|----|------|------|---------|
-| Duplicate helper birleştirme | Orta | Düşük | P0 |
-| Wear GPS fallback | Yüksek | Orta | P0 |
-| CI-CD-PLAN senkronu | Düşük | Düşük | P0 |
-| İmzalı release | Yüksek | Orta | P1 |
-| Kalibrasyon UX | Orta | Orta | P1 |
-| generate_static CI adımı | Orta | Düşük | P1 |
-| R8 küçültme | Orta | Yüksek | P2 |
+### E4. Kandil takvimi otomasyonu
+- `SpecialDays.kt` sabit tablo her yıl elle güncellenmeli. Seçenek: Diyanet API'den çekme veya `generate`-benzeri build-time üretici. 2028 öncesi karar verilmeli.
+
+### E5. Edge-to-edge + Wear Tile kerahat
+- `edge-to-edge` skill ile insets denetimi; Wear Tile'a kerahat rozeti (08/P1-7'nin devamı).
+
+### E6. EN/TR string mirror otomasyonu
+- CI'da `values/strings.xml` ↔ `values-en/strings.xml` key karşılaştırma job'ı (eksik çeviri erken yakalanır).
+
+### E7. `generate_static.py` CI adımı
+- `deploy-website.yml`'e üretim adımını ekle (manuel unutma riski kalkar).
+
+## Öncelik Önerisi
+
+| İş | Etki | Efor | Öneri |
+|----|------|------|-------|
+| E4 kandil otomasyonu | Yüksek (2028'e kadar zorunlu) | Düşük | P0 |
+| E2 R8 küçültme | Orta | Orta | P1 |
+| E1 gerçek ezan sesi | Yüksek | Orta | P1 |
+| E6 string mirror CI | Düşük | Düşük | P1 |
+| E7 generate_static CI | Düşük | Düşük | P1 |
+| E5 edge-to-edge + tile | Orta | Orta | P2 |
+| E3 navigation-3 | Orta | Yüksek | P2 |

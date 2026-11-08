@@ -6,8 +6,9 @@
 
 | Modül | Package | minSdk / target | Sorumluluk |
 |-------|---------|-----------------|------------|
-| `app/` (mobil) | `co.gorkem.namaz` | 24 / 36 | Vakitler, kıble + harita, takvim, zikirmatik, Glance widget, bildirim, Wear sync kaynağı |
-| `wear/` (saat) | `co.gorkem.namaz` | 30 / 36 | Grid vakitler, kıble, zikirmatik, Tile, 2 Complication; Data Layer + standalone |
+| `app/` (mobil) | `co.gorkem.namaz` | 24 / 36 | Vakitler, kıble + harita, takvim, zikirmatik, kaza takibi, ramazan, özel gün, Glance widget, bildirim, Wear sync kaynağı |
+| `wear/` (saat) | `co.gorkem.namaz` | 30 / 36 | Grid vakitler, kıble, zikirmatik, Tile, 2 Complication; Data Layer + standalone (Diyanet dahil) |
+| `core/` (paylaşım) | `co.gorkem.namaz.core` | JVM only | Qibla, Aladhan DTO/API, GreatCircle, LocationMath, DateTimeUtils (T-210/211) |
 
 > Kritik: Data Layer senkronizasyonu için iki modülün `applicationId` değeri eşitlenmiştir (`co.gorkem.namaz`). CI-CD-PLAN.md içindeki eski `co.gorkem.namaz.wear` değeri geçersizdir.
 
@@ -28,7 +29,7 @@ Hero card (geri sayım + sıradaki vakit + periyot + hicri tarih) + kerahat bann
 5 vakit + güneş sütunlu responsive tablo, bugünü vurgulama, sol/sağ okla ay geçişi.
 
 ### 2.4 Ayarlar
-Bildirim master toggle + dakika seçimi (0/15/30/45), veri kaynağı (0 Aladhan / 1 İmsakiyem / 2 Lokal), hesaplama yöntemi, mezhep (school), tema (4 seçenek), dil (TR/EN). Alt kısımda `BuildConfig.VERSION_NAME` ile sürüm gösterimi + manuel güncelleme kontrol butonu.
+Bildirim master toggle + dakika seçimi (0/15/30/45) + ezan sesi toggle (T-230, voice kanal), veri kaynağı (0 Aladhan / 1 İmsakiyem / 2 Lokal), hesaplama yöntemi, mezhep (school), tema (11 seçenek: 0-10), dil (TR/EN), kaza takibi sayaçları (T-231). Alt kısımda `BuildConfig.VERSION_NAME` ile sürüm gösterimi + manuel güncelleme kontrol butonu.
 
 ### 2.5 Şehir seçimi
 - `dataSource == 1` (İmsakiyem) → İmsakiyem ilçe arama (TR büyük harf normalizasyonlu).
@@ -48,13 +49,26 @@ Native `Chronometer` (OS işletir — %0 CPU/wake lock), kerahat modunda kırmı
 ### 2.9 Uygulama içi güncelleme
 `UpdateChecker` → `version.json` endpoint'i, semantik karşılaştırma, haftada 1 otomatik throttle (`lastUpdateCheckMs`), ana ekranda `UpdateBanner` + ayarlarda `UpdateCheckButton`. "İndir" GitHub Releases'i açar.
 
+### 2.10 Ezan sesi (T-230)
+Ayarlardaki toggle ile bildirimler `VOICE_CHANNEL_ID` üzerinden gösterilir. Gerçek ezan mp3'ü henüz eklenmedi — sistem varsayılan bildirim sesi çalar.
+
+### 2.11 Kaza takibi (T-231)
+Ayarlar'da 6 vakit için +/- sayaç (`QadaSettingsGroup` + `QadaPrayerRow`), Room'da kalıcı (`QadaPrayerEntity`), process kill sonrası korunur.
+
+### 2.12 Ramazan modu (T-232)
+Hicri ay 9 ise hero card'da sahur/iftar çift sayacı (`RamadanCountdownRow`); diğer aylarda mevcut tek sayaç (regresyon yok).
+
+### 2.13 Cuma/kandil hatırlatıcıları (T-233)
+Özel gün sabah 09:00 tek seferlik WorkManager bildirimi (`special_day_{date}`) + ana ekranda `SpecialDayBanner`. Kandil listesi `SpecialDays.kt` içinde 2026-2027 sabit tablosu — her yıl güncellenmeli.
+
 ## 3. Konfigürasyon
 
 ```
-Gradle:      9.4.1
-AGP:         9.4.0 (libs.versions.toml) — README'deki 9.2.1 eski değerdir
+Gradle:      9.6.0
+AGP:         9.4.0 (libs.versions.toml)
 Kotlin:      2.2.10
-KSP:         2.3.6 (libs.versions.toml) — AGENTS'deki 2.3.2 eski değerdir
+KSP:         2.2.10-2.0.2 (libs.versions.toml)
+DB:          v6 (Room, exportSchema=true)
 Compose BOM: 2026.05.00
 compileSdk / targetSdk: 36
 app minSdk:  24, wear minSdk: 30
@@ -70,10 +84,11 @@ Ana bağımlılıklar (`gradle/libs.versions.toml`): Hilt 2.59.2, Retrofit 2.11.
 git clone https://github.com/gorkem/Namaz.git
 cd Namaz
 
-./gradlew assembleDebug          # app + wear
+./gradlew assembleDebug          # app + wear + core
 ./gradlew :app:assembleDebug     # sadece mobil
 ./gradlew :wear:assembleDebug    # sadece wear
-./gradlew test                   # tüm unit testler
+./gradlew :core:build            # sadece paylaşılan modül
+./gradlew test                   # tüm unit testler (30 dosya: app 23, wear 6, core 1)
 ./gradlew :app:test              # sadece mobil
 ./gradlew :wear:test              # sadece wear
 ```
@@ -89,5 +104,5 @@ Android CLI tercih edilir (AGENTS.md kuralı): `android run --debug`, `android d
 5. Ayarlar: bildirim/metod/mezhep/tema/dil/kaynak.
 6. Şehir seçimi kaynağa göre arama.
 7. Kıble: pusula veya harita.
-8. Telefon → Wear Data Layer sync (vakit + konum + next + kerahat + tema).
-9. Wear standalone: telefon yoksa saat kendi GPS + API ile çalışır (GPS yoksa İstanbul fallback — bkz. `08` tech debt).
+8. Telefon → Wear Data Layer sync (vakit + konum + districtId + dataSource + next + kerahat + tema).
+9. Wear standalone: telefon yoksa saat kendi GPS'i + aktif dataSource (Aladhan/İmsakiyem) ile çalışır. Konum zinciri: saat GPS → telefondan gelen son konum → İstanbul DEFAULT (districtId 9548).

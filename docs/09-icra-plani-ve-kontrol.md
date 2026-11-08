@@ -1,6 +1,6 @@
 # 09 — İcra Planı ve Kontrol (Başka Agent Uygulayacak)
 
-> Sahip: plan + kontrol bu oturumda. Uygulama başka agent tarafından yapılır.
+> Durum: TAMAMLANDI (Kas 2026) — T-200 → T-234, 17 commit, tree temiz, tüm testler yeşil. Yeni işler için `07-gelistirme-plani-roadmap.md` Faz E'ye bak.
 > İlke: her görev TDD, her görev sonu `./gradlew test` yeşil. Mimari: Clean + MVVM + Hilt korunur.
 
 ## Kontrol Modeli
