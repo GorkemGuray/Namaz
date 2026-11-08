@@ -28,14 +28,17 @@
 - Resmi Diyanet takvimi tablosu korundu, 2028 yılı resmi kandil tarihleri eklendi.
 - `SpecialDaysTest` guard testi eklendi: içinde bulunulan yıl + sonraki yıl için 5 kandilin tamamının çözümlenebilir olması şart koşuldu. Tablo biterse test kırmızı olur (sessiz hata engellendi). Yıllık bakım artık guard test ile denetlenmektedir.
 
+### 9. `generate_static.py` CI Entegrasyonu — ✅ ÇÖZÜLDÜ (E7)
+- `deploy-website.yml` ve `release.yml` workflow'larında website kopyalanmadan önce `python3 website/generate_static.py` adımı bağlandı; sitemap ve statik sayfaların eskimesi riski önlendi.
+
+### 12. EN/TR String Mirror Denetimi — ✅ ÇÖZÜLDÜ (E6)
+- `.github/workflows/string-mirror-check.yml` ve `scripts/check_string_mirror.py` eklendi; TR/EN string XML dosyaları arasındaki anahtar uyumu CI'da zorunlu kılındı.
+
 ## P1 — Kısa Vadede
 
 ### 8. Room Migration Stratejisi (v6)
 - `NamazDatabase` v6, `exportSchema=true`, şemalar `app/schemas/` altında. v5→v6 geçişinde migration yazılmadı (bilinçli tercih: qada tablosu yeni, kullanıcı verisi kaybı yok).
 - **Kural:** v7+ şema değişikliğinde `MigrationSpec` + registry kaydı zorunlu. `NamazDatabaseMigrationTest` bunu doğrular.
-
-### 9. `generate_static.py` Manuel Adım
-- `deploy-website.yml` bu adımı çalıştırmaz; unutulursa site/sitemap eskir. Çözüm: CI'ya ekle (07/E7).
 
 ### 10. Complication/Tile Null-State
 - Veri yoksa `NoData`/mock (`AKSAM:20:33`) gösterilir. Çözüm: son cache + yükleniyor durumu.

@@ -30,11 +30,11 @@ Detay + kontrol modeli: `09-icra-plani-ve-kontrol.md` (tümü DONE).
 ### E5. Edge-to-edge + Wear Tile kerahat
 - `edge-to-edge` skill ile insets denetimi; Wear Tile'a kerahat rozeti (08/P1-7'nin devamı).
 
-### E6. EN/TR string mirror otomasyonu
-- CI'da `values/strings.xml` ↔ `values-en/strings.xml` key karşılaştırma job'ı (eksik çeviri erken yakalanır).
+### E6. EN/TR string mirror otomasyonu — ✅ ÇÖZÜLDÜ
+- `.github/workflows/string-mirror-check.yml` + `scripts/check_string_mirror.py` ile PR ve push'larda XML string anahtar uyumu denetimi eklendi.
 
-### E7. `generate_static.py` CI adımı
-- `deploy-website.yml`'e üretim adımını ekle (manuel unutma riski kalkar).
+### E7. `generate_static.py` CI adımı — ✅ ÇÖZÜLDÜ
+- `deploy-website.yml` ve `release.yml` adımlarında site dosyaları kopyalanmadan önce `generate_static.py` çalıştırılarak sitemap ve SEO sayfaları güncellenir.
 
 ## Öncelik Önerisi
 
