@@ -169,7 +169,7 @@ app/
     │   @HiltAndroidApp NamazApplication, @AndroidEntryPoint MainActivity
     │   Widget: APPWIDGET_UPDATE receiver + configure activity + WorkManager init provider
     ├── java/co/gorkem/namaz/
-    │   ├── NamazApp.kt                    # Root composable, 4-tab bottom nav (Vakitler/Takvim/Kıble/Ayarlar) + AppThemeEntryPoint + rememberAppTheme() + HorizontalPager (Zikirmatik/Home)
+    │   ├── NamazApp.kt                    # Root: Navigation 3 NavDisplay + 5-tab bar + CitySelection bottom-sheet sahnesi (E3). ui/navigation/: AppRoute (NavKey), Navigator, NavigationState, BottomSheetSceneStrategy
     │   ├── NamazApplication.kt            # @HiltAndroidApp, Configuration.Provider (HiltWorkerFactory), notification channel + worker schedule + passive location listener + WidgetMinuteReceiver reboot reschedule
     │   ├── MainActivity.kt                # @AndroidEntryPoint, edge-to-edge, LocaleManager.attachBaseContext
     │   ├── LocaleManager.kt               # i18n: SharedPreferences-based locale, activity recreate

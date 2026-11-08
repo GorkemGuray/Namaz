@@ -25,7 +25,7 @@ Detay + kontrol modeli: `09-icra-plani-ve-kontrol.md` (tümü DONE).
 - Canlı cihaz (emülatör) testi: 0 çökme, MainActivity 811 ms'de sorunsuz açıldı.
 - `isMinifyEnabled = false` korundu, kurallar gelecekteki release derlemelerine hazır bırakıldı.
 
-### E3. Navigation-3 geçişi
+### E3. Navigation-3 geçişi — ✅ TAMAMLANDI (b08e5139)
 - `navigation-3` skill: `NavHost` → Navigation 3 sahne modeli. Qada ekranını ayrı route yapma fırsatı (T-231b'de silindi, ihtiyaç olursa geri gelir).
 
 ### E4. Kandil takvimi otomasyonu — ✅ ÇÖZÜLDÜ
@@ -53,4 +53,4 @@ Detay + kontrol modeli: `09-icra-plani-ve-kontrol.md` (tümü DONE).
 | E6 string mirror CI | Düşük | Düşük | P1 |
 | E7 generate_static CI | Düşük | Düşük | P1 |
 | E5 edge-to-edge + tile | Orta | Orta | P2 |
-| E3 navigation-3 | Orta | Yüksek | P2 |
+| E3 navigation-3 | Orta | Yüksek | ✅ bitti |
