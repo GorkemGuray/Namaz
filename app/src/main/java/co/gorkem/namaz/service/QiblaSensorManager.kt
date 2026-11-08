@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.PI
 import kotlin.math.sqrt
 import kotlin.math.sin
 import kotlin.math.cos
