@@ -92,7 +92,9 @@ class WearViewModel @Inject constructor(
                 if (data != null) {
                     _prayerItems.value = data.prayers
                     _cityName.value = data.cityName
-                    _nextPrayerInfo.value = data.nextPrayer
+                    val next = data.nextPrayer
+                    val isNextValid = next != null && (next.targetTimeMillis == 0L || next.targetTimeMillis > System.currentTimeMillis())
+                    _nextPrayerInfo.value = if (isNextValid) next else co.gorkem.namaz.wear.calculateNextPrayer(data.prayers)
                     _kerahatInfo.value = data.kerahat
                     _themeId.value = data.themeId
                     _isPhoneSource.value = true
@@ -100,19 +102,15 @@ class WearViewModel @Inject constructor(
                 }
             }
         }
-        
         viewModelScope.launch {
-            while (true) {
-                if (_prayerItems.value.isNotEmpty()) {
-                    _nextPrayerInfo.value = co.gorkem.namaz.wear.calculateNextPrayer(_prayerItems.value)
-                }
-                kotlinx.coroutines.delay(10_000L)
-            }
-        }
-        viewModelScope.launch {
-            // Wait 2 seconds to allow DataLayer to fetch existing items from phone
             kotlinx.coroutines.delay(2000L)
             loadFromStandalone()
+        }
+    }
+
+    fun refreshNextPrayer() {
+        if (_prayerItems.value.isNotEmpty()) {
+            _nextPrayerInfo.value = co.gorkem.namaz.wear.calculateNextPrayer(_prayerItems.value)
         }
     }
 

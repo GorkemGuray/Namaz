@@ -43,6 +43,8 @@ import co.gorkem.namaz.wear.data.WearNextPrayer
 import co.gorkem.namaz.wear.data.WearPrayerItem
 import co.gorkem.namaz.wear.ui.WearViewModel
 import co.gorkem.namaz.wear.prayerNameFromEnum
+import androidx.compose.runtime.rememberUpdatedState
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -131,6 +133,7 @@ fun WearHomeScreen(
                         item {
                             NextPrayerHeader(
                                 nextPrayerInfo = nextPrayer!!,
+                                onCountdownFinished = { viewModel.refreshNextPrayer() },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .transformedHeight(this, transformationSpec)
@@ -330,29 +333,40 @@ private fun TransformingLazyColumnItemScope.CompactHeader(
 }
 
 @Composable
-private fun CompactCountdown(
+fun WearCountdownHero(
     nextPrayer: WearNextPrayer,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCountdownFinished: () -> Unit = {}
 ) {
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var remaining by remember { mutableLongStateOf(0L) }
+    val currentOnFinished by rememberUpdatedState(onCountdownFinished)
 
-    LaunchedEffect(nextPrayer) {
-        val now = LocalTime.now()
-        val prayerTime = LocalTime.parse(nextPrayer.time, timeFormatter)
-        val today = LocalDate.now()
-
-        val targetDateTime = if (prayerTime.isAfter(now)) {
-            LocalDateTime.of(today, prayerTime)
+    val targetMillis = remember(nextPrayer) {
+        if (nextPrayer.targetTimeMillis > 0L) {
+            nextPrayer.targetTimeMillis
         } else {
-            LocalDateTime.of(today.plusDays(1), prayerTime)
+            val now = LocalTime.now()
+            val prayerTime = LocalTime.parse(nextPrayer.time, timeFormatter)
+            val today = LocalDate.now()
+            val targetDateTime = if (prayerTime.isAfter(now)) {
+                LocalDateTime.of(today, prayerTime)
+            } else {
+                LocalDateTime.of(today.plusDays(1), prayerTime)
+            }
+            targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         }
+    }
 
-        val targetMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-        while (true) {
-            val remainingSecs = ((targetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+    LaunchedEffect(targetMillis) {
+        while (isActive) {
+            val nowWall = System.currentTimeMillis()
+            val remainingSecs = ((targetMillis - nowWall) / 1000).coerceAtLeast(0)
             remaining = remainingSecs
+            if (nowWall >= targetMillis + 1200) {
+                currentOnFinished()
+                break
+            }
             delay(1000L)
         }
     }
@@ -375,9 +389,23 @@ private fun CompactCountdown(
 }
 
 @Composable
+private fun CompactCountdown(
+    nextPrayer: WearNextPrayer,
+    modifier: Modifier = Modifier,
+    onCountdownFinished: () -> Unit = {}
+) {
+    WearCountdownHero(
+        nextPrayer = nextPrayer,
+        modifier = modifier,
+        onCountdownFinished = onCountdownFinished
+    )
+}
+
+@Composable
 private fun TransformingLazyColumnItemScope.NextPrayerHeader(
     nextPrayerInfo: WearNextPrayer,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCountdownFinished: () -> Unit = {}
 ) {
     Row(
         modifier = modifier.padding(vertical = 2.dp),
@@ -389,7 +417,10 @@ private fun TransformingLazyColumnItemScope.NextPrayerHeader(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        CompactCountdown(nextPrayer = nextPrayerInfo)
+        CompactCountdown(
+            nextPrayer = nextPrayerInfo,
+            onCountdownFinished = onCountdownFinished
+        )
     }
 }
 
