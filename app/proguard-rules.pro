@@ -1,21 +1,34 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# R8 / ProGuard Configuration for Namaz Mobile App
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 1. Native methods: preserve native methods for JNI
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# 2. Gson / Serialization: Keep fields of DTO models serialized/deserialized via reflection
+-keepclassmembers class co.gorkem.namaz.data.remote.dto.** {
+    <fields>;
+}
+-keepclassmembers class co.gorkem.namaz.service.WearPrayerData** {
+    <fields>;
+}
+-keepclassmembers class co.gorkem.namaz.service.WearPrayerItem {
+    <fields>;
+}
+-keepclassmembers class co.gorkem.namaz.service.WearNextPrayer {
+    <fields>;
+}
+-keepclassmembers class co.gorkem.namaz.service.WearKerahatInfo {
+    <fields>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# 3. Glance AppWidget: preserve Glance widget classes
+-keep class * extends androidx.glance.appwidget.GlanceAppWidget {
+    public <init>(...);
+}
+
+# 4. MapLibre: JNI reflection and NativeMapView
+-keepclassmembers class org.maplibre.android.maps.NativeMapView {
+    native <methods>;
+}
+-dontwarn org.maplibre.geojson.**

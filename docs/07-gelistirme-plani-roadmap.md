@@ -18,8 +18,12 @@ Detay + kontrol modeli: `09-icra-plani-ve-kontrol.md` (tümü DONE).
 ### E1. Gerçek ezan sesi (T-230 devamı) — ✅ ÇÖZÜLDÜ
 - `res/raw/ezan.mp3` altına CC0 lisanslı 30.5 saniyelik ezan kaydı eklendi (+256 KB). `PrayerAudioPlayer` ile ilk 10 saniye kademeli ses artışı sağlandı. Voice kanalına `setSound()` ve `AudioAttributes(USAGE_NOTIFICATION)` bağlandı. Ayarlar'a "Sesi dene" butonu eklendi.
 
-### E2. R8/ProGuard küçültme
-- `r8-analyzer` skill ile keep kuralları, `isMinifyEnabled=true` denemesi, release APK boyut ölçümü. Glance + Hilt + Room keep kurallarına dikkat.
+### E2. R8/ProGuard küçültme — ✅ TAMAMLANDI
+- `r8-analyzer` skill ile keep kuralları analiz edildi. Glance, Hilt, Room, MapLibre ve Gson modelleri doğrulandı.
+- `app/proguard-rules.pro` ve `wear/proguard-rules.pro` optimize edildi; AAR tüketici kurallarıyla çakışmayan temiz kurallar yazıldı.
+- Boyut ölçümü: Debug APK 72.5 MB (76,070,372 bayt) → Minified Release APK 50.9 MB (53,444,364 bayt) ile %29.7 tasarruf (-21.6 MB).
+- Canlı cihaz (emülatör) testi: 0 çökme, MainActivity 811 ms'de sorunsuz açıldı.
+- `isMinifyEnabled = false` korundu, kurallar gelecekteki release derlemelerine hazır bırakıldı.
 
 ### E3. Navigation-3 geçişi
 - `navigation-3` skill: `NavHost` → Navigation 3 sahne modeli. Qada ekranını ayrı route yapma fırsatı (T-231b'de silindi, ihtiyaç olursa geri gelir).
