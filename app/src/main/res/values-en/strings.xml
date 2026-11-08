@@ -52,6 +52,10 @@
     <string name="city_no_results_suffix">\ no results found</string>
     <string name="city_try_different">Try a different search term</string>
 
+    <!-- Ramadan -->
+    <string name="ramadan_sahur">Suhoor</string>
+    <string name="ramadan_iftar">Iftar</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="qada_tracker_title">Missed Prayers Tracker</string>

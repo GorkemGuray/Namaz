@@ -49,6 +49,7 @@ import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.domain.usecase.PeriodType
+import co.gorkem.namaz.domain.usecase.RamadanCounters
 import co.gorkem.namaz.ui.theme.HeroCardShape
 import co.gorkem.namaz.ui.theme.prayerHeroGradient
 import kotlinx.coroutines.delay
@@ -63,6 +64,7 @@ fun PrayerHeroCard(
     dashboard: PrayerDashboardData,
     locationName: String,
     hijriDate: String = "",
+    ramadanCounters: RamadanCounters? = null,
     onLocationClick: () -> Unit = {},
     onCountdownFinished: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -175,44 +177,51 @@ fun PrayerHeroCard(
                     .background(Color.White.copy(alpha = 0.15f))
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_next_prayer),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-            AnimatedContent(
-                targetState = dashboard.nextPrayer.prayerName,
-                transitionSpec = {
-                    scaleIn(
-                        initialScale = 0.85f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-                    ) + fadeIn() togetherWith
-                    scaleOut(targetScale = 1.15f) + fadeOut()
-                },
-                label = "next_prayer_name"
-            ) { name ->
-                Text(
-                    text = stringResource(name.nameRes),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White
-                )
-            }
-                }
-
-                CountdownDisplay(
-                    targetPrayerTimeInMillis = dashboard.nextPrayer.targetPrayerTimeInMillis,
-                    textColor = Color.White,
-                    textAlign = TextAlign.End,
+            if (ramadanCounters != null) {
+                RamadanCountdownRow(
+                    ramadanCounters = ramadanCounters,
                     onCountdownFinished = onCountdownFinished
                 )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.home_next_prayer),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                        AnimatedContent(
+                            targetState = dashboard.nextPrayer.prayerName,
+                            transitionSpec = {
+                                scaleIn(
+                                    initialScale = 0.85f,
+                                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                                ) + fadeIn() togetherWith
+                                scaleOut(targetScale = 1.15f) + fadeOut()
+                            },
+                            label = "next_prayer_name"
+                        ) { name ->
+                            Text(
+                                text = stringResource(name.nameRes),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    CountdownDisplay(
+                        targetPrayerTimeInMillis = dashboard.nextPrayer.targetPrayerTimeInMillis,
+                        textColor = Color.White,
+                        textAlign = TextAlign.End,
+                        onCountdownFinished = onCountdownFinished
+                    )
+                }
             }
         }
     }

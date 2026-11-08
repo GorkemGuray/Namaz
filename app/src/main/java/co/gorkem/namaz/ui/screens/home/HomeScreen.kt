@@ -78,6 +78,7 @@ fun HomeScreen(
     val needsLocationPermission by viewModel.needsLocationPermission.collectAsState()
     val needsBackgroundLocationPermission by viewModel.needsBackgroundLocationPermission.collectAsState()
     val nextPrayer by viewModel.nextPrayer.collectAsState()
+    val ramadanCounters by viewModel.ramadanCounters.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -199,6 +200,7 @@ fun HomeScreen(
                                 dashboard = dash,
                                 locationName = locationDisplay,
                                 hijriDate = hijriDateDisplay,
+                                ramadanCounters = ramadanCounters,
                                 onLocationClick = onLocationClick,
                                 onCountdownFinished = { viewModel.refreshDashboardImmediately() }
                             )

@@ -12,7 +12,9 @@ import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerDashboardUseCase
+import co.gorkem.namaz.domain.usecase.GetRamadanCountersUseCase
 import co.gorkem.namaz.domain.usecase.PrayerDashboardData
+import co.gorkem.namaz.domain.usecase.RamadanCounters
 import co.gorkem.namaz.service.GeocoderHelper
 import co.gorkem.namaz.service.LocationTracker
 import co.gorkem.namaz.service.PrayerNotificationScheduler
@@ -43,6 +45,7 @@ class HomeViewModel @Inject constructor(
     private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
     private val getNextPrayerUseCase: GetNextPrayerUseCase,
     private val getPrayerDashboardUseCase: GetPrayerDashboardUseCase,
+    private val getRamadanCountersUseCase: GetRamadanCountersUseCase,
     private val locationTracker: LocationTracker,
     private val geocoderHelper: GeocoderHelper,
     private val notificationScheduler: PrayerNotificationScheduler,
@@ -60,6 +63,9 @@ class HomeViewModel @Inject constructor(
 
     private val _dashboardData = MutableStateFlow<PrayerDashboardData?>(null)
     val dashboardData: StateFlow<PrayerDashboardData?> = _dashboardData.asStateFlow()
+
+    private val _ramadanCounters = MutableStateFlow<RamadanCounters?>(null)
+    val ramadanCounters: StateFlow<RamadanCounters?> = _ramadanCounters.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -217,6 +223,7 @@ class HomeViewModel @Inject constructor(
         _error.value = null
         _nextPrayer.value = null
         _dashboardData.value = null
+        _ramadanCounters.value = null
         val today = LocalDate.now()
         val todayKey = today.format(DateTimeUtils.DATE_FORMATTER)
 
@@ -292,6 +299,7 @@ class HomeViewModel @Inject constructor(
         val tomorrowKey = todayDate.plusDays(1).format(DateTimeUtils.DATE_FORMATTER)
         val tomorrow = _prayerTimes.value.find { it.date == tomorrowKey }
         _dashboardData.value = getPrayerDashboardUseCase.execute(today, tomorrow)
+        _ramadanCounters.value = getRamadanCountersUseCase(today, tomorrowPrayerTimes = tomorrow)
 
         syncToWear(_prayerTimes.value, _locationInfo.value)
     }

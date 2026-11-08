@@ -52,6 +52,10 @@
     <string name="city_no_results_suffix">\ için sonuç bulunamadı</string>
     <string name="city_try_different">Farklı bir arama terimi deneyin</string>
 
+    <!-- Ramadan -->
+    <string name="ramadan_sahur">Sahur</string>
+    <string name="ramadan_iftar">İftar</string>
+
     <!-- Settings -->
     <string name="settings_title">Ayarlar</string>
     <string name="qada_tracker_title">Kaza Takibi</string>
