@@ -130,7 +130,9 @@ fun QiblaScreen(
                     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
 
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -226,7 +228,9 @@ fun QiblaScreen(
                     }
 
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -268,7 +272,9 @@ fun QiblaScreen(
 
                 is QiblaUiState.StaticDirection -> {
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -311,7 +317,9 @@ fun QiblaScreen(
                     var isRetrying by remember { mutableStateOf(false) }
 
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -383,7 +391,9 @@ fun QiblaScreen(
 
                 is QiblaUiState.LocationRequired -> {
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {

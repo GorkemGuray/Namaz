@@ -31,8 +31,11 @@ Detay + kontrol modeli: `09-icra-plani-ve-kontrol.md` (tümü DONE).
 ### E4. Kandil takvimi otomasyonu — ✅ ÇÖZÜLDÜ
 - `SpecialDays.kt` 2028 resmi Diyanet takvimi eklendi. `SpecialDaysTest` guard testi ile içinde bulunulan + sonraki yıl denetimi bağlandı (tablo biterse test kırmızı olur). Umm al-Qura spike'ında ±1 gün Diyanet sapması görüldüğü için tablo + guard yaklaşımı benimsendi.
 
-### E5. Edge-to-edge + Wear Tile kerahat
-- `edge-to-edge` skill ile insets denetimi; Wear Tile'a kerahat rozeti (08/P1-7'nin devamı).
+### E5. Edge-to-edge + Wear Tile kerahat — ✅ ÇÖZÜLDÜ
+- `edge-to-edge` skill kurallarına göre `MainActivity`'ye `isNavigationBarContrastEnforced = false` ve `AndroidManifest.xml`'e `adjustResize` eklendi.
+- `QiblaScreen` tüm durumlarında status bar taşması önlendi (`statusBarsPadding()`).
+- `WearHomeScreen` `CompactHeader` Material 3 `ListHeader` ile sarılarak `TimeText` çakışması giderildi. `WearQiblaScreen`'de pusula modunda `ScreenScaffold(timeText = {})` ile saat gizlenerek derece rozetiyle üst üste binmesi önlendi.
+- Wear Tile'a kerahat aktifken kompakt kerahat uyarısı (`⚠️ kerahat aktif (-Xdk)`) eklendi ve `PrayerTileLayoutTest` ile doğrulandı.
 
 ### E6. EN/TR string mirror otomasyonu — ✅ ÇÖZÜLDÜ
 - `.github/workflows/string-mirror-check.yml` + `scripts/check_string_mirror.py` ile PR ve push'larda XML string anahtar uyumu denetimi eklendi.

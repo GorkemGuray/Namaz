@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.wear.compose.material3.ScreenScaffold
 import co.gorkem.namaz.wear.ui.WearQiblaViewModel
 import co.gorkem.namaz.wear.ui.state.QiblaUiState
 
@@ -38,13 +39,17 @@ fun WearQiblaScreen(
     val context = LocalContext.current
     var lastAlignedState by remember { mutableStateOf(false) }
 
-    Box(
+    ScreenScaffold(
+        timeText = {}, // Pusula modunda saat rozetle çakışmaması için gizlenir
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
-        contentAlignment = Alignment.Center
+            .background(Color.Black)
     ) {
-        when (val state = uiState) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            when (val state = uiState) {
             is QiblaUiState.Loading -> {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
@@ -136,6 +141,7 @@ fun WearQiblaScreen(
             }
         }
     }
+}
 }
 
 private fun vibrate(context: Context, isTargetReached: Boolean) {

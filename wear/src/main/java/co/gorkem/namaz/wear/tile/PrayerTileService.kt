@@ -1,5 +1,6 @@
 package co.gorkem.namaz.wear.tile
 
+import android.content.Context
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.ResourceBuilders as ProtoResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders as ProtoTimelineBuilders
@@ -23,6 +24,12 @@ data class ResolvedDisplay(
     val source: DisplaySource
 )
 
+data class TileDisplayTexts(
+    val kerahatBadge: String?,
+    val mainText: String,
+    val subText: String
+)
+
 fun isCacheUsable(data: WearPrayerData?, nowMillis: Long): Boolean {
     if (data == null) return false
     return nowMillis - data.timestamp < STALE_CACHE_MILLIS
@@ -40,6 +47,76 @@ fun resolveDisplayData(
         return ResolvedDisplay(cached, DisplaySource.CACHE)
     }
     return ResolvedDisplay(null, DisplaySource.EMPTY)
+}
+
+fun resolveTileTexts(
+    data: WearPrayerData?,
+    source: DisplaySource,
+    getString: (Int) -> String,
+    prayerNameResolver: (String) -> String
+): TileDisplayTexts {
+    val kerahat = data?.kerahat
+    val kerahatBadge = if (kerahat != null && kerahat.isCurrentlyKerahat) {
+        "⚠️ " + getString(R.string.wear_kerahat_active) + " (-${kerahat.remainingMinutes}dk)"
+    } else {
+        null
+    }
+
+    val (text, subText) = if (data == null) {
+        getString(R.string.wear_loading) to getString(R.string.wear_prayer_times)
+    } else {
+        val nextPrayer = data.nextPrayer ?: calculateNextPrayer(data.prayers)
+        if (nextPrayer != null) {
+            "${prayerNameResolver(nextPrayer.name)}: ${nextPrayer.time}" to
+                (if (source == DisplaySource.CACHE) {
+                    getString(R.string.wear_standalone_mode)
+                } else {
+                    nextPrayer.remainingMinutes.toString() + getString(R.string.wear_minutes_left)
+                })
+        } else {
+            getString(R.string.wear_prayer_times) to data.cityName
+        }
+    }
+
+    return TileDisplayTexts(kerahatBadge, text, subText)
+}
+
+fun buildTileLayout(
+    context: Context,
+    resolved: ResolvedDisplay
+): LayoutElementBuilders.Layout {
+    val texts = resolveTileTexts(
+        data = resolved.data,
+        source = resolved.source,
+        getString = { resId -> context.getString(resId) },
+        prayerNameResolver = { enumName -> prayerNameFromEnum(context, enumName) }
+    )
+
+    val columnBuilder = LayoutElementBuilders.Column.Builder()
+
+    if (texts.kerahatBadge != null) {
+        columnBuilder.addContent(
+            LayoutElementBuilders.Text.Builder()
+                .setText(texts.kerahatBadge)
+                .build()
+        )
+    }
+
+    columnBuilder
+        .addContent(
+            LayoutElementBuilders.Text.Builder()
+                .setText(texts.mainText)
+                .build()
+        )
+        .addContent(
+            LayoutElementBuilders.Text.Builder()
+                .setText(texts.subText)
+                .build()
+        )
+
+    return LayoutElementBuilders.Layout.Builder()
+        .setRoot(columnBuilder.build())
+        .build()
 }
 
 @OptIn(ExperimentalHorologistApi::class)
@@ -65,52 +142,14 @@ class PrayerTileService : SuspendingTileService() {
             nowMillis = System.currentTimeMillis()
         )
 
-        val tile = TileBuilders.Tile.Builder()
+        return TileBuilders.Tile.Builder()
             .setResourcesVersion("1")
             .setTileTimeline(
                 ProtoTimelineBuilders.Timeline.Builder()
                     .addTimelineEntry(
                         ProtoTimelineBuilders.TimelineEntry.Builder()
-                            .setLayout(buildLayout(resolved))
+                            .setLayout(buildTileLayout(this, resolved))
                             .build()
-                    )
-                    .build()
-            )
-            .build()
-
-        return tile
-    }
-
-    private fun buildLayout(resolved: ResolvedDisplay): LayoutElementBuilders.Layout {
-        val data = resolved.data
-
-        val (text, subText) = if (data == null) {
-            getString(R.string.wear_loading) to getString(R.string.wear_prayer_times)
-        } else {
-            val nextPrayer = data.nextPrayer
-                ?: calculateNextPrayer(data.prayers)
-            if (nextPrayer != null) {
-                "${prayerNameFromEnum(this, nextPrayer.name)}: ${nextPrayer.time}" to
-                    (if (resolved.source == DisplaySource.CACHE) {
-                        getString(R.string.wear_standalone_mode)
-                    } else {
-                        nextPrayer.remainingMinutes.toString() + getString(R.string.wear_minutes_left)
-                    })
-            } else {
-                getString(R.string.wear_prayer_times) to data.cityName
-            }
-        }
-
-        return LayoutElementBuilders.Layout.Builder()
-            .setRoot(
-                LayoutElementBuilders.Column.Builder()
-                    .addContent(
-                        LayoutElementBuilders.Text.Builder()
-                            .setText(text).build()
-                    )
-                    .addContent(
-                        LayoutElementBuilders.Text.Builder()
-                            .setText(subText).build()
                     )
                     .build()
             )

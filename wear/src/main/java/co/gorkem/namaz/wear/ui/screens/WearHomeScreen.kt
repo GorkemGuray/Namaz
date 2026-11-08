@@ -58,7 +58,10 @@ import androidx.compose.material.icons.filled.TouchApp
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListHeaderDefaults
+import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.lazy.TransformationSpec
 
 @Composable
 fun WearHomeScreen(
@@ -105,6 +108,7 @@ fun WearHomeScreen(
                             CompactHeader(
                                 cityName = cityName,
                                 isPhoneSource = isPhoneSource,
+                                transformationSpec = transformationSpec,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .transformedHeight(this, transformationSpec)
@@ -309,26 +313,31 @@ private fun TransformingLazyColumnItemScope.LoadingState(modifier: Modifier = Mo
 private fun TransformingLazyColumnItemScope.CompactHeader(
     cityName: String,
     isPhoneSource: Boolean,
+    transformationSpec: TransformationSpec,
     modifier: Modifier = Modifier
 ) {
     val sourceIconColor = if (isPhoneSource) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
-    Row(
-        modifier = modifier.padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+    ListHeader(
+        modifier = modifier,
+        transformation = SurfaceTransformation(transformationSpec)
     ) {
-        Box(
-            modifier = Modifier
-                .size(4.dp)
-                .clip(CircleShape)
-                .background(sourceIconColor)
-        )
-        Spacer(modifier = Modifier.size(6.dp))
-        Text(
-            text = cityName,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(sourceIconColor)
+            )
+            Spacer(modifier = Modifier.size(6.dp))
+            Text(
+                text = cityName,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 
