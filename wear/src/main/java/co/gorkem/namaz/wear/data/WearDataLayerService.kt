@@ -44,38 +44,45 @@ class WearDataLayerService @Inject constructor(
         updateFromDataItems(events)
     }
 
+    companion object {
+        fun parsePrayerData(json: String): WearPrayerData? {
+            return try {
+                WearPrayerData.fromJson(json)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
     fun startListening() {
         dataClient.addListener(dataListener)
         
-        // Fetch cached data from disk first
         scope.launch {
             try {
                 context.wearPrayerDataStore.data.first().let { prefs ->
                     val cachedJson = prefs[PRAYER_DATA_KEY]
                     if (cachedJson != null) {
-                        val data = WearPrayerData.fromJson(cachedJson)
-                        _prayerData.value = data
+                        val data = parsePrayerData(cachedJson)
+                        if (data != null) {
+                            _prayerData.value = data
+                        }
                     }
                 }
             } catch (e: Exception) {
-                // Ignore
             }
         }
 
-        // Fetch existing data so we don't start in standalone mode if phone already sent data
         dataClient.dataItems.addOnSuccessListener { items ->
             for (item in items) {
                 if (item.uri.path == "/namaz_prayer_data") {
                     val dataMap = com.google.android.gms.wearable.DataMapItem.fromDataItem(item).dataMap
                     val json = dataMap.getString("prayer_json") ?: continue
-                    try {
-                        val data = WearPrayerData.fromJson(json)
+                    val data = parsePrayerData(json)
+                    if (data != null) {
                         _prayerData.value = data
                         _isPhoneConnected.value = true
                         savePrayerDataToDisk(json)
                         requestComplicationUpdate()
-                    } catch (e: Exception) {
-                        // Invalid data
                     }
                 }
             }
@@ -93,15 +100,12 @@ class WearDataLayerService @Inject constructor(
                 if (dataItem.uri.path == "/namaz_prayer_data") {
                     val dataMap = com.google.android.gms.wearable.DataMapItem.fromDataItem(dataItem).dataMap
                     val json = dataMap.getString("prayer_json") ?: continue
-
-                    try {
-                        val data = WearPrayerData.fromJson(json)
+                    val data = parsePrayerData(json)
+                    if (data != null) {
                         _prayerData.value = data
                         _isPhoneConnected.value = true
                         savePrayerDataToDisk(json)
                         requestComplicationUpdate()
-                    } catch (e: Exception) {
-                        // Invalid data
                     }
                 }
             }
@@ -143,34 +147,32 @@ class WearDataLayerService @Inject constructor(
         val current = _prayerData.value
         if (current != null) return current
 
-        // Try reading from cache
         try {
             val prefs = context.wearPrayerDataStore.data.first()
             val cachedJson = prefs[PRAYER_DATA_KEY]
             if (cachedJson != null) {
-                val data = WearPrayerData.fromJson(cachedJson)
-                _prayerData.value = data
-                return data
+                val data = parsePrayerData(cachedJson)
+                if (data != null) {
+                    _prayerData.value = data
+                    return data
+                }
             }
         } catch (e: Exception) {
-            // Ignore
         }
 
         return suspendCancellableCoroutine { cont ->
             dataClient.dataItems.addOnSuccessListener { items ->
                 for (item in items) {
                     if (item.uri.path == "/namaz_prayer_data") {
-                        try {
-                            val dataMap = com.google.android.gms.wearable.DataMapItem.fromDataItem(item).dataMap
-                            val json = dataMap.getString("prayer_json") ?: continue
-                            val data = WearPrayerData.fromJson(json)
+                        val dataMap = com.google.android.gms.wearable.DataMapItem.fromDataItem(item).dataMap
+                        val json = dataMap.getString("prayer_json") ?: continue
+                        val data = parsePrayerData(json)
+                        if (data != null) {
                             _prayerData.value = data
                             _isPhoneConnected.value = true
                             savePrayerDataToDisk(json)
                             if (cont.isActive) cont.resume(data)
                             return@addOnSuccessListener
-                        } catch (e: Exception) {
-                            // ignore
                         }
                     }
                 }
