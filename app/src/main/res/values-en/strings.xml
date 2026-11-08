@@ -52,6 +52,20 @@
     <string name="city_no_results_suffix">\ no results found</string>
     <string name="city_try_different">Try a different search term</string>
 
+    <!-- Special Days -->
+    <string name="special_day_friday_title">Blessed Friday</string>
+    <string name="special_day_friday_desc">Have a blessed Friday, may your prayers be accepted.</string>
+    <string name="special_day_regaib_title">Regaip Night</string>
+    <string name="special_day_regaib_desc">May your Regaip Night be blessed.</string>
+    <string name="special_day_mirac_title">Miraj Night</string>
+    <string name="special_day_mirac_desc">May your Miraj Night be blessed.</string>
+    <string name="special_day_berat_title">Berat Night</string>
+    <string name="special_day_berat_desc">May your Berat Night be blessed.</string>
+    <string name="special_day_kadir_title">Laylat al-Qadr</string>
+    <string name="special_day_kadir_desc">Blessed Laylat al-Qadr, better than a thousand months.</string>
+    <string name="special_day_mevlid_title">Mawlid Night</string>
+    <string name="special_day_mevlid_desc">Blessed Mawlid Night honoring the birth of Prophet Muhammad (PBUH).</string>
+
     <!-- Ramadan -->
     <string name="ramadan_sahur">Suhoor</string>
     <string name="ramadan_iftar">Iftar</string>

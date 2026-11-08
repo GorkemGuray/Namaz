@@ -52,6 +52,20 @@
     <string name="city_no_results_suffix">\ için sonuç bulunamadı</string>
     <string name="city_try_different">Farklı bir arama terimi deneyin</string>
 
+    <!-- Special Days -->
+    <string name="special_day_friday_title">Hayırlı Cumalar</string>
+    <string name="special_day_friday_desc">Cumanız mübarek olsun, dualarınız kabul olsun.</string>
+    <string name="special_day_regaib_title">Regaip Kandili</string>
+    <string name="special_day_regaib_desc">Regaip Kandiliniz mübarek olsun.</string>
+    <string name="special_day_mirac_title">Miraç Kandili</string>
+    <string name="special_day_mirac_desc">Miraç Kandiliniz mübarek olsun.</string>
+    <string name="special_day_berat_title">Berat Kandili</string>
+    <string name="special_day_berat_desc">Berat Kandiliniz mübarek olsun.</string>
+    <string name="special_day_kadir_title">Kadir Gecesi</string>
+    <string name="special_day_kadir_desc">Bin aydan daha hayırlı Kadir Geceniz mübarek olsun.</string>
+    <string name="special_day_mevlid_title">Mevlid Kandili</string>
+    <string name="special_day_mevlid_desc">Peygamber Efendimiz\'in (s.a.v.) dünyayı teşrif ettiği Mevlid Kandiliniz mübarek olsun.</string>
+
     <!-- Ramadan -->
     <string name="ramadan_sahur">Sahur</string>
     <string name="ramadan_iftar">İftar</string>

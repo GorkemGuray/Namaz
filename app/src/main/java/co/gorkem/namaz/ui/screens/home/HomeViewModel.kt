@@ -9,10 +9,12 @@ import co.gorkem.namaz.domain.model.NetworkResult
 import co.gorkem.namaz.data.repository.PrayerTimeRepositoryImpl
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
+import co.gorkem.namaz.domain.model.SpecialDay
 import co.gorkem.namaz.domain.usecase.GetNextPrayerUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase
 import co.gorkem.namaz.domain.usecase.GetPrayerDashboardUseCase
 import co.gorkem.namaz.domain.usecase.GetRamadanCountersUseCase
+import co.gorkem.namaz.domain.usecase.GetSpecialDayUseCase
 import co.gorkem.namaz.domain.usecase.PrayerDashboardData
 import co.gorkem.namaz.domain.usecase.RamadanCounters
 import co.gorkem.namaz.service.GeocoderHelper
@@ -46,6 +48,7 @@ class HomeViewModel @Inject constructor(
     private val getNextPrayerUseCase: GetNextPrayerUseCase,
     private val getPrayerDashboardUseCase: GetPrayerDashboardUseCase,
     private val getRamadanCountersUseCase: GetRamadanCountersUseCase,
+    private val getSpecialDayUseCase: GetSpecialDayUseCase,
     private val locationTracker: LocationTracker,
     private val geocoderHelper: GeocoderHelper,
     private val notificationScheduler: PrayerNotificationScheduler,
@@ -66,6 +69,9 @@ class HomeViewModel @Inject constructor(
 
     private val _ramadanCounters = MutableStateFlow<RamadanCounters?>(null)
     val ramadanCounters: StateFlow<RamadanCounters?> = _ramadanCounters.asStateFlow()
+
+    private val _specialDay = MutableStateFlow<SpecialDay?>(null)
+    val specialDay: StateFlow<SpecialDay?> = _specialDay.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -224,6 +230,7 @@ class HomeViewModel @Inject constructor(
         _nextPrayer.value = null
         _dashboardData.value = null
         _ramadanCounters.value = null
+        _specialDay.value = null
         val today = LocalDate.now()
         val todayKey = today.format(DateTimeUtils.DATE_FORMATTER)
 
@@ -300,6 +307,7 @@ class HomeViewModel @Inject constructor(
         val tomorrow = _prayerTimes.value.find { it.date == tomorrowKey }
         _dashboardData.value = getPrayerDashboardUseCase.execute(today, tomorrow)
         _ramadanCounters.value = getRamadanCountersUseCase(today, tomorrowPrayerTimes = tomorrow)
+        _specialDay.value = getSpecialDayUseCase(todayDate)
 
         syncToWear(_prayerTimes.value, _locationInfo.value)
     }

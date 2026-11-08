@@ -58,6 +58,7 @@ import co.gorkem.namaz.ui.components.CountdownTimer
 import co.gorkem.namaz.ui.components.UpdateBanner
 import co.gorkem.namaz.ui.components.PrayerHeroCard
 import co.gorkem.namaz.ui.components.PrayerTimesList
+import co.gorkem.namaz.ui.components.SpecialDayBanner
 import co.gorkem.namaz.ui.theme.PillShape
 import co.gorkem.namaz.util.DateTimeUtils
 import java.time.LocalDate
@@ -79,6 +80,7 @@ fun HomeScreen(
     val needsBackgroundLocationPermission by viewModel.needsBackgroundLocationPermission.collectAsState()
     val nextPrayer by viewModel.nextPrayer.collectAsState()
     val ramadanCounters by viewModel.ramadanCounters.collectAsState()
+    val specialDay by viewModel.specialDay.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -207,6 +209,10 @@ fun HomeScreen(
                         }
 
                         item {
+                            SpecialDayBanner(specialDay = specialDay)
+                        }
+
+                        item {
                             KerahatBanner(dashboard = dash)
                         }
 
@@ -253,6 +259,10 @@ fun HomeScreen(
                                 nextPrayer = np,
                                 onCountdownFinished = { viewModel.refreshDashboardImmediately() }
                             )
+                        }
+
+                        item {
+                            SpecialDayBanner(specialDay = specialDay)
                         }
 
                         item {

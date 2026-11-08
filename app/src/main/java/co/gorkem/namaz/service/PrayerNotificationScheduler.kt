@@ -12,6 +12,8 @@ import co.gorkem.namaz.data.local.room.PrayerTimeDao
 import co.gorkem.namaz.data.local.room.toDomainModel
 import co.gorkem.namaz.domain.model.PrayerName
 import co.gorkem.namaz.domain.model.PrayerTime
+import co.gorkem.namaz.domain.model.SpecialDay
+import co.gorkem.namaz.domain.usecase.GetSpecialDayUseCase
 import co.gorkem.namaz.util.DateTimeUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -31,6 +33,28 @@ data class PrayerNotificationSchedule(
     val uniqueWorkName: String,
     val notificationId: Int
 )
+
+data class SpecialDayNotificationSchedule(
+    val specialDay: SpecialDay,
+    val targetDateTime: ZonedDateTime,
+    val delayMillis: Long,
+    val uniqueWorkName: String
+)
+
+fun resolveSpecialDayNotificationSchedule(
+    date: LocalDate,
+    specialDay: SpecialDay,
+    now: ZonedDateTime
+): SpecialDayNotificationSchedule? {
+    val target = ZonedDateTime.of(date, LocalTime.of(9, 0), now.zone)
+    if (!target.isAfter(now)) return null
+    return SpecialDayNotificationSchedule(
+        specialDay = specialDay,
+        targetDateTime = target,
+        delayMillis = Duration.between(now, target).toMillis(),
+        uniqueWorkName = "special_day_${date.format(DateTimeUtils.DATE_FORMATTER)}"
+    )
+}
 
 enum class NotificationReplanOutcome { SCHEDULED, NEEDS_REFRESH, DISABLED }
 
@@ -72,7 +96,8 @@ fun resolveNotificationSchedules(
 class PrayerNotificationScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val prayerTimeDao: PrayerTimeDao,
-    private val preferencesRepository: UserPreferencesRepository
+    private val preferencesRepository: UserPreferencesRepository,
+    private val getSpecialDayUseCase: GetSpecialDayUseCase
 ) {
 
     fun schedulePrayerNotifications(
@@ -91,6 +116,7 @@ class PrayerNotificationScheduler @Inject constructor(
                     uniqueWorkName = schedule.uniqueWorkName
                 )
             }
+        scheduleSpecialDayReminders(ZonedDateTime.now())
     }
 
     suspend fun rescheduleFromCache(cancelExisting: Boolean = true): NotificationReplanOutcome {
@@ -145,6 +171,46 @@ class PrayerNotificationScheduler @Inject constructor(
 
     fun cancelAllNotifications() {
         WorkManager.getInstance(context).cancelAllWorkByTag("prayer_notification")
+        WorkManager.getInstance(context).cancelAllWorkByTag("special_day_notification")
+    }
+
+    fun scheduleSpecialDayNotification(
+        date: LocalDate,
+        specialDay: SpecialDay,
+        now: ZonedDateTime = ZonedDateTime.now()
+    ) {
+        val schedule = resolveSpecialDayNotificationSchedule(date, specialDay, now) ?: return
+
+        val workRequest = OneTimeWorkRequestBuilder<SpecialDayNotificationWorker>()
+            .setInitialDelay(schedule.delayMillis, TimeUnit.MILLISECONDS)
+            .addTag("special_day_notification")
+            .setInputData(
+                androidx.work.Data.Builder()
+                    .putString("special_day_type", specialDay.type.name)
+                    .putString("date", date.format(DateTimeUtils.DATE_FORMATTER))
+                    .build()
+            )
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiresBatteryNotLow(false)
+                    .build()
+            )
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            schedule.uniqueWorkName,
+            ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
+    }
+
+    fun scheduleSpecialDayReminders(now: ZonedDateTime = ZonedDateTime.now()) {
+        listOf(now.toLocalDate(), now.toLocalDate().plusDays(1)).forEach { date ->
+            val specialDay = getSpecialDayUseCase(date)
+            if (specialDay != null) {
+                scheduleSpecialDayNotification(date, specialDay, now)
+            }
+        }
     }
 
     private fun scheduleSingleNotification(
