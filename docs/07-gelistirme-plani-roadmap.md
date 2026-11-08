@@ -24,8 +24,8 @@ Detay + kontrol modeli: `09-icra-plani-ve-kontrol.md` (tümü DONE).
 ### E3. Navigation-3 geçişi
 - `navigation-3` skill: `NavHost` → Navigation 3 sahne modeli. Qada ekranını ayrı route yapma fırsatı (T-231b'de silindi, ihtiyaç olursa geri gelir).
 
-### E4. Kandil takvimi otomasyonu
-- `SpecialDays.kt` sabit tablo her yıl elle güncellenmeli. Seçenek: Diyanet API'den çekme veya `generate`-benzeri build-time üretici. 2028 öncesi karar verilmeli.
+### E4. Kandil takvimi otomasyonu — ✅ ÇÖZÜLDÜ
+- `SpecialDays.kt` 2028 resmi Diyanet takvimi eklendi. `SpecialDaysTest` guard testi ile içinde bulunulan + sonraki yıl denetimi bağlandı (tablo biterse test kırmızı olur). Umm al-Qura spike'ında ±1 gün Diyanet sapması görüldüğü için tablo + guard yaklaşımı benimsendi.
 
 ### E5. Edge-to-edge + Wear Tile kerahat
 - `edge-to-edge` skill ile insets denetimi; Wear Tile'a kerahat rozeti (08/P1-7'nin devamı).

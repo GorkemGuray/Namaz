@@ -25,17 +25,40 @@ data class SpecialDay(
 )
 
 object SpecialDays {
+    val ALL_KANDIL_TYPES: Set<SpecialDayType> = setOf(
+        SpecialDayType.REGAIB_KANDILI,
+        SpecialDayType.MIRAC_KANDILI,
+        SpecialDayType.BERAT_KANDILI,
+        SpecialDayType.KADIR_GECESI,
+        SpecialDayType.MEVLID_KANDILI
+    )
+
     val KANDIL_DAYS: Map<LocalDate, SpecialDayType> = mapOf(
+        // 2026 (Diyanet İşleri Başkanlığı Resmi Dini Günler Takvimi)
         LocalDate.of(2026, 1, 15) to SpecialDayType.MIRAC_KANDILI,
         LocalDate.of(2026, 2, 2) to SpecialDayType.BERAT_KANDILI,
         LocalDate.of(2026, 3, 16) to SpecialDayType.KADIR_GECESI,
         LocalDate.of(2026, 8, 24) to SpecialDayType.MEVLID_KANDILI,
         LocalDate.of(2026, 12, 10) to SpecialDayType.REGAIB_KANDILI,
+
+        // 2027 (Diyanet İşleri Başkanlığı Resmi Dini Günler Takvimi)
         LocalDate.of(2027, 1, 4) to SpecialDayType.MIRAC_KANDILI,
         LocalDate.of(2027, 1, 22) to SpecialDayType.BERAT_KANDILI,
         LocalDate.of(2027, 3, 5) to SpecialDayType.KADIR_GECESI,
         LocalDate.of(2027, 8, 13) to SpecialDayType.MEVLID_KANDILI,
         LocalDate.of(2027, 12, 2) to SpecialDayType.REGAIB_KANDILI,
-        LocalDate.of(2027, 12, 24) to SpecialDayType.MIRAC_KANDILI
+        LocalDate.of(2027, 12, 24) to SpecialDayType.MIRAC_KANDILI,
+
+        // 2028 (Diyanet İşleri Başkanlığı Resmi Dini Günler Takvimi)
+        LocalDate.of(2028, 1, 11) to SpecialDayType.BERAT_KANDILI,
+        LocalDate.of(2028, 2, 22) to SpecialDayType.KADIR_GECESI,
+        LocalDate.of(2028, 8, 2) to SpecialDayType.MEVLID_KANDILI,
+        LocalDate.of(2028, 11, 23) to SpecialDayType.REGAIB_KANDILI,
+        LocalDate.of(2028, 12, 13) to SpecialDayType.MIRAC_KANDILI,
+        LocalDate.of(2028, 12, 30) to SpecialDayType.BERAT_KANDILI
     )
+
+    fun getKandilsForYear(year: Int): Map<LocalDate, SpecialDayType> {
+        return KANDIL_DAYS.filterKeys { it.year == year }
+    }
 }

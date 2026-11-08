@@ -59,7 +59,7 @@ Ayarlar'da 6 vakit için +/- sayaç (`QadaSettingsGroup` + `QadaPrayerRow`), Roo
 Hicri ay 9 ise hero card'da sahur/iftar çift sayacı (`RamadanCountdownRow`); diğer aylarda mevcut tek sayaç (regresyon yok).
 
 ### 2.13 Cuma/kandil hatırlatıcıları (T-233)
-Özel gün sabah 09:00 tek seferlik WorkManager bildirimi (`special_day_{date}`) + ana ekranda `SpecialDayBanner`. Kandil listesi `SpecialDays.kt` içinde 2026-2027 sabit tablosu — her yıl güncellenmeli.
+Özel gün sabah 09:00 tek seferlik WorkManager bildirimi (`special_day_{date}`) + ana ekranda `SpecialDayBanner`. Kandil listesi `SpecialDays.kt` içinde 2026-2028 tablosu — `SpecialDaysTest` guard testi ile korunur.
 
 ## 3. Konfigürasyon
 

@@ -189,7 +189,7 @@ app/
     │   │   │   ├── UserPreferences.kt      # data class: DataStore snapshot (T-213'te impl'dan ayrıldı)
     │   │   │   ├── Zikir.kt                # domain zikir modeli (T-213, Entity sızıntısı kapatıldı)
     │   │   │   ├── QadaPrayer.kt           # data class: kaza borcu (T-231)
-    │   │   │   └── SpecialDays.kt          # kandil tarih tablosu 2026-2027 + SpecialDayType (T-233)
+    │   │   │   └── SpecialDays.kt          # kandil tarih tablosu 2026-2028 + SpecialDayType + guard test (T-233/E4)
     │   │   ├── repository/
     │   │   │   ├── PrayerTimeRepository.kt # interface: getPrayerTimes() → Flow<NetworkResult<>>, refreshPrayerTimes(), getActiveDataSource(), findDistrictId(), searchLocations() (T-212), cleanupOldData()
     │   │   │   ├── ZikirRepository.kt      # interface: domain Zikir modelleriyle CRUD (T-213)
@@ -442,7 +442,7 @@ wear/
 12. **Ezan sesi (T-230)**: Ayarlardaki toggle ile bildirimler voice kanaldan (`VOICE_CHANNEL_ID`) gösterilir. Gerçek ezan mp3'ü henüz yok — sistem varsayılan ses çalar.
 13. **Kaza takibi (T-231)**: Ayarlar'da 6 vakit için +/- sayaç, Room'da kalıcı (`QadaPrayerEntity`), process kill sonrası korunur.
 14. **Ramazan modu (T-232)**: Hicri ay 9 ise hero card'da sahur/iftar çift sayacı; diğer aylarda tek sayaç (regresyon yok).
-15. **Cuma/kandil (T-233)**: Özel gün sabah 09:00 tek seferlik bildirim + ana ekranda banner. Kandil listesi `SpecialDays.kt` içinde 2026-2027 sabit tablo — her yıl güncellenmeli.
+15. **Cuma/kandil (T-233/E4)**: Özel gün sabah 09:00 tek seferlik bildirim + ana ekranda banner. Kandil listesi `SpecialDays.kt` içinde 2026-2028 tablosu — `SpecialDaysTest` guard testi ile denetlenir.
 
 ---
 

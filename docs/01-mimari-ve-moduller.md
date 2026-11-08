@@ -46,7 +46,7 @@ Kurallar: Türkçe vakit isimleri (`imsak, gunes, ogle, ikindi, aksam, yatsi`), 
 - `NetworkResult.kt`: `sealed Success/Error/Loading` (T-213'te `data/remote`'dan taşındı).
 - `LocationSearchResult.kt`: şehir arama sonucu (T-212).
 - `UserPreferences.kt` + `Zikir.kt`: DataStore snapshot / domain zikir modeli (T-213, Entity sızıntısı kapalı).
-- `QadaPrayer.kt`: kaza borcu (T-231). `SpecialDays.kt`: kandil tablosu 2026-2027 (T-233, her yıl güncellenmeli).
+- `QadaPrayer.kt`: kaza borcu (T-231). `SpecialDays.kt`: kandil tablosu 2026-2028 (T-233/E4, guard test korumalı).
 
 ### 3.2 `domain/repository/` (interface)
 - `PrayerTimeRepository.kt`: `getPrayerTimes(location, month, year, method=13, school=1): Flow<NetworkResult<List<PrayerTime>>>`, `refreshPrayerTimes()`, `getActiveDataSource()`, `findDistrictId()`, `searchLocations(query)` (T-212), `cleanupOldData()`.

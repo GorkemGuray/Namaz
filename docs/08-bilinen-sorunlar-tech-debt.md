@@ -23,6 +23,11 @@
 ### 7. Domain/Data Ters Bağımlılık — ✅ ÇÖZÜLDÜ (T-213)
 - `NetworkResult` domain'de, `ZikirEntity` domain'e sızmıyor, Data katmanı service çağırmıyor.
 
+### 11. Kandil Tablosu ve Otomasyonu — ✅ ÇÖZÜLDÜ (E4)
+- `java.time.chrono.HijrahChronology` (Umm al-Qura) spike testi yapıldı. Diyanet İşleri Başkanlığı'nın hilal/ru'yet ve kandil gecesi hesaplama kriterleri ile Umm al-Qura hesaplaması arasında ±1 gün tutarsızlık olduğu tespit edildi (ör. 2026 Kadir gecesi 0 gün fark, Miraç ve Berat 1 gün fark).
+- Resmi Diyanet takvimi tablosu korundu, 2028 yılı resmi kandil tarihleri eklendi.
+- `SpecialDaysTest` guard testi eklendi: içinde bulunulan yıl + sonraki yıl için 5 kandilin tamamının çözümlenebilir olması şart koşuldu. Tablo biterse test kırmızı olur (sessiz hata engellendi). Yıllık bakım artık guard test ile denetlenmektedir.
+
 ## P1 — Kısa Vadede
 
 ### 8. Room Migration Stratejisi (v6)
@@ -34,9 +39,6 @@
 
 ### 10. Complication/Tile Null-State
 - Veri yoksa `NoData`/mock (`AKSAM:20:33`) gösterilir. Çözüm: son cache + yükleniyor durumu.
-
-### 11. Kandil Tablosu Yıllık Bakım
-- `SpecialDays.kt` 2026-2027 sabit tablo. 2028 öncesi otomasyon veya güncelleme gerekli (07/E4).
 
 ## P2 — İzlenmeli
 

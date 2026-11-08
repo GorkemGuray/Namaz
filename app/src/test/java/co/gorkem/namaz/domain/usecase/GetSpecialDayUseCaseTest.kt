@@ -85,4 +85,37 @@ class GetSpecialDayUseCaseTest {
         assertTrue(kadir2027.isKandil)
         assertTrue(kadir2027.isFriday)
     }
+
+    @Test
+    fun kandilDays2028_detectedCorrectly() {
+        val berat2028First = useCase(LocalDate.of(2028, 1, 11))
+        assertNotNull(berat2028First)
+        assertEquals(SpecialDayType.BERAT_KANDILI, berat2028First!!.type)
+        assertTrue(berat2028First.isKandil)
+
+        val kadir2028 = useCase(LocalDate.of(2028, 2, 22))
+        assertNotNull(kadir2028)
+        assertEquals(SpecialDayType.KADIR_GECESI, kadir2028!!.type)
+        assertTrue(kadir2028.isKandil)
+
+        val mevlid2028 = useCase(LocalDate.of(2028, 8, 2))
+        assertNotNull(mevlid2028)
+        assertEquals(SpecialDayType.MEVLID_KANDILI, mevlid2028!!.type)
+        assertTrue(mevlid2028.isKandil)
+
+        val regaib2028 = useCase(LocalDate.of(2028, 11, 23))
+        assertNotNull(regaib2028)
+        assertEquals(SpecialDayType.REGAIB_KANDILI, regaib2028!!.type)
+        assertTrue(regaib2028.isKandil)
+
+        val mirac2028 = useCase(LocalDate.of(2028, 12, 13))
+        assertNotNull(mirac2028)
+        assertEquals(SpecialDayType.MIRAC_KANDILI, mirac2028!!.type)
+        assertTrue(mirac2028.isKandil)
+
+        val berat2028Second = useCase(LocalDate.of(2028, 12, 30))
+        assertNotNull(berat2028Second)
+        assertEquals(SpecialDayType.BERAT_KANDILI, berat2028Second!!.type)
+        assertTrue(berat2028Second.isKandil)
+    }
 }
