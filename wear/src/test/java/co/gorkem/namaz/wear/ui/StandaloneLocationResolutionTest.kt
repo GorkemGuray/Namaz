@@ -135,4 +135,77 @@ class StandaloneLocationResolutionTest {
         assertEquals(LocationSource.CACHE, result.source)
         assertEquals(40.9842, result.latitude, 0.0)
     }
+
+    @Test
+    fun gpsWithDistrictId_usesGpsDistrictId() {
+        val result = resolveStandaloneLocation(
+            gpsLatitude = 39.9253,
+            gpsLongitude = 32.8354,
+            cachedLatitude = 41.0082,
+            cachedLongitude = 28.9784,
+            cachedCityName = "Istanbul",
+            cachedDistrictId = "9548",
+            gpsDistrictId = "9206"
+        )
+
+        assertEquals("9206", result.districtId)
+    }
+
+    @Test
+    fun gpsWithoutDistrictId_cacheWithDistrictId_usesCachedDistrictId() {
+        val result = resolveStandaloneLocation(
+            gpsLatitude = 39.9253,
+            gpsLongitude = 32.8354,
+            cachedLatitude = 41.0082,
+            cachedLongitude = 28.9784,
+            cachedCityName = "Istanbul",
+            cachedDistrictId = "9548",
+            gpsDistrictId = null
+        )
+
+        assertEquals("9548", result.districtId)
+    }
+
+    @Test
+    fun gpsWithoutDistrictId_cacheWithoutDistrictId_usesDefaultDistrictId() {
+        val result = resolveStandaloneLocation(
+            gpsLatitude = 39.9253,
+            gpsLongitude = 32.8354,
+            cachedLatitude = null,
+            cachedLongitude = null,
+            cachedCityName = null,
+            cachedDistrictId = null,
+            gpsDistrictId = null
+        )
+
+        assertEquals(WearPrayerRepository.DEFAULT_DISTRICT_ID, result.districtId)
+    }
+
+    @Test
+    fun noGps_cacheWithDistrictId_usesCachedDistrictId() {
+        val result = resolveStandaloneLocation(
+            gpsLatitude = null,
+            gpsLongitude = null,
+            cachedLatitude = 40.9842,
+            cachedLongitude = 29.0238,
+            cachedCityName = "Kadikoy",
+            cachedDistrictId = "9541"
+        )
+
+        assertEquals("9541", result.districtId)
+    }
+
+    @Test
+    fun noGps_noCache_usesDefaultDistrictId() {
+        val result = resolveStandaloneLocation(
+            gpsLatitude = null,
+            gpsLongitude = null,
+            cachedLatitude = null,
+            cachedLongitude = null,
+            cachedCityName = null,
+            cachedDistrictId = null
+        )
+
+        assertEquals(WearPrayerRepository.DEFAULT_DISTRICT_ID, result.districtId)
+    }
 }

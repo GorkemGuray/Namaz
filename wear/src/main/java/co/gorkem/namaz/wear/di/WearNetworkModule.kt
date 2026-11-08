@@ -17,7 +17,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object WearNetworkModule {
 
-    private const val BASE_URL = "https://ezanvakti.imsakiyem.com/"
+    private const val IMSAKIYEM_BASE_URL = "https://ezanvakti.imsakiyem.com/"
 
     @Provides
     @Singleton
@@ -35,7 +35,7 @@ object WearNetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(IMSAKIYEM_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

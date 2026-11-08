@@ -44,7 +44,8 @@ class WearSyncManager @Inject constructor(
         location: LocationInfo,
         themeId: Int,
         getNextPrayerUseCase: GetNextPrayerUseCase,
-        getPrayerDashboardUseCase: GetPrayerDashboardUseCase
+        getPrayerDashboardUseCase: GetPrayerDashboardUseCase,
+        dataSource: Int = 0
     ) {
         val today = LocalDate.now()
         val todayData = prayerTimes.find { it.date == today.format(DateTimeUtils.DATE_FORMATTER) } ?: return
@@ -83,7 +84,9 @@ class WearSyncManager @Inject constructor(
             kerahat = wearKerahat,
             themeId = themeId,
             latitude = location.latitude,
-            longitude = location.longitude
+            longitude = location.longitude,
+            districtId = location.districtId,
+            dataSource = dataSource
         )
         syncPrayerData(wearData)
     }

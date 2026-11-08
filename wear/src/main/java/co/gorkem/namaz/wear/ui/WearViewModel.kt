@@ -28,7 +28,8 @@ data class ResolvedLocation(
     val latitude: Double,
     val longitude: Double,
     val cityName: String,
-    val source: LocationSource
+    val source: LocationSource,
+    val districtId: String = WearPrayerRepository.DEFAULT_DISTRICT_ID
 )
 
 fun resolveStandaloneLocation(
@@ -36,24 +37,45 @@ fun resolveStandaloneLocation(
     gpsLongitude: Double?,
     cachedLatitude: Double?,
     cachedLongitude: Double?,
-    cachedCityName: String?
+    cachedCityName: String?,
+    cachedDistrictId: String? = null,
+    gpsDistrictId: String? = null
 ): ResolvedLocation {
+    val districtId = when {
+        !gpsDistrictId.isNullOrBlank() -> gpsDistrictId
+        !cachedDistrictId.isNullOrBlank() -> cachedDistrictId
+        else -> WearPrayerRepository.DEFAULT_DISTRICT_ID
+    }
+
     if (gpsLatitude != null && gpsLongitude != null) {
-        return ResolvedLocation(gpsLatitude, gpsLongitude, "Konumunuz", LocationSource.GPS)
+        return ResolvedLocation(
+            latitude = gpsLatitude,
+            longitude = gpsLongitude,
+            cityName = "Konumunuz",
+            source = LocationSource.GPS,
+            districtId = districtId
+        )
     }
 
     if (cachedLatitude != null && cachedLongitude != null &&
         cachedLatitude != 0.0 && cachedLongitude != 0.0
     ) {
         val city = cachedCityName?.trim()?.takeIf { it.isNotEmpty() } ?: "Konumunuz"
-        return ResolvedLocation(cachedLatitude, cachedLongitude, city, LocationSource.CACHE)
+        return ResolvedLocation(
+            latitude = cachedLatitude,
+            longitude = cachedLongitude,
+            cityName = city,
+            source = LocationSource.CACHE,
+            districtId = districtId
+        )
     }
 
     return ResolvedLocation(
-        WearPrayerRepository.DEFAULT_LATITUDE,
-        WearPrayerRepository.DEFAULT_LONGITUDE,
-        "Konumunuz",
-        LocationSource.DEFAULT
+        latitude = WearPrayerRepository.DEFAULT_LATITUDE,
+        longitude = WearPrayerRepository.DEFAULT_LONGITUDE,
+        cityName = "Konumunuz",
+        source = LocationSource.DEFAULT,
+        districtId = districtId
     )
 }
 
@@ -148,20 +170,42 @@ class WearViewModel @Inject constructor(
             } catch (e: Exception) {
             }
 
-            val cached = dataLayerService.prayerData.value
+            var gpsDistrictId: String? = null
+            if (gpsLatitude != null && gpsLongitude != null) {
+                try {
+                    if (android.location.Geocoder.isPresent()) {
+                        val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+                        val addresses = geocoder.getFromLocation(gpsLatitude, gpsLongitude, 1)
+                        val address = addresses?.firstOrNull()
+                        val districtName = address?.subAdminArea ?: address?.locality
+                        if (!districtName.isNullOrBlank()) {
+                            gpsDistrictId = prayerRepository.findDistrictId(districtName)
+                        }
+                    }
+                } catch (_: Exception) {
+                }
+            }
+
+            val cached = dataLayerService.getLatestPrayerData() ?: dataLayerService.prayerData.value
             val resolved = resolveStandaloneLocation(
                 gpsLatitude = gpsLatitude,
                 gpsLongitude = gpsLongitude,
                 cachedLatitude = cached?.latitude,
                 cachedLongitude = cached?.longitude,
-                cachedCityName = cached?.cityName
+                cachedCityName = cached?.cityName,
+                cachedDistrictId = cached?.districtId,
+                gpsDistrictId = gpsDistrictId
             )
 
             if (_isPhoneSource.value) return@launch
 
-            prayerRepository.getPrayerTimesFromApi(
+            val dataSource = cached?.dataSource ?: 0
+
+            prayerRepository.loadStandalone(
                 latitude = resolved.latitude,
-                longitude = resolved.longitude
+                longitude = resolved.longitude,
+                districtId = resolved.districtId,
+                dataSource = dataSource
             ).collect { result ->
                 result.onSuccess { prayers ->
                     _prayerItems.value = prayers
@@ -174,6 +218,4 @@ class WearViewModel @Inject constructor(
             }
         }
     }
-
-
 }

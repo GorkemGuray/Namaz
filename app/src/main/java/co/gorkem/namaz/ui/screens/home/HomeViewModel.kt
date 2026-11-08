@@ -369,7 +369,9 @@ class HomeViewModel @Inject constructor(
                 kerahat = wearKerahat,
                 themeId = currentPreferences?.appTheme ?: 0,
                 latitude = location.latitude,
-                longitude = location.longitude
+                longitude = location.longitude,
+                districtId = location.districtId,
+                dataSource = currentPreferences?.dataSource ?: 0
             )
             wearSyncManager.syncPrayerData(wearData)
         }

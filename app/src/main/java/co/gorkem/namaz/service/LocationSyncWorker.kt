@@ -179,7 +179,8 @@ class LocationSyncWorker @AssistedInject constructor(
                     location = currentLocationInfo,
                     themeId = prefs.appTheme,
                     getNextPrayerUseCase = getNextPrayerUseCase,
-                    getPrayerDashboardUseCase = getPrayerDashboardUseCase
+                    getPrayerDashboardUseCase = getPrayerDashboardUseCase,
+                    dataSource = prefs.dataSource
                 )
             } else {
                 notificationScheduler.rescheduleFromCache()

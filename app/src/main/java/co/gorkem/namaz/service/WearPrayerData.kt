@@ -10,7 +10,9 @@ data class WearPrayerData(
     val themeId: Int = 0,
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val districtId: String = "",
+    val dataSource: Int = 0
 ) {
     companion object {
         private val gson = Gson()
