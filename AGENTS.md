@@ -66,10 +66,11 @@ Eğer görev yukarıdaki konulardan biriyle ilgiliyse (örneğin; Wear OS'te Mat
 ### Konfigürasyon
 
 ```
-Gradle:      9.4.1
-AGP:         9.2.1
+Gradle:      9.6.0
+AGP:         9.4.0
 Kotlin:      2.2.10
-KSP:         2.3.2
+KSP:         2.2.10-2.0.2
+DB:          v5
 Compose BOM: 2026.05.00
 compileSdk:  36
 targetSdk:   36
@@ -211,7 +212,7 @@ app/
     │   │   │   └── ZikirRepositoryImpl.kt      # @Singleton, Local Room DB implementation of ZikirRepository
     │   │   └── local/
     │   │       ├── room/
-    │   │       │   ├── NamazDatabase.kt        # Room v3, PrayerTimeEntity, ZikirEntity, fallbackToDestructiveMigration(true)
+    │   │       │   ├── NamazDatabase.kt        # Room v5, PrayerTimeEntity, ZikirEntity, fallbackToDestructiveMigration(true)
     │   │       │   ├── PrayerTimeDao.kt        # Queries by city+month+year+method+school, deleteOlderThan
     │   │       │   ├── PrayerTimeEntity.kt     # date (PK), cityName, 6 prayer times, hijri fields, cacheSchool, cacheDataSource
     │   │       │   ├── ZikirDao.kt             # Queries for Zikir CRUD operations
@@ -420,7 +421,7 @@ wear/
 
 ### Çevrimdışı (Room)
 - `PrayerTimeEntity` ve `ZikirEntity` cache'lenir. PrayerTime cache key: `cityName + month + year + method + school + cacheDataSource`.
-- `NamazDatabase` version = 4. `fallbackToDestructiveMigration(true)` kullanılır (schema export disabled).
+- `NamazDatabase` version = 5. `fallbackToDestructiveMigration(true)` kullanılır (schema export disabled).
 - `cleanupOldData(30)` 30 günden eski veriyi siler.
 
 ### Bildirimler
