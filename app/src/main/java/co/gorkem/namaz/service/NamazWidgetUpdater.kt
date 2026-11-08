@@ -12,6 +12,7 @@ object NamazWidgetUpdater {
     private const val TAG = "NamazWidgetUpdater"
 
     fun update(context: Context) {
+        NamazWidget.clearMemoryCache()
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 val manager = GlanceAppWidgetManager(context)
