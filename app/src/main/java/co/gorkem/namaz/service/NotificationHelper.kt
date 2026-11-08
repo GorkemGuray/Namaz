@@ -4,9 +4,12 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -18,9 +21,34 @@ import co.gorkem.namaz.domain.model.PrayerName
 object NotificationHelper {
     const val CHANNEL_ID = "namaz_prayer_times"
     const val VOICE_CHANNEL_ID = "namaz_prayer_times_voice"
+    const val TEST_NOTIFICATION_ID = 8888
 
     fun resolveNotificationChannelId(prayerVoiceEnabled: Boolean): String {
         return if (prayerVoiceEnabled) VOICE_CHANNEL_ID else CHANNEL_ID
+    }
+
+    fun getEzanSoundUriString(packageName: String): String {
+        return "${ContentResolver.SCHEME_ANDROID_RESOURCE}://$packageName/${R.raw.ezan}"
+    }
+
+    fun getEzanSoundUri(context: Context): Uri {
+        return Uri.parse(getEzanSoundUriString(context.packageName))
+    }
+
+    fun getChannelSoundUriString(packageName: String, channelId: String): String? {
+        return if (channelId == VOICE_CHANNEL_ID) {
+            getEzanSoundUriString(packageName)
+        } else {
+            null
+        }
+    }
+
+    fun getSoundUriString(packageName: String, voiceEnabled: Boolean): String? {
+        return if (voiceEnabled) getEzanSoundUriString(packageName) else null
+    }
+
+    fun getNotificationSoundUri(context: Context, voiceEnabled: Boolean): Uri? {
+        return if (voiceEnabled) getEzanSoundUri(context) else null
     }
 
     fun createNotificationChannel(context: Context) {
@@ -35,8 +63,21 @@ object NotificationHelper {
             ).apply {
                 description = context.getString(R.string.notification_channel_desc)
                 setShowBadge(true)
+                setSound(null, null)
             }
             notificationManager.createNotificationChannel(channel)
+
+            // Re-create voice channel if it previously existed without sound
+            val existingVoiceChannel = notificationManager.getNotificationChannel(VOICE_CHANNEL_ID)
+            if (existingVoiceChannel != null && existingVoiceChannel.sound == null) {
+                notificationManager.deleteNotificationChannel(VOICE_CHANNEL_ID)
+            }
+
+            val soundUri = getEzanSoundUri(context)
+            val audioAttributes = AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build()
 
             val voiceChannel = NotificationChannel(
                 VOICE_CHANNEL_ID,
@@ -45,6 +86,7 @@ object NotificationHelper {
             ).apply {
                 description = context.getString(R.string.notification_channel_prayer_voice_desc)
                 setShowBadge(true)
+                setSound(soundUri, audioAttributes)
             }
             notificationManager.createNotificationChannel(voiceChannel)
         }
@@ -97,9 +139,26 @@ object NotificationHelper {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .apply {
+                if (voiceEnabled) {
+                    // Gradual 10-second volume ramp is played via PrayerAudioPlayer
+                    setSilent(true)
+                }
+            }
             .build()
 
         NotificationManagerCompat.from(context).notify(notificationId, notification)
+    }
+
+    fun showTestPrayerNotification(context: Context) {
+        showPrayerNotification(
+            context = context,
+            prayerName = PrayerName.OGLE,
+            prayerTime = "13:05",
+            cityName = context.getString(R.string.test_notification_city),
+            notificationId = TEST_NOTIFICATION_ID,
+            voiceEnabled = true
+        )
     }
 
     fun showSpecialDayNotification(

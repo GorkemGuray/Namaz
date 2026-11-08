@@ -50,7 +50,7 @@ Native `Chronometer` (OS işletir — %0 CPU/wake lock), kerahat modunda kırmı
 `UpdateChecker` → `version.json` endpoint'i, semantik karşılaştırma, haftada 1 otomatik throttle (`lastUpdateCheckMs`), ana ekranda `UpdateBanner` + ayarlarda `UpdateCheckButton`. "İndir" GitHub Releases'i açar.
 
 ### 2.10 Ezan sesi (T-230)
-Ayarlardaki toggle ile bildirimler `VOICE_CHANNEL_ID` üzerinden gösterilir. Gerçek ezan mp3'ü henüz eklenmedi — sistem varsayılan bildirim sesi çalar.
+Ayarlardaki toggle ile bildirimler `VOICE_CHANNEL_ID` üzerinden gösterilir. CC0 lisanslı ezan kaydı `R.raw.ezan` ile ilk 10 saniye kademeli ses artışı (`PrayerAudioPlayer`) uygulanır; Ayarlar'da "Sesi dene" butonu bulunur.
 
 ### 2.11 Kaza takibi (T-231)
 Ayarlar'da 6 vakit için +/- sayaç (`QadaSettingsGroup` + `QadaPrayerRow`), Room'da kalıcı (`QadaPrayerEntity`), process kill sonrası korunur.

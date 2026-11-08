@@ -298,7 +298,7 @@ app/
     │   │       ├── settings/
     │   │       │   ├── SettingsScreen.kt    # İnce iskelet: grup bileşenleri + QadaSettingsGroup (T-214)
     │   │       │   ├── SettingsViewModel.kt # UserPreferences + qada sayaçları (T-231b)
-    │   │       │   ├── NotificationSettingsGroup.kt # Master toggle + dakika + ezan sesi toggle (T-230)
+    │   │       │   ├── NotificationSettingsGroup.kt # Master toggle + dakika + ezan sesi toggle & sesi dene (T-230/E1)
     │   │       │   ├── ThemeSettingsGroup.kt        # 11 tema seçici (T-214)
     │   │       │   ├── LanguageSettingsGroup.kt     # Dil seçici (T-214)
     │   │       │   └── QadaSettingsGroup.kt         # Kaza takibi sayaçları (T-231)
@@ -439,7 +439,7 @@ wear/
 9. **Wear Kıble**: Wear OS ana ekranındaki "Kıble Bulucu" butonuna basarak ulaşılan, dairesel ekranlara optimize edilmiş, hizalandığında haptik titreşim ve visual glow parlaması veren canvas pusula. Sensör yoksa statik kıble yönü ve açısını gösterir.
 10. **Wear Zikirmatik (Gelişmiş)**: Wear OS ana ekranındaki "Zikirmatik" butonundan ulaşılan; dairesel ekran kavislerine tam uyumlu, üst ve alt çakışmaları (TimeText ve sistem butonları) önleyecek şekilde optimize edilmiş; hem **Serbest Sayaç** (hedefli/sınırsız) hem de **Kısa Namaz Tesbihatı** (adım adım rehberli) akışlarını barındıran, dairesel ilerleme halkalı ve haptik titreşim geri bildirimli saat zikirmatik ekranı.
 11. **Wear standalone**: Telefon yoksa saat standalone çalışır — dataSource'a göre Aladhan veya İmsakiyem (T-234). Konum zinciri: saat GPS → telefondan gelen son DataStore konumu → İstanbul DEFAULT (districtId 9548).
-12. **Ezan sesi (T-230)**: Ayarlardaki toggle ile bildirimler voice kanaldan (`VOICE_CHANNEL_ID`) gösterilir. Gerçek ezan mp3'ü henüz yok — sistem varsayılan ses çalar.
+12. **Ezan sesi (T-230/E1)**: Ayarlardaki toggle ile bildirimler voice kanaldan (`VOICE_CHANNEL_ID`) gösterilir. CC0 lisanslı ezan kaydı `R.raw.ezan` ile ilk 10 saniye kademeli ses artışı (`PrayerAudioPlayer`) uygulanır; Ayarlar'da "Sesi dene" butonu bulunur.
 13. **Kaza takibi (T-231)**: Ayarlar'da 6 vakit için +/- sayaç, Room'da kalıcı (`QadaPrayerEntity`), process kill sonrası korunur.
 14. **Ramazan modu (T-232)**: Hicri ay 9 ise hero card'da sahur/iftar çift sayacı; diğer aylarda tek sayaç (regresyon yok).
 15. **Cuma/kandil (T-233/E4)**: Özel gün sabah 09:00 tek seferlik bildirim + ana ekranda banner. Kandil listesi `SpecialDays.kt` içinde 2026-2028 tablosu — `SpecialDaysTest` guard testi ile denetlenir.
@@ -480,7 +480,7 @@ wear/
 
 ### Bildirimler
 - WorkManager `OneTimeWorkRequest` ile her vakit için ayrı worker (`resolveNotificationSchedules()` saf hesaplama, test edilebilir).
-- Ezan sesi (T-230): `NotificationHelper` iki kanal açar — `CHANNEL_ID` (sessiz) + `VOICE_CHANNEL_ID` (sesli). `PrayerNotificationWorker` `prayerVoiceEnabled` toggle'ına göre `resolveNotificationChannelId()` ile seçer. Gerçek ezan mp3'ü henüz eklenmedi.
+- Ezan sesi (T-230/E1): `NotificationHelper` iki kanal açar — `CHANNEL_ID` (sessiz) + `VOICE_CHANNEL_ID` (sesli, `setSound()` bağlı). `PrayerNotificationWorker` `prayerVoiceEnabled` toggle'ına göre seçer ve `PrayerAudioPlayer` ile ilk 10 saniye kademeli ses artışı sağlar.
 - Özel gün (T-233): `SpecialDayNotificationWorker` + `special_day_{date}` work name ile sabah 09:00 tek seferlik bildirim. 6 vakit scheduler'ına dokunulmaz.
 - `LocationSyncWorker`: 12 saatte bir periyodik ve konum değiştiğinde on-demand çalışır.
   - **On-demand işler `setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)` ile önceliklendirilir** — Doze modunda bile hemen çalışır.

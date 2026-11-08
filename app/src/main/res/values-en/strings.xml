@@ -171,6 +171,9 @@
     <string name="notification_channel_prayer_voice_desc">Voice notifications for prayer times</string>
     <string name="settings_prayer_voice">Adhan Voice</string>
     <string name="settings_prayer_voice_desc">Play sound when prayer time arrives</string>
+    <string name="settings_test_sound">Test Sound</string>
+    <string name="settings_stop_sound">Stop Sound</string>
+    <string name="test_notification_city">Istanbul</string>
     <string name="notification_title_format">%1$s Time</string>
     <string name="notification_text_format">%1$s - %2$s</string>
     <string name="notification_big_text_format">It is time for %1$s. %2$s - %3$s</string>

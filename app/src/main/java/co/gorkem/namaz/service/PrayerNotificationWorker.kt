@@ -45,6 +45,12 @@ class PrayerNotificationWorker @AssistedInject constructor(
 
         runCatching { notificationScheduler.rescheduleFromCache(cancelExisting = false) }
 
+        if (voiceEnabled) {
+            runCatching {
+                PrayerAudioPlayer.playWithRampSuspended(applicationContext)
+            }
+        }
+
         return Result.success()
     }
 }

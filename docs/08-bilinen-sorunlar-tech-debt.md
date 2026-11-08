@@ -46,4 +46,4 @@
 - API 36 mock-konum zorunluluğu (`adb emu geo fix` çalışmaz) — bkz. `05` §4.
 - `QiblaSensorManager` core'da stub, platformda gerçek impl — bilinçli ayrım; saf smoothing matematiğini core'a taşıma fırsatı duruyor.
 - `REQUEST_INSTALL_PACKAGES` Play politika incelemesi gerektirir — gerekçe manifest'te yazılı, release öncesi tekrar değerlendirilmeli.
-- `SpecialDayNotificationWorker` kademeli ses yok; gerçek ezan mp3'ü için 07/E1.
+- `SpecialDayNotificationWorker` kademeli ses yok; ezan sesi vakit bildirimlerinde kademeli olarak hazır (07/E1).

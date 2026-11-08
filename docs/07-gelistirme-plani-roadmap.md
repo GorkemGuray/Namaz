@@ -15,8 +15,8 @@ Detay + kontrol modeli: `09-icra-plani-ve-kontrol.md` (tümü DONE).
 
 ## Faz E — Yeni İşler (öneri, öncelik sırasız)
 
-### E1. Gerçek ezan sesi (T-230 devamı)
-- `res/raw/` altına ezan mp3 + `MediaPlayer`/ses-servisi ile kademeli ses artırma. Voice kanalına `setSound()` bağlama. Telif/dosya boyutu kararı gerekli (APK +~3MB).
+### E1. Gerçek ezan sesi (T-230 devamı) — ✅ ÇÖZÜLDÜ
+- `res/raw/ezan.mp3` altına CC0 lisanslı 30.5 saniyelik ezan kaydı eklendi (+256 KB). `PrayerAudioPlayer` ile ilk 10 saniye kademeli ses artışı sağlandı. Voice kanalına `setSound()` ve `AudioAttributes(USAGE_NOTIFICATION)` bağlandı. Ayarlar'a "Sesi dene" butonu eklendi.
 
 ### E2. R8/ProGuard küçültme
 - `r8-analyzer` skill ile keep kuralları, `isMinifyEnabled=true` denemesi, release APK boyut ölçümü. Glance + Hilt + Room keep kurallarına dikkat.

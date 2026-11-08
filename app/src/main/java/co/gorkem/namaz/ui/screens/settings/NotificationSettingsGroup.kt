@@ -13,11 +13,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -34,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +54,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import co.gorkem.namaz.R
 import co.gorkem.namaz.domain.model.UserPreferences
+import co.gorkem.namaz.service.NotificationHelper
+import co.gorkem.namaz.service.PrayerAudioPlayer
 import co.gorkem.namaz.util.NotificationPermissionHelper
 
 @Composable
@@ -280,6 +288,53 @@ fun NotificationSettingsGroup(
                     ),
                     modifier = Modifier.clip(MaterialTheme.shapes.large)
                 )
+
+                var isPlayingSound by remember { mutableStateOf(false) }
+                val scope = rememberCoroutineScope()
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        PrayerAudioPlayer.stop()
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                FilledTonalButton(
+                    onClick = {
+                        if (isPlayingSound) {
+                            PrayerAudioPlayer.stop()
+                            isPlayingSound = false
+                        } else {
+                            isPlayingSound = true
+                            NotificationHelper.showTestPrayerNotification(context)
+                            PrayerAudioPlayer.playWithRamp(
+                                context = context,
+                                scope = scope,
+                                onCompletion = {
+                                    isPlayingSound = false
+                                }
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    Icon(
+                        imageVector = if (isPlayingSound) Icons.Rounded.Stop else Icons.AutoMirrored.Rounded.VolumeUp,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(
+                            if (isPlayingSound) R.string.settings_stop_sound else R.string.settings_test_sound
+                        ),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
         }
     }
