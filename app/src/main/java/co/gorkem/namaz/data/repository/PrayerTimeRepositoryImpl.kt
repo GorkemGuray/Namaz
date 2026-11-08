@@ -9,7 +9,7 @@ import co.gorkem.namaz.data.local.room.PrayerTimeDao
 import co.gorkem.namaz.data.local.room.PrayerTimeEntity
 import co.gorkem.namaz.data.local.room.toDomainModel
 import co.gorkem.namaz.data.local.room.toEntity
-import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.domain.model.NetworkResult
 import co.gorkem.namaz.data.remote.api.AladhanApiService
 import co.gorkem.namaz.data.remote.api.ImsakiyemApiService
 import co.gorkem.namaz.data.remote.api.NominatimApiService
@@ -30,7 +30,6 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
-import co.gorkem.namaz.service.NamazWidgetUpdater
 
 
 @Singleton
@@ -83,7 +82,6 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 prayerTimeDao.insertAll(localTimes.map {
                     it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
-                NamazWidgetUpdater.update(context)
                 emit(NetworkResult.Success(localTimes))
             } else {
                 emit(NetworkResult.Error(context.getString(R.string.error_local_calculation_failed)))
@@ -100,7 +98,6 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                     prayerTimeDao.insertAll(prayerTimes.map {
                         it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                     })
-                    NamazWidgetUpdater.update(context)
                     emit(NetworkResult.Success(prayerTimes))
                 } else if (cached.isEmpty()) {
                     emit(NetworkResult.Error(context.getString(R.string.error_prayer_times_fetch_failed)))
@@ -317,7 +314,6 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 prayerTimeDao.insertAll(localTimes.map {
                     it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
-                NamazWidgetUpdater.update(context)
                 Result.success(localTimes)
             } else {
                 Result.failure(Exception(context.getString(R.string.error_local_calculation_failed)))
@@ -335,7 +331,6 @@ class PrayerTimeRepositoryImpl @Inject constructor(
                 prayerTimeDao.insertAll(prayerTimes.map {
                     it.toEntity(location.cityName, month, year, method, school, activeDataSource)
                 })
-                NamazWidgetUpdater.update(context)
                 Result.success(prayerTimes)
             } else {
                 val cached = prayerTimeDao.getPrayerTimesForMonth(location.cityName, month, year, method, school, activeDataSource)

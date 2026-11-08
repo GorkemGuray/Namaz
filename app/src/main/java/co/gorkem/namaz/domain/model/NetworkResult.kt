@@ -1,4 +1,4 @@
-package co.gorkem.namaz.data.remote
+package co.gorkem.namaz.domain.model
 
 sealed class NetworkResult<out T> {
     data class Success<T>(val data: T) : NetworkResult<T>()

@@ -1,0 +1,215 @@
+package co.gorkem.namaz.data.local.datastore
+
+import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
+import co.gorkem.namaz.domain.model.RecentCity
+import co.gorkem.namaz.domain.model.UserPreferences
+import co.gorkem.namaz.domain.repository.UserPreferencesRepository
+
+@Singleton
+class UserPreferencesRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context
+) : UserPreferencesRepository {
+
+    private val dataStore = context.userPreferencesDataStore
+    private val gson = Gson()
+
+    companion object Keys {
+        val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        val NOTIFICATION_PERMISSION_REQUESTED = booleanPreferencesKey("notification_permission_requested")
+        val NOTIFICATION_MINUTES_BEFORE = intPreferencesKey("notification_minutes_before")
+        val CALCULATION_METHOD = intPreferencesKey("calculation_method")
+        val SCHOOL = intPreferencesKey("school")
+        val USE_LOCAL_CALCULATION = booleanPreferencesKey("use_local_calculation")
+        val DATA_SOURCE = intPreferencesKey("data_source")
+        val LANGUAGE = stringPreferencesKey("language")
+        val MANUAL_CITY_NAME = stringPreferencesKey("manual_city_name")
+        val MANUAL_DISTRICT_NAME = stringPreferencesKey("manual_district_name")
+        val MANUAL_DISTRICT_ID = stringPreferencesKey("manual_district_id")
+        val MANUAL_LATITUDE = stringPreferencesKey("manual_latitude")
+        val MANUAL_LONGITUDE = stringPreferencesKey("manual_longitude")
+        val RECENT_CITIES = stringPreferencesKey("recent_cities")
+        val LAST_AUTO_LATITUDE = stringPreferencesKey("last_auto_latitude")
+        val LAST_AUTO_LONGITUDE = stringPreferencesKey("last_auto_longitude")
+        val LAST_AUTO_CITY_NAME = stringPreferencesKey("last_auto_city_name")
+        val LAST_AUTO_DISTRICT_NAME = stringPreferencesKey("last_auto_district_name")
+        val LAST_AUTO_DISTRICT_ID = stringPreferencesKey("last_auto_district_id")
+        val LAST_AUTO_TIMEZONE = stringPreferencesKey("last_auto_timezone")
+        val MANUAL_TIMEZONE = stringPreferencesKey("manual_timezone")
+        val APP_THEME = intPreferencesKey("app_theme")
+        val LAST_UPDATE_CHECK_MS = stringPreferencesKey("last_update_check_ms")
+    }
+
+    override val preferences: Flow<UserPreferences>
+        get() = dataStore.data.map { prefs ->
+            val recentCitiesJson = prefs[RECENT_CITIES] ?: "[]"
+            val recentCities: List<RecentCity> = try {
+                val type = object : TypeToken<List<RecentCity>>() {}.type
+                val cities = gson.fromJson<List<RecentCity>>(recentCitiesJson, type) ?: emptyList()
+                cities.map { it.copy(districtId = it.districtId ?: "") }
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+            UserPreferences(
+                notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
+                notificationPermissionRequested = prefs[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
+                notificationMinutesBefore = prefs[NOTIFICATION_MINUTES_BEFORE] ?: 15,
+                calculationMethod = prefs[CALCULATION_METHOD] ?: 13,
+                school = prefs[SCHOOL] ?: 0,
+                useLocalCalculation = prefs[USE_LOCAL_CALCULATION] ?: false,
+                dataSource = prefs[DATA_SOURCE] ?: 0,
+                language = prefs[LANGUAGE] ?: "tr",
+                appTheme = prefs[APP_THEME] ?: 0,
+                manualCityName = prefs[MANUAL_CITY_NAME] ?: "",
+                manualDistrictName = prefs[MANUAL_DISTRICT_NAME] ?: "",
+                manualDistrictId = prefs[MANUAL_DISTRICT_ID] ?: "",
+                manualLatitude = (prefs[MANUAL_LATITUDE] ?: "0.0").toDouble(),
+                manualLongitude = (prefs[MANUAL_LONGITUDE] ?: "0.0").toDouble(),
+                recentCities = recentCities,
+                lastAutoLatitude = (prefs[LAST_AUTO_LATITUDE] ?: "0.0").toDouble(),
+                lastAutoLongitude = (prefs[LAST_AUTO_LONGITUDE] ?: "0.0").toDouble(),
+                lastAutoCityName = prefs[LAST_AUTO_CITY_NAME] ?: "",
+                lastAutoDistrictName = prefs[LAST_AUTO_DISTRICT_NAME] ?: "",
+                lastAutoDistrictId = prefs[LAST_AUTO_DISTRICT_ID] ?: "",
+                lastAutoTimezone = prefs[LAST_AUTO_TIMEZONE] ?: "Europe/Istanbul",
+                manualTimezone = prefs[MANUAL_TIMEZONE] ?: "Europe/Istanbul",
+                lastUpdateCheckMs = (prefs[LAST_UPDATE_CHECK_MS] ?: "0").toLongOrNull() ?: 0L
+            )
+        }
+
+    override suspend fun setNotificationsEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[NOTIFICATIONS_ENABLED] = enabled }
+    }
+
+    override suspend fun setNotificationPermissionRequested(requested: Boolean) {
+        dataStore.edit { prefs -> prefs[NOTIFICATION_PERMISSION_REQUESTED] = requested }
+    }
+
+    override suspend fun setNotificationMinutesBefore(minutes: Int) {
+        dataStore.edit { prefs -> prefs[NOTIFICATION_MINUTES_BEFORE] = minutes }
+    }
+
+    override suspend fun setCalculationMethod(method: Int) {
+        dataStore.edit { prefs -> prefs[CALCULATION_METHOD] = method }
+    }
+
+    override suspend fun setSchool(school: Int) {
+        dataStore.edit { prefs -> prefs[SCHOOL] = school }
+    }
+
+    override suspend fun setUseLocalCalculation(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[USE_LOCAL_CALCULATION] = enabled
+            if (enabled) {
+                prefs[DATA_SOURCE] = 2
+            } else if ((prefs[DATA_SOURCE] ?: 0) == 2) {
+                prefs[DATA_SOURCE] = 0
+            }
+        }
+    }
+
+    override suspend fun setDataSource(source: Int) {
+        dataStore.edit { prefs ->
+            prefs[DATA_SOURCE] = source
+            prefs[USE_LOCAL_CALCULATION] = (source == 2)
+        }
+    }
+
+    override suspend fun setLanguage(language: String) {
+        dataStore.edit { prefs -> prefs[LANGUAGE] = language }
+    }
+
+    override suspend fun setAppTheme(theme: Int) {
+        dataStore.edit { prefs -> prefs[APP_THEME] = theme }
+    }
+
+    override suspend fun setManualCity(
+        name: String,
+        districtName: String,
+        latitude: Double,
+        longitude: Double,
+        districtId: String
+    ) {
+        dataStore.edit { prefs ->
+            prefs[MANUAL_CITY_NAME] = name
+            prefs[MANUAL_DISTRICT_NAME] = districtName
+            prefs[MANUAL_DISTRICT_ID] = districtId
+            prefs[MANUAL_LATITUDE] = latitude.toString()
+            prefs[MANUAL_LONGITUDE] = longitude.toString()
+        }
+        addRecentCity(RecentCity(name, latitude, longitude, districtId))
+    }
+
+    override suspend fun clearManualCity() {
+        dataStore.edit { prefs ->
+            prefs.remove(MANUAL_CITY_NAME)
+            prefs.remove(MANUAL_DISTRICT_NAME)
+            prefs.remove(MANUAL_DISTRICT_ID)
+            prefs.remove(MANUAL_LATITUDE)
+            prefs.remove(MANUAL_LONGITUDE)
+        }
+    }
+
+    private suspend fun addRecentCity(city: RecentCity) {
+        dataStore.edit { prefs ->
+            val currentJson = prefs[RECENT_CITIES] ?: "[]"
+            val current: List<RecentCity> = try {
+                val type = object : TypeToken<List<RecentCity>>() {}.type
+                gson.fromJson(currentJson, type) ?: emptyList()
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+            val updated = listOf(city) + current.filter {
+                it.name != city.name
+            }.take(4)
+
+            prefs[RECENT_CITIES] = gson.toJson(updated)
+        }
+    }
+
+    override suspend fun clearRecentCities() {
+        dataStore.edit { prefs -> prefs[RECENT_CITIES] = "[]" }
+    }
+
+    override suspend fun setLastAutoLocation(
+        name: String,
+        districtName: String,
+        latitude: Double,
+        longitude: Double,
+        districtId: String,
+        timezone: String
+    ) {
+        dataStore.edit { prefs ->
+            prefs[LAST_AUTO_CITY_NAME] = name
+            prefs[LAST_AUTO_DISTRICT_NAME] = districtName
+            prefs[LAST_AUTO_LATITUDE] = latitude.toString()
+            prefs[LAST_AUTO_LONGITUDE] = longitude.toString()
+            prefs[LAST_AUTO_DISTRICT_ID] = districtId
+            prefs[LAST_AUTO_TIMEZONE] = timezone
+        }
+    }
+
+    override suspend fun updateManualTimezone(timezone: String) {
+        dataStore.edit { prefs ->
+            prefs[MANUAL_TIMEZONE] = timezone
+        }
+    }
+
+    override suspend fun setLastUpdateCheck() {
+        dataStore.edit { prefs ->
+            prefs[LAST_UPDATE_CHECK_MS] = System.currentTimeMillis().toString()
+        }
+    }
+}

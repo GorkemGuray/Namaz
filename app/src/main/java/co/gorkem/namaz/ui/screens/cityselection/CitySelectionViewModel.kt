@@ -127,6 +127,7 @@ class CitySelectionViewModel @Inject constructor(
             longitude = result.longitude,
             districtId = finalDistrictId
         )
+        context?.let { co.gorkem.namaz.service.NamazWidgetUpdater.update(it) }
     }
 
     suspend fun saveRecentCity(city: RecentCity) {
@@ -136,10 +137,12 @@ class CitySelectionViewModel @Inject constructor(
             longitude = city.longitude,
             districtId = city.districtId ?: ""
         )
+        context?.let { co.gorkem.namaz.service.NamazWidgetUpdater.update(it) }
     }
 
     suspend fun useMyLocation() {
         preferencesRepository.clearManualCity()
+        context?.let { co.gorkem.namaz.service.NamazWidgetUpdater.update(it) }
     }
 
     fun clearRecentCities() {

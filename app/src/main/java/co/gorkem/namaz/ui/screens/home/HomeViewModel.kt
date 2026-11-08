@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.data.local.datastore.getLocationInfo
-import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.domain.model.NetworkResult
 import co.gorkem.namaz.data.repository.PrayerTimeRepositoryImpl
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
@@ -17,6 +17,7 @@ import co.gorkem.namaz.service.GeocoderHelper
 import co.gorkem.namaz.service.LocationTracker
 import co.gorkem.namaz.service.PrayerNotificationScheduler
 import co.gorkem.namaz.service.LocationSyncWorker
+import co.gorkem.namaz.service.NamazWidgetUpdater
 import co.gorkem.namaz.service.WearKerahatInfo
 import co.gorkem.namaz.service.WearNextPrayer
 import co.gorkem.namaz.service.WearPrayerData
@@ -114,6 +115,10 @@ class HomeViewModel @Inject constructor(
                 val methodChanged = prefs.calculationMethod != lastMethod
                 val schoolChanged = prefs.school != lastSchool
                 
+                if (themeChanged || cityKey != lastCityKey || methodChanged || schoolChanged) {
+                    NamazWidgetUpdater.update(context)
+                }
+
                 if (cityKey != lastCityKey || methodChanged || schoolChanged) {
                     lastCityKey = cityKey
                     lastMethod = prefs.calculationMethod
@@ -237,6 +242,7 @@ class HomeViewModel @Inject constructor(
                             _nextPrayer.value = getNextPrayerUseCase(todayData)
                             refreshDashboard()
                             startDashboardRefresh()
+                            NamazWidgetUpdater.update(context)
                         }
                         if (result.data.isNotEmpty()) {
                             val resolvedTimezone = result.data.first().timezone

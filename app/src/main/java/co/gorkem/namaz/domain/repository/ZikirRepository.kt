@@ -1,13 +1,13 @@
 package co.gorkem.namaz.domain.repository
 
-import co.gorkem.namaz.data.local.room.ZikirEntity
+import co.gorkem.namaz.domain.model.Zikir
 import kotlinx.coroutines.flow.Flow
 
 interface ZikirRepository {
-    fun getAllZikirs(): Flow<List<ZikirEntity>>
-    fun getNamazTesbihati(): Flow<ZikirEntity?>
-    suspend fun insertZikir(zikir: ZikirEntity)
-    suspend fun updateZikir(zikir: ZikirEntity)
-    suspend fun deleteZikir(zikir: ZikirEntity)
+    fun getAllZikirs(): Flow<List<Zikir>>
+    fun getNamazTesbihati(): Flow<Zikir?>
+    suspend fun insertZikir(zikir: Zikir)
+    suspend fun updateZikir(zikir: Zikir)
+    suspend fun deleteZikir(zikir: Zikir)
     suspend fun updateCountAndPhase(id: Int, count: Int, phase: Int)
 }

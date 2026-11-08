@@ -31,7 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import co.gorkem.namaz.BuildConfig
-import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
+import co.gorkem.namaz.data.local.datastore.UserPreferencesRepositoryImpl
 import co.gorkem.namaz.util.UpdateCheckResult
 import co.gorkem.namaz.util.UpdateChecker
 import co.gorkem.namaz.util.UpdateDownloader
@@ -54,7 +54,7 @@ fun UpdateBanner(
     LaunchedEffect(shouldCheck) {
         if (!shouldCheck) return@LaunchedEffect
 
-        val prefsRepo = UserPreferencesRepository(context.applicationContext)
+        val prefsRepo = UserPreferencesRepositoryImpl(context.applicationContext)
         val prefs = prefsRepo.preferences.first()
 
         if (!manualCheck) {

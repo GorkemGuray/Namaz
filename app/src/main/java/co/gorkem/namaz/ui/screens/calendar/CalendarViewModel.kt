@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.data.local.datastore.getLocationInfo
-import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.domain.model.NetworkResult
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.usecase.GetPrayerTimesUseCase

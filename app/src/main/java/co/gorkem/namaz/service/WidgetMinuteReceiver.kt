@@ -73,7 +73,7 @@ class WidgetMinuteReceiver : BroadcastReceiver() {
         @android.annotation.SuppressLint("MissingPermission")
         private suspend fun checkLocationChange(context: Context) {
             try {
-                val prefsRepo = co.gorkem.namaz.data.local.datastore.UserPreferencesRepository(context.applicationContext)
+                val prefsRepo = co.gorkem.namaz.data.local.datastore.UserPreferencesRepositoryImpl(context.applicationContext)
                 val prefs = prefsRepo.preferences.first()
                 
                 if (prefs.manualCityName.isNotEmpty()) {

@@ -1,6 +1,6 @@
 package co.gorkem.namaz.domain.usecase
 
-import co.gorkem.namaz.data.local.room.ZikirEntity
+import co.gorkem.namaz.domain.model.Zikir
 import co.gorkem.namaz.domain.repository.ZikirRepository
 import javax.inject.Inject
 
@@ -9,7 +9,7 @@ class ManageZikirUseCase @Inject constructor(
 ) {
     suspend fun addZikir(title: String, targetCount: Int, isNamazTesbihati: Boolean = false) {
         repository.insertZikir(
-            ZikirEntity(
+            Zikir(
                 title = title,
                 targetCount = targetCount,
                 currentCount = 0,
@@ -19,7 +19,7 @@ class ManageZikirUseCase @Inject constructor(
         )
     }
 
-    suspend fun deleteZikir(zikir: ZikirEntity) {
+    suspend fun deleteZikir(zikir: Zikir) {
         repository.deleteZikir(zikir)
     }
 

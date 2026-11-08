@@ -58,7 +58,7 @@ import co.gorkem.namaz.MainActivity
 import co.gorkem.namaz.R
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
 import co.gorkem.namaz.data.local.datastore.getLocationInfo
-import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.domain.model.NetworkResult
 import co.gorkem.namaz.data.repository.PrayerTimeRepositoryImpl
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerName

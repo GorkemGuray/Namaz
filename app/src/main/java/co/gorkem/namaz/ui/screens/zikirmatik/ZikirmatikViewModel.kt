@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.gorkem.namaz.R
-import co.gorkem.namaz.data.local.room.ZikirEntity
+import co.gorkem.namaz.domain.model.Zikir
 import co.gorkem.namaz.domain.usecase.GetNamazTesbihatiUseCase
 import co.gorkem.namaz.domain.usecase.GetZikirsUseCase
 import co.gorkem.namaz.domain.usecase.ManageZikirUseCase
@@ -24,18 +24,18 @@ class ZikirmatikViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val _zikirs = MutableStateFlow<List<ZikirEntity>>(emptyList())
-    val zikirs: StateFlow<List<ZikirEntity>> = _zikirs.asStateFlow()
+    private val _zikirs = MutableStateFlow<List<Zikir>>(emptyList())
+    val zikirs: StateFlow<List<Zikir>> = _zikirs.asStateFlow()
 
-    private val _currentZikir = MutableStateFlow<ZikirEntity?>(null)
-    val currentZikir: StateFlow<ZikirEntity?> = _currentZikir.asStateFlow()
+    private val _currentZikir = MutableStateFlow<Zikir?>(null)
+    val currentZikir: StateFlow<Zikir?> = _currentZikir.asStateFlow()
 
-    private val _namazTesbihati = MutableStateFlow<ZikirEntity?>(null)
+    private val _namazTesbihati = MutableStateFlow<Zikir?>(null)
 
     val namazTesbihatPhases = listOf(
         context.getString(R.string.zikir_subhanallah),
         context.getString(R.string.zikir_elhamdulillah),
-        context.getString(R.string.zikir_allahuekber)
+        context.getString(R.string.zikir_allahu_ekber)
     )
 
     private val _selectedTesbihatMode = MutableStateFlow(TesbihatMode.UZUN)
@@ -105,7 +105,7 @@ class ZikirmatikViewModel @Inject constructor(
         }
     }
 
-    fun selectZikir(zikir: ZikirEntity) {
+    fun selectZikir(zikir: Zikir) {
         _currentZikir.value = zikir
     }
 
@@ -146,7 +146,7 @@ class ZikirmatikViewModel @Inject constructor(
         }
     }
     
-    fun deleteCustomZikir(zikir: ZikirEntity) {
+    fun deleteCustomZikir(zikir: Zikir) {
         viewModelScope.launch {
             manageZikirUseCase.deleteZikir(zikir)
             if (_currentZikir.value?.id == zikir.id) {

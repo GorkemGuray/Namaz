@@ -3,7 +3,7 @@ package co.gorkem.namaz.ui.screens.cityselection
 import co.gorkem.namaz.data.local.datastore.RecentCity
 import co.gorkem.namaz.data.local.datastore.UserPreferences
 import co.gorkem.namaz.data.local.datastore.UserPreferencesRepository
-import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.domain.model.NetworkResult
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.LocationSearchResult
 import co.gorkem.namaz.domain.model.PrayerTime
@@ -179,7 +179,7 @@ class CitySelectionViewModelTest {
         }
     }
 
-    private class FakeUserPreferencesRepository : UserPreferencesRepository() {
+    private class FakeUserPreferencesRepository : UserPreferencesRepository {
         private val _prefs = MutableStateFlow(UserPreferences())
         override val preferences: Flow<UserPreferences> = _prefs
 
@@ -190,6 +190,16 @@ class CitySelectionViewModelTest {
         fun updateTestDataSource(source: Int) {
             _prefs.value = _prefs.value.copy(dataSource = source)
         }
+
+        override suspend fun setNotificationsEnabled(enabled: Boolean) {}
+        override suspend fun setNotificationPermissionRequested(requested: Boolean) {}
+        override suspend fun setNotificationMinutesBefore(minutes: Int) {}
+        override suspend fun setCalculationMethod(method: Int) {}
+        override suspend fun setSchool(school: Int) {}
+        override suspend fun setUseLocalCalculation(enabled: Boolean) {}
+        override suspend fun setDataSource(source: Int) {}
+        override suspend fun setLanguage(language: String) {}
+        override suspend fun setAppTheme(theme: Int) {}
 
         override suspend fun setManualCity(
             name: String,
@@ -208,5 +218,15 @@ class CitySelectionViewModelTest {
         }
 
         override suspend fun clearRecentCities() {}
+        override suspend fun setLastAutoLocation(
+            name: String,
+            districtName: String,
+            latitude: Double,
+            longitude: Double,
+            districtId: String,
+            timezone: String
+        ) {}
+        override suspend fun updateManualTimezone(timezone: String) {}
+        override suspend fun setLastUpdateCheck() {}
     }
 }

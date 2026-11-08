@@ -1,6 +1,6 @@
 package co.gorkem.namaz.domain.repository
 
-import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.domain.model.NetworkResult
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.LocationSearchResult
 import co.gorkem.namaz.domain.model.PrayerTime

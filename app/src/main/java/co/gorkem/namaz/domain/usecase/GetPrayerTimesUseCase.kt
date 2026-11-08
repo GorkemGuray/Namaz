@@ -1,6 +1,6 @@
 package co.gorkem.namaz.domain.usecase
 
-import co.gorkem.namaz.data.remote.NetworkResult
+import co.gorkem.namaz.domain.model.NetworkResult
 import co.gorkem.namaz.domain.model.LocationInfo
 import co.gorkem.namaz.domain.model.PrayerTime
 import co.gorkem.namaz.domain.repository.PrayerTimeRepository
