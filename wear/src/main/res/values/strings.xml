@@ -17,4 +17,5 @@
     <string name="wear_kerahat_approaching">kerahat yaklaşıyor</string>
     <string name="wear_kerahat_remaining">dk sonra</string>
     <string name="wear_prayer_progress">Namaz İlerleme</string>
+    <string name="wear_next_prayer_detail">Sıradaki Vakit Detay</string>
 </resources>
