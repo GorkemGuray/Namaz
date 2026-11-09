@@ -11,6 +11,8 @@ jobs:
   deploy-site:
     name: Deploy Website to GitHub Pages
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -24,21 +26,14 @@ jobs:
       - name: Generate static SEO pages
         run: python3 website/generate_static.py
 
-      - name: Deploy to Namaz-App gh-pages
-        env:
-          RELEASE_REPO_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+      - name: Deploy to gh-pages (same repo)
         run: |
-          if [ -z "$RELEASE_REPO_TOKEN" ]; then
-            echo "Error: RELEASE_REPO_TOKEN is not set."
-            exit 1
-          fi
-
-          # Clone public repo gh-pages branch
-          if git clone --branch gh-pages "https://x-access-token:${RELEASE_REPO_TOKEN}@github.com/GorkemGuray/Namaz-App.git" public-repo; then
+          # Clone this repo's gh-pages branch
+          if git clone --branch gh-pages "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" public-repo; then
             echo "Successfully cloned gh-pages branch"
           else
             echo "gh-pages branch not found, cloning default repository..."
-            git clone "https://x-access-token:${RELEASE_REPO_TOKEN}@github.com/GorkemGuray/Namaz-App.git" public-repo
+            git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" public-repo
             cd public-repo
             git checkout -b gh-pages 2>/dev/null || git checkout --orphan gh-pages
             git rm -rf . || true

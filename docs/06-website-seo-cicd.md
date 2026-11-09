@@ -2,7 +2,7 @@
 
 ## 1. Website Yapısı (`website/`)
 
-Canlı adres: `gorkemguray.github.io/Namaz-App`. Hibrit prerendering: her şehir için statik HTML (title/meta/JSON-LD/OG gömülü), vakit değerleri JS ile canlı doldurulur.
+Canlı adres: `gorkemguray.github.io/Namaz`. Hibrit prerendering: her şehir için statik HTML (title/meta/JSON-LD/OG gömülü), vakit değerleri JS ile canlı doldurulur.
 
 | Dosya/Dizin | Açıklama |
 |-------------|----------|
@@ -32,7 +32,7 @@ URL: `/sehir/{city}/`, `/en/city/{city}/` (eski `?sehir=` redirect ile taşını
 ## 2. CI/CD (`.github/workflows/`)
 
 ### 2.1 `deploy-website.yml` (site)
-Tetikleyici: `main` + `website/**` push. Süreç: `GorkemGuray/Namaz-App@gh-pages` klonla (yoksa orphan) → `version.json` yedekle/geri yükle → `website/*` kopyala → commit+push. Secret: `RELEASE_REPO_TOKEN`.
+Tetikleyici: `main` + `website/**` push. Süreç: `GorkemGuray/Namaz@gh-pages` klonla (yoksa orphan) → `version.json` yedekle/geri yükle → `website/*` kopyala → commit+push. Secret: `RELEASE_REPO_TOKEN`.
 
 ### 2.2 `release.yml` (uygulama)
 Tetikleyici: `v*` tag push. Süreç: JDK 17 + Gradle cache → `versionName=tag-v`, `versionCode=tag sayısı` → `:app:assembleDebug :wear:assembleDebug -PciVersion*` → `Namaz-{v}-app/wear-debug.apk` rename → `softprops/action-gh-release` ile release → `version.json` üretip siteyle `gh-pages`'e push.

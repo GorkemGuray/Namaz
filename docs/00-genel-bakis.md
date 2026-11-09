@@ -12,7 +12,7 @@
 
 > Kritik: Data Layer senkronizasyonu için iki modülün `applicationId` değeri eşitlenmiştir (`co.gorkem.namaz`). CI-CD-PLAN.md içindeki eski `co.gorkem.namaz.wear` değeri geçersizdir.
 
-Ek bileşen: `website/` — GitHub Pages tanıtım + canlı vakit sitesi (`gorkemguray.github.io/Namaz-App`).
+Ek bileşen: `website/` — GitHub Pages tanıtım + canlı vakit sitesi (`gorkemguray.github.io/Namaz`).
 
 ## 2. Özellik Özeti
 

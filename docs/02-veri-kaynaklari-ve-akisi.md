@@ -46,7 +46,7 @@ GET https://nominatim.openstreetmap.org/search
 
 ### 2.5 Sürüm endpoint'i (uygulama içi güncelleme)
 ```
-GET https://gorkemguray.github.io/Namaz-App/version.json
+GET https://gorkemguray.github.io/Namaz/version.json
 ```
 `UpdateChecker.check(currentVersion)` + `isNewerThan` semantik karşılaştırma.
 

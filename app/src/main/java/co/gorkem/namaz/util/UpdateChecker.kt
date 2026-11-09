@@ -23,9 +23,9 @@ class UpdateChecker(private val gson: Gson = Gson()) {
 
     companion object {
         private const val TAG = "UpdateChecker"
-        private const val VERSION_JSON_URL = "https://gorkemguray.github.io/Namaz-App/version.json"
-        private const val GITHUB_RELEASES_URL = "https://github.com/GorkemGuray/Namaz-App/releases/latest"
-        private const val GITHUB_DOWNLOAD_BASE = "https://github.com/GorkemGuray/Namaz-App/releases/download"
+        private const val VERSION_JSON_URL = "https://gorkemguray.github.io/Namaz/version.json"
+        private const val GITHUB_RELEASES_URL = "https://github.com/GorkemGuray/Namaz/releases/latest"
+        private const val GITHUB_DOWNLOAD_BASE = "https://github.com/GorkemGuray/Namaz/releases/download"
     }
 
     suspend fun check(currentVersion: String): UpdateCheckResult = withContext(Dispatchers.IO) {

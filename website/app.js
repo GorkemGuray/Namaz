@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Dynamic Version Loading
     const fallbackVersion = '1.0.4';
-    const repoBaseUrl = 'https://github.com/GorkemGuray/Namaz-App';
+    const repoBaseUrl = 'https://github.com/GorkemGuray/Namaz';
 
     const versionElements = document.querySelectorAll('.latest-version-name');
     const releaseNotesElement = document.querySelector('.release-notes-text');
@@ -651,8 +651,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const baseUrl = isEN 
-            ? "https://gorkemguray.github.io/Namaz-App/en/" 
-            : "https://gorkemguray.github.io/Namaz-App/";
+            ? "https://gorkemguray.github.io/Namaz/en/" 
+            : "https://gorkemguray.github.io/Namaz/";
             
         if (cityName) {
             const queryCityKey = isEN ? 'city' : 'sehir';

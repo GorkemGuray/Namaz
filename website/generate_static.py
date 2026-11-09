@@ -13,8 +13,8 @@ import xml.etree.ElementTree as ET
 import os, json
 from datetime import date
 
-BASE_URL_TR = "https://gorkemguray.github.io/Namaz-App"
-BASE_URL_EN = "https://gorkemguray.github.io/Namaz-App/en"
+BASE_URL_TR = "https://gorkemguray.github.io/Namaz"
+BASE_URL_EN = "https://gorkemguray.github.io/Namaz/en"
 TODAY = date.today().isoformat()
 WEBSITE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -513,8 +513,8 @@ def generate_city_index(cities, lang):
 <body>
     <header class="site-header">
         <div class="container nav-container">
-            <a href="/Namaz-App/" class="logo"><span>Namaz Vakitleri</span></a>
-            <nav><ul class="nav-links"><li><a href="/Namaz-App/">{home_label}</a></li></ul></nav>
+            <a href="/Namaz/" class="logo"><span>Namaz Vakitleri</span></a>
+            <nav><ul class="nav-links"><li><a href="/Namaz/">{home_label}</a></li></ul></nav>
         </div>
     </header>
     <section class="sitemap-section" style="padding:4rem 1rem;max-width:960px;margin:0 auto;">

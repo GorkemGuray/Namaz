@@ -1,7 +1,7 @@
 {
   "version": "1.0.4",
   "versionCode": 4,
-  "releaseUrl": "https://github.com/GorkemGuray/Namaz-App/releases/tag/v1.0.4",
+  "releaseUrl": "https://github.com/GorkemGuray/Namaz/releases/tag/v1.0.4",
   "releaseNotes": "Namaz Vakitleri uygulamasının ilk kararlı sürümü yayınlandı! Telefon ve Wear OS (akıllı saat) entegrasyonu, konum bazlı otomatik namaz vakti hesaplama, pürüzsüz kıble pusulası, ana ekran widget'ları ve gelişmiş zikirmatik özellikleri eklendi.",
   "releaseNotesEN": "The first stable version of Namaz Vakitleri is released! Features phone and Wear OS smartwatch integration, location-based automatic calculation, smooth Qibla compass, home screen widgets, and dhikr counter."
 }

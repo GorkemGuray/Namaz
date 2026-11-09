@@ -96,8 +96,6 @@ jobs:
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          repository: GorkemGuray/Namaz-App
-          token: ${{ secrets.RELEASE_REPO_TOKEN }}
           name: Namaz ${{ steps.version.outputs.versionName }}
           body: ${{ steps.release_notes.outputs.notes }}
           files: |
@@ -114,10 +112,7 @@ jobs:
       - name: Generate static SEO pages
         run: python3 website/generate_static.py
 
-      - name: Push version.json to public release repo
-        if: env.RELEASE_REPO_TOKEN != ''
-        env:
-          RELEASE_REPO_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+      - name: Push version.json to gh-pages (same repo)
         run: |
           VERSION="${{ steps.version.outputs.versionName }}"
           VERSION_CODE="${{ steps.version.outputs.versionCode }}"
@@ -128,7 +123,7 @@ jobs:
           {
             "version": "${VERSION}",
             "versionCode": ${VERSION_CODE},
-            "releaseUrl": "https://github.com/GorkemGuray/Namaz-App/releases/tag/${TAG_NAME}",
+            "releaseUrl": "https://github.com/${{ github.repository }}/releases/tag/${TAG_NAME}",
             "releaseNotes": "${NOTES}"
           }
           EOF
@@ -136,12 +131,12 @@ jobs:
           echo "Generated version.json:"
           cat version.json
 
-          # Clone public repo gh-pages branch or set it up if it doesn't exist
-          if git clone --branch gh-pages "https://x-access-token:${RELEASE_REPO_TOKEN}@github.com/GorkemGuray/Namaz-App.git" public-repo; then
+          # Clone this repo's gh-pages branch or set it up if it doesn't exist
+          if git clone --branch gh-pages "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" public-repo; then
             echo "Successfully cloned gh-pages branch"
           else
             echo "gh-pages branch not found, cloning default repository..."
-            git clone "https://x-access-token:${RELEASE_REPO_TOKEN}@github.com/GorkemGuray/Namaz-App.git" public-repo
+            git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" public-repo
             cd public-repo
             git checkout -b gh-pages 2>/dev/null || git checkout --orphan gh-pages
             git rm -rf . || true

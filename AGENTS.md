@@ -646,7 +646,7 @@ schedulePrayerTransitionAlarm() ← sonraki vakit için alarm kurar
 Projede iki adet otomatik iş akışı (workflow) tanımlıdır:
 - **1. Sadece Web Sitesi Dağıtımı (`deploy-website.yml`)**:
   - `website/**` yollarındaki dosyalar güncellenip `main` branch'ine `push` yapıldığında tetiklenir.
-  - Sitenin barındırıldığı `GorkemGuray/Namaz-App` reposunun `gh-pages` branch'ini klonlar, mevcut `version.json` dosyasını koruyarak (yedekleyip geri yükleyerek) web sitesini günceller.
+  - Sitenin barındırıldığı `GorkemGuray/Namaz` reposunun `gh-pages` branch'ini klonlar, mevcut `version.json` dosyasını koruyarak (yedekleyip geri yükleyerek) web sitesini günceller.
   - Bu sayede uygulamayı derlemeden site güncellenebilir.
 - **2. Uygulama Sürümü & Otomatik Release (`release.yml`)**:
   - `v*` formatındaki tag'ler pushlandığında tetiklenir.
@@ -656,7 +656,7 @@ Projede iki adet otomatik iş akışı (workflow) tanımlıdır:
 - **Secrets**: Her iki workflow da repo bazındaki `RELEASE_REPO_TOKEN` secret'ını kullanır.
 
 ### Uygulama İçi Güncelleme Kontrolü
-- **UpdateChecker** (`util/UpdateChecker.kt`): `https://gorkemguray.github.io/Namaz-App/version.json` endpoint'inden JSON verisini okur, semantik versiyon karşılaştırması yapar (`isNewerThan`).
+- **UpdateChecker** (`util/UpdateChecker.kt`): `https://gorkemguray.github.io/Namaz/version.json` endpoint'inden JSON verisini okur, semantik versiyon karşılaştırması yapar (`isNewerThan`).
 - **UpdateBanner** (`ui/components/UpdateBanner.kt`): Ana ekranda LazyColumn'ın ilk item'i olarak render edilir. İki mod: otomatik (haftada 1) ve manuel. Banner'da "İndir" butonu GitHub Releases sayfasını Intent ile açar.
 - **UpdateCheckButton** (`ui/components/UpdateCheckButton.kt`): Ayarlar sayfasında manuel kontrol butonu.
 - **Throttle**: `UserPreferencesRepository.lastUpdateCheckMs` ile haftada 1'den fazla otomatik kontrol yapılmaz.
@@ -664,7 +664,7 @@ Projede iki adet otomatik iş akışı (workflow) tanımlıdır:
 
 ### Web Sitesi ve SEO (`website/`)
 
-Tanıtım sitesi `gorkemguray.github.io/Namaz-App` adresinde GitHub Pages üzerinden yayınlanır. **Hibrit prerendering** yaklaşımı kullanır: her şehir için statik HTML (title, meta, JSON-LD, OG etiketleri gömülü), vakit değerleri JS ile canlı doldurulur.
+Tanıtım sitesi `gorkemguray.github.io/Namaz` adresinde GitHub Pages üzerinden yayınlanır. **Hibrit prerendering** yaklaşımı kullanır: her şehir için statik HTML (title, meta, JSON-LD, OG etiketleri gömülü), vakit değerleri JS ile canlı doldurulur.
 
 **Önemli dosyalar:**
 - `website/index.html` + `website/en/index.html` — ana sayfalar
