@@ -20,6 +20,12 @@ class ComplicationUpdateReceiver : BroadcastReceiver() {
                 complicationDataSourceComponent = ComponentName(context, PrayerCountdownComplicationService::class.java)
             )
             requester2.requestUpdateAll()
+
+            val requester3 = ComplicationDataSourceUpdateRequester.create(
+                context = context,
+                complicationDataSourceComponent = ComponentName(context, PrayerProgressComplicationService::class.java)
+            )
+            requester3.requestUpdateAll()
         } catch (e: Exception) {
             // Ignore
         }

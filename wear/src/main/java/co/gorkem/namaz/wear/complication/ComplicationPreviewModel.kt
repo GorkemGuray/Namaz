@@ -6,5 +6,8 @@ data class ComplicationPreviewModel(
     val type: ComplicationType,
     val text: String,
     val title: String,
-    val isStaticText: Boolean = true
+    val isStaticText: Boolean = true,
+    val value: Float = 0f,
+    val min: Float = 0f,
+    val max: Float = 6f
 )
