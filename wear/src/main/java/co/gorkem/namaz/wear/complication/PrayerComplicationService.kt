@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
+import androidx.wear.watchface.complications.data.LongTextComplicationData
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
@@ -13,8 +14,6 @@ import co.gorkem.namaz.wear.R
 import co.gorkem.namaz.wear.di.WearDataEntryPoint
 import co.gorkem.namaz.wear.prayerNameFromEnum
 import dagger.hilt.EntryPoints
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 
 class PrayerComplicationService : SuspendingComplicationDataSourceService() {
 
@@ -22,13 +21,8 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
         EntryPoints.get(applicationContext, WearDataEntryPoint::class.java)
     }
 
-    override fun getPreviewData(type: ComplicationType): ComplicationData {
-        return ShortTextComplicationData.Builder(
-            text = PlainComplicationText.Builder(text = "20:28").build(),
-            contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
-        )
-        .setTitle(PlainComplicationText.Builder(text = getString(R.string.prayer_aksam)).build())
-        .build()
+    override fun getPreviewData(type: ComplicationType): ComplicationData? {
+        return resolvePrayerComplicationPreview(type) { getString(it) }
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
@@ -44,7 +38,7 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
 
         if (resolved.source == co.gorkem.namaz.wear.tile.DisplaySource.EMPTY) {
             co.gorkem.namaz.wear.scheduleComplicationUpdateAlarm(this, System.currentTimeMillis() + 5 * 60 * 1000L)
-            return buildLoadingData()
+            return buildLoadingData(request.complicationType)
         }
 
         val tapIntent = PendingIntent.getActivity(
@@ -54,22 +48,39 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return buildData(resolved, tapIntent)
+        return buildData(request.complicationType, resolved, tapIntent)
     }
 
     override fun onComplicationActivated(complicationInstanceId: Int, type: ComplicationType) {}
     override fun onComplicationDeactivated(complicationInstanceId: Int) {}
 
-    private fun buildLoadingData(): ComplicationData {
-        return ShortTextComplicationData.Builder(
-            text = PlainComplicationText.Builder(text = getString(R.string.wear_loading)).build(),
-            contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
-        )
-            .setTitle(PlainComplicationText.Builder(text = getString(R.string.wear_prayer_times)).build())
-            .build()
+    private fun buildLoadingData(type: ComplicationType): ComplicationData {
+        val loading = PlainComplicationText.Builder(text = getString(R.string.wear_loading)).build()
+        val title = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_times)).build()
+        val contentDesc = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
+
+        return when (type) {
+            ComplicationType.LONG_TEXT -> {
+                LongTextComplicationData.Builder(
+                    text = loading,
+                    contentDescription = contentDesc
+                )
+                .setTitle(title)
+                .build()
+            }
+            else -> {
+                ShortTextComplicationData.Builder(
+                    text = loading,
+                    contentDescription = contentDesc
+                )
+                .setTitle(title)
+                .build()
+            }
+        }
     }
 
     private fun buildData(
+        type: ComplicationType,
         resolved: co.gorkem.namaz.wear.tile.ResolvedDisplay,
         tapAction: PendingIntent
     ): ComplicationData {
@@ -85,14 +96,32 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
             co.gorkem.namaz.wear.scheduleComplicationUpdateAlarm(this, nextPrayer.targetTimeMillis)
         }
 
+        val contentDesc = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
+
         if (nextPrayer == null) {
-            return ShortTextComplicationData.Builder(
-                text = PlainComplicationText.Builder(text = getString(R.string.wear_loading)).build(),
-                contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
-            )
-                .setTitle(PlainComplicationText.Builder(text = data?.cityName ?: getString(R.string.wear_prayer_times)).build())
-                .setTapAction(tapAction)
-                .build()
+            val titleText = PlainComplicationText.Builder(text = data?.cityName ?: getString(R.string.wear_prayer_times)).build()
+            val loadingText = PlainComplicationText.Builder(text = getString(R.string.wear_loading)).build()
+
+            return when (type) {
+                ComplicationType.LONG_TEXT -> {
+                    LongTextComplicationData.Builder(
+                        text = loadingText,
+                        contentDescription = contentDesc
+                    )
+                    .setTitle(titleText)
+                    .setTapAction(tapAction)
+                    .build()
+                }
+                else -> {
+                    ShortTextComplicationData.Builder(
+                        text = loadingText,
+                        contentDescription = contentDesc
+                    )
+                    .setTitle(titleText)
+                    .setTapAction(tapAction)
+                    .build()
+                }
+            }
         }
 
         val title = if (resolved.source == co.gorkem.namaz.wear.tile.DisplaySource.CACHE) {
@@ -101,12 +130,75 @@ class PrayerComplicationService : SuspendingComplicationDataSourceService() {
             prayerNameFromEnum(this, nextPrayer.name)
         }
 
-        return ShortTextComplicationData.Builder(
-            text = PlainComplicationText.Builder(text = nextPrayer.time).build(),
-            contentDescription = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
-        )
-            .setTitle(PlainComplicationText.Builder(text = title).build())
-            .setTapAction(tapAction)
+        val titleText = PlainComplicationText.Builder(text = title).build()
+        val timeText = PlainComplicationText.Builder(text = nextPrayer.time).build()
+
+        return when (type) {
+            ComplicationType.LONG_TEXT -> {
+                LongTextComplicationData.Builder(
+                    text = timeText,
+                    contentDescription = contentDesc
+                )
+                .setTitle(titleText)
+                .setTapAction(tapAction)
+                .build()
+            }
+            else -> {
+                ShortTextComplicationData.Builder(
+                    text = timeText,
+                    contentDescription = contentDesc
+                )
+                .setTitle(titleText)
+                .setTapAction(tapAction)
+                .build()
+            }
+        }
+    }
+}
+
+fun resolvePrayerComplicationPreviewTexts(
+    type: ComplicationType,
+    getString: (Int) -> String
+): ComplicationPreviewModel? {
+    return when (type) {
+        ComplicationType.SHORT_TEXT, ComplicationType.LONG_TEXT -> {
+            ComplicationPreviewModel(
+                type = type,
+                text = "20:28",
+                title = getString(R.string.prayer_aksam),
+                isStaticText = true
+            )
+        }
+        else -> null
+    }
+}
+
+fun resolvePrayerComplicationPreview(
+    type: ComplicationType,
+    getString: (Int) -> String
+): ComplicationData? {
+    val model = resolvePrayerComplicationPreviewTexts(type, getString) ?: return null
+    val text = PlainComplicationText.Builder(text = model.text).build()
+    val title = PlainComplicationText.Builder(text = model.title).build()
+    val contentDesc = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
+
+    return when (type) {
+        ComplicationType.SHORT_TEXT -> {
+            ShortTextComplicationData.Builder(
+                text = text,
+                contentDescription = contentDesc
+            )
+            .setTitle(title)
             .build()
+        }
+        ComplicationType.LONG_TEXT -> {
+            LongTextComplicationData.Builder(
+                text = text,
+                contentDescription = contentDesc
+            )
+            .setTitle(title)
+            .build()
+        }
+        else -> null
     }
 }

@@ -25,34 +25,7 @@ class PrayerCountdownComplicationService : SuspendingComplicationDataSourceServi
     }
 
     override fun getPreviewData(type: ComplicationType): ComplicationData? {
-        val previewTime = Instant.now().plusSeconds(3600) // 1 hour from now
-        val timeDiffText = TimeDifferenceComplicationText.Builder(
-            style = TimeDifferenceStyle.STOPWATCH,
-            countDownTimeReference = androidx.wear.watchface.complications.data.CountDownTimeReference(previewTime)
-        ).setText("-^1").build()
-
-        val titleText = PlainComplicationText.Builder(text = getString(R.string.prayer_aksam)).build()
-        val contentDesc = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
-
-        return when (type) {
-            ComplicationType.SHORT_TEXT -> {
-                ShortTextComplicationData.Builder(
-                    text = timeDiffText,
-                    contentDescription = contentDesc
-                )
-                .setTitle(titleText)
-                .build()
-            }
-            ComplicationType.LONG_TEXT -> {
-                LongTextComplicationData.Builder(
-                    text = timeDiffText,
-                    contentDescription = contentDesc
-                )
-                .setTitle(titleText)
-                .build()
-            }
-            else -> null
-        }
+        return resolveCountdownComplicationPreview(type) { getString(it) }
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
@@ -162,5 +135,52 @@ class PrayerCountdownComplicationService : SuspendingComplicationDataSourceServi
             }
             else -> null
         }
+    }
+}
+
+fun resolveCountdownComplicationPreviewTexts(
+    type: ComplicationType,
+    getString: (Int) -> String
+): ComplicationPreviewModel? {
+    return when (type) {
+        ComplicationType.SHORT_TEXT, ComplicationType.LONG_TEXT -> {
+            ComplicationPreviewModel(
+                type = type,
+                text = "-1sa 30dk",
+                title = getString(R.string.prayer_aksam),
+                isStaticText = true
+            )
+        }
+        else -> null
+    }
+}
+
+fun resolveCountdownComplicationPreview(
+    type: ComplicationType,
+    getString: (Int) -> String
+): ComplicationData? {
+    val model = resolveCountdownComplicationPreviewTexts(type, getString) ?: return null
+    val previewDiffText = PlainComplicationText.Builder(text = model.text).build()
+    val titleText = PlainComplicationText.Builder(text = model.title).build()
+    val contentDesc = PlainComplicationText.Builder(text = getString(R.string.wear_prayer_time)).build()
+
+    return when (type) {
+        ComplicationType.SHORT_TEXT -> {
+            ShortTextComplicationData.Builder(
+                text = previewDiffText,
+                contentDescription = contentDesc
+            )
+            .setTitle(titleText)
+            .build()
+        }
+        ComplicationType.LONG_TEXT -> {
+            LongTextComplicationData.Builder(
+                text = previewDiffText,
+                contentDescription = contentDesc
+            )
+            .setTitle(titleText)
+            .build()
+        }
+        else -> null
     }
 }

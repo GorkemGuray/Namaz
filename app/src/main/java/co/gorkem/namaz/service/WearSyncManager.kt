@@ -65,28 +65,14 @@ class WearSyncManager @Inject constructor(
             )
         }
 
-        val wearData = WearPrayerData(
-            cityName = location.cityName,
-            prayers = todayData.getAllPrayers().map { (name, time) ->
-                WearPrayerItem(
-                    name = localizedContext.getString(name.nameRes),
-                    time = time
-                )
-            },
-            nextPrayer = nextPrayerInfo?.let { nextPrayer ->
-                WearNextPrayer(
-                    name = localizedContext.getString(nextPrayer.prayerName.nameRes),
-                    time = nextPrayer.prayerTime,
-                    remainingMinutes = nextPrayer.remainingMinutes,
-                    targetTimeMillis = nextPrayer.targetPrayerTimeInMillis
-                )
-            },
-            kerahat = wearKerahat,
+        val wearData = createWearPrayerData(
+            todayData = todayData,
+            location = location,
             themeId = themeId,
-            latitude = location.latitude,
-            longitude = location.longitude,
-            districtId = location.districtId,
-            dataSource = dataSource
+            dataSource = dataSource,
+            stringResolver = { localizedContext.getString(it) },
+            nextPrayerInfo = nextPrayerInfo,
+            kerahatInfo = kerahatInfo
         )
         syncPrayerData(wearData)
     }
@@ -95,5 +81,47 @@ class WearSyncManager @Inject constructor(
         const val SYNC_PATH = "/namaz_prayer_data"
         const val KEY_PRAYER_JSON = "prayer_json"
         const val KEY_TIMESTAMP = "timestamp"
+
+        fun createWearPrayerData(
+            todayData: PrayerTime,
+            location: LocationInfo,
+            themeId: Int,
+            dataSource: Int,
+            stringResolver: (Int) -> String,
+            nextPrayerInfo: GetNextPrayerUseCase.NextPrayerInfo?,
+            kerahatInfo: co.gorkem.namaz.domain.usecase.KerahatInfo?
+        ): WearPrayerData {
+            val wearKerahat = kerahatInfo?.let { k ->
+                WearKerahatInfo(
+                    isCurrentlyKerahat = k.isCurrentlyKerahat,
+                    prayerName = stringResolver(k.prayerName.nameRes),
+                    remainingMinutes = if (k.isCurrentlyKerahat) k.remainingToEndMinutes else k.remainingToStartMinutes
+                )
+            }
+
+            return WearPrayerData(
+                cityName = location.formattedName,
+                prayers = todayData.getAllPrayers().map { (name, time) ->
+                    WearPrayerItem(
+                        name = stringResolver(name.nameRes),
+                        time = time
+                    )
+                },
+                nextPrayer = nextPrayerInfo?.let { nextPrayer ->
+                    WearNextPrayer(
+                        name = stringResolver(nextPrayer.prayerName.nameRes),
+                        time = nextPrayer.prayerTime,
+                        remainingMinutes = nextPrayer.remainingMinutes,
+                        targetTimeMillis = nextPrayer.targetPrayerTimeInMillis
+                    )
+                },
+                kerahat = wearKerahat,
+                themeId = themeId,
+                latitude = location.latitude,
+                longitude = location.longitude,
+                districtId = location.districtId,
+                dataSource = dataSource
+            )
+        }
     }
 }
