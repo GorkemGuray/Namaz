@@ -90,8 +90,13 @@ internal fun getChronometerLayoutRes(appTheme: AppThemeSelection, isKerahatActiv
 }
 
 enum class WidgetLayoutType {
+    SINGLE_ROW,
     COMPACT,
     EXPANDED
+}
+
+internal fun getSingleRowBadgeText(isKerahat: Boolean, language: String = "tr"): String {
+    return if (isKerahat) "(Kerahat)" else ""
 }
 
 object WidgetLayoutResolver {
@@ -121,6 +126,11 @@ object WidgetLayoutResolver {
         width: androidx.compose.ui.unit.Dp,
         height: androidx.compose.ui.unit.Dp
     ): WidgetLayoutType {
+        // Physical constraint: if height < 90.dp, single row is mandatory
+        if (height < 90.dp) {
+            return WidgetLayoutType.SINGLE_ROW
+        }
+
         if (layoutPreference == NamazWidgetPrefs.LAYOUT_COMPACT) {
             layoutCache.remove(appWidgetId)
             return WidgetLayoutType.COMPACT
@@ -202,7 +212,7 @@ internal fun WidgetContent(state: NamazWidgetState, appWidgetId: Int, appTheme: 
             .fillMaxSize()
             .background(outerBackground)
             .cornerRadius(android.R.dimen.system_app_widget_background_radius)
-            .padding(8.dp)
+            .padding(horizontal = 8.dp, vertical = if (size.height < 90.dp) 4.dp else 8.dp)
             .clickable(actionStartActivity<MainActivity>())
     ) {
         val layoutType = resolveWidgetLayout(
@@ -212,39 +222,159 @@ internal fun WidgetContent(state: NamazWidgetState, appWidgetId: Int, appTheme: 
             height = size.height
         )
 
-        if (layoutType == WidgetLayoutType.COMPACT) {
-            CompactLayout(
-                cityName = state.cityName,
-                nextPrayerName = nextPrayerName,
-                nextPrayerTime = nextPrayerTime,
-                targetEpochMillis = targetEpochMillis,
-                language = state.language,
-                onSurfaceColor = onSurfaceColor,
-                onSurfaceVariantColor = onSurfaceVariantColor,
-                isKerahat = state.isKerahat,
-                kerahatPrayerName = state.kerahatPrayerName,
-                kerahatRemainingStr = kerahatRemainingStr,
-                remainingLabel = remainingLabel,
-                appTheme = appTheme
-            )
-        } else {
-            ExpandedLayout(
-                cityName = state.cityName,
-                nextPrayerName = nextPrayerName,
-                nextPrayerTime = nextPrayerTime,
-                targetEpochMillis = targetEpochMillis,
-                todayPrayerTimes = state.todayPrayerTimes,
-                currentPrayerName = state.currentPrayerName,
-                language = state.language,
-                onSurfaceColor = onSurfaceColor,
-                onSurfaceVariantColor = onSurfaceVariantColor,
-                isKerahat = state.isKerahat,
-                kerahatPrayerName = state.kerahatPrayerName,
-                kerahatRemainingStr = kerahatRemainingStr,
-                remainingLabel = remainingLabel,
-                appTheme = appTheme
-            )
+        when (layoutType) {
+            WidgetLayoutType.SINGLE_ROW -> {
+                SingleRowLayout(
+                    cityName = state.cityName,
+                    nextPrayerName = nextPrayerName,
+                    nextPrayerTime = nextPrayerTime,
+                    targetEpochMillis = targetEpochMillis,
+                    language = state.language,
+                    onSurfaceColor = onSurfaceColor,
+                    onSurfaceVariantColor = onSurfaceVariantColor,
+                    isKerahat = state.isKerahat,
+                    kerahatPrayerName = state.kerahatPrayerName,
+                    remainingLabel = remainingLabel,
+                    appTheme = appTheme
+                )
+            }
+            WidgetLayoutType.COMPACT -> {
+                CompactLayout(
+                    cityName = state.cityName,
+                    nextPrayerName = nextPrayerName,
+                    nextPrayerTime = nextPrayerTime,
+                    targetEpochMillis = targetEpochMillis,
+                    language = state.language,
+                    onSurfaceColor = onSurfaceColor,
+                    onSurfaceVariantColor = onSurfaceVariantColor,
+                    isKerahat = state.isKerahat,
+                    kerahatPrayerName = state.kerahatPrayerName,
+                    kerahatRemainingStr = kerahatRemainingStr,
+                    remainingLabel = remainingLabel,
+                    appTheme = appTheme
+                )
+            }
+            WidgetLayoutType.EXPANDED -> {
+                ExpandedLayout(
+                    cityName = state.cityName,
+                    nextPrayerName = nextPrayerName,
+                    nextPrayerTime = nextPrayerTime,
+                    targetEpochMillis = targetEpochMillis,
+                    todayPrayerTimes = state.todayPrayerTimes,
+                    currentPrayerName = state.currentPrayerName,
+                    language = state.language,
+                    onSurfaceColor = onSurfaceColor,
+                    onSurfaceVariantColor = onSurfaceVariantColor,
+                    isKerahat = state.isKerahat,
+                    kerahatPrayerName = state.kerahatPrayerName,
+                    kerahatRemainingStr = kerahatRemainingStr,
+                    remainingLabel = remainingLabel,
+                    appTheme = appTheme
+                )
+            }
         }
+    }
+}
+
+@Composable
+internal fun SingleRowLayout(
+    cityName: String,
+    nextPrayerName: PrayerName,
+    nextPrayerTime: String,
+    targetEpochMillis: Long,
+    language: String,
+    onSurfaceColor: ColorProvider,
+    onSurfaceVariantColor: ColorProvider,
+    isKerahat: Boolean = false,
+    kerahatPrayerName: String? = null,
+    remainingLabel: String = "",
+    appTheme: AppThemeSelection
+) {
+    val context = LocalContext.current
+    val localizedPrayerName = getLocalizedString(context, nextPrayerName.nameRes, language)
+    val isKerahatActive = isKerahat && kerahatPrayerName != null
+    val badgeBg = if (isKerahatActive) GlanceTheme.colors.error else GlanceTheme.colors.primary
+
+    val chronometerFormat = if (isKerahatActive) {
+        if (language == "en") "%s Kerahat ends" else "%s Kerahat bitiyor"
+    } else {
+        if (language == "en") "%s left" else "%s kaldı"
+    }
+
+    val chronometerRemoteViews = remember(targetEpochMillis, appTheme, isKerahatActive, chronometerFormat) {
+        val layoutRes = getChronometerLayoutRes(appTheme, isKerahatActive)
+        val rv = RemoteViews(context.packageName, layoutRes)
+        val nowElapsed = SystemClock.elapsedRealtime()
+        val nowWall = System.currentTimeMillis()
+        val remainingWall = maxOf(targetEpochMillis - nowWall, 0)
+        val targetElapsed = nowElapsed + remainingWall
+        rv.setChronometer(R.id.widget_chronometer, targetElapsed, chronometerFormat, true)
+        rv.setChronometerCountDown(R.id.widget_chronometer, true)
+        rv
+    }
+
+    Row(
+        modifier = GlanceModifier.fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = GlanceModifier.defaultWeight(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "$cityName • $localizedPrayerName $nextPrayerTime",
+                style = TextStyle(
+                    color = onSurfaceColor,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                maxLines = 1
+            )
+            val badgeText = getSingleRowBadgeText(isKerahat, language)
+            if (badgeText.isNotEmpty()) {
+                Spacer(modifier = GlanceModifier.width(6.dp))
+                Box(
+                    modifier = GlanceModifier
+                        .background(GlanceTheme.colors.error)
+                        .cornerRadius(8.dp)
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = badgeText,
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onError,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = GlanceModifier.width(6.dp))
+
+        Box(
+            modifier = GlanceModifier
+                .background(badgeBg)
+                .cornerRadius(12.dp)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            AndroidRemoteViews(chronometerRemoteViews)
+        }
+
+        Spacer(modifier = GlanceModifier.width(6.dp))
+
+        Image(
+            provider = ImageProvider(R.drawable.ic_widget_refresh),
+            contentDescription = context.getString(R.string.refresh),
+            modifier = GlanceModifier
+                .size(18.dp)
+                .clickable(actionRunCallback<RefreshActionCallback>()),
+            colorFilter = ColorFilter.tint(onSurfaceVariantColor)
+        )
     }
 }
 

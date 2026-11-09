@@ -188,4 +188,108 @@ class WidgetLayoutResolutionTest {
         val bState = resolveWidgetLayout(widgetB, NamazWidgetPrefs.LAYOUT_AUTO, 100.dp, 100.dp)
         assertEquals(WidgetLayoutType.COMPACT, bState)
     }
+
+    @Test
+    fun heightLessThan90dp_resolvesToSingleRow_regardlessOfPreference() {
+        // (a) height 70dp -> SingleRow
+        // Otomatik modda SingleRow
+        val autoSingleRow = resolveWidgetLayout(
+            appWidgetId = 50,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_AUTO,
+            width = 300.dp,
+            height = 70.dp
+        )
+        assertEquals(WidgetLayoutType.SINGLE_ROW, autoSingleRow)
+
+        // Manuel Geniş kilitli olsa bile 70dp'de SingleRow'a düşmeli (fiziksel zorunluluk)
+        val expandedSingleRow = resolveWidgetLayout(
+            appWidgetId = 51,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_EXPANDED,
+            width = 300.dp,
+            height = 70.dp
+        )
+        assertEquals(WidgetLayoutType.SINGLE_ROW, expandedSingleRow)
+
+        // Manuel Kompakt kilitli olsa bile 70dp'de SingleRow'a düşmeli
+        val compactSingleRow = resolveWidgetLayout(
+            appWidgetId = 52,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_COMPACT,
+            width = 300.dp,
+            height = 70.dp
+        )
+        assertEquals(WidgetLayoutType.SINGLE_ROW, compactSingleRow)
+
+        // 40dp (minHeight) durumunda da SingleRow
+        val minHeightSingleRow = resolveWidgetLayout(
+            appWidgetId = 53,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_AUTO,
+            width = 300.dp,
+            height = 40.dp
+        )
+        assertEquals(WidgetLayoutType.SINGLE_ROW, minHeightSingleRow)
+    }
+
+    @Test
+    fun singleRow_kerahatActive_showsBadgeText() {
+        // (b) kerahat + SingleRow -> badge metni "(Kerahat)"
+        val kerahatBadge = getSingleRowBadgeText(isKerahat = true)
+        assertEquals("(Kerahat)", kerahatBadge)
+
+        // Kerahat aktif değilken badge metni boş olmalı
+        val normalBadge = getSingleRowBadgeText(isKerahat = false)
+        assertEquals("", normalBadge)
+
+        // İngilizce dilde de badge metni "(Kerahat)"
+        val englishBadge = getSingleRowBadgeText(isKerahat = true, language = "en")
+        assertEquals("(Kerahat)", englishBadge)
+    }
+
+    @Test
+    fun height140dpOrMore_preservesPreviousBehavior_noRegression() {
+        // (c) 140dp+ -> eski davranış (regresyon yok)
+        // 140dp ve üstünde büyük genişlikte Auto -> EXPANDED
+        val autoExpandedAt140 = resolveWidgetLayout(
+            appWidgetId = 60,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_AUTO,
+            width = 300.dp,
+            height = 140.dp
+        )
+        assertEquals(WidgetLayoutType.EXPANDED, autoExpandedAt140)
+
+        // 180dp yükseklik Auto -> EXPANDED
+        val autoExpandedAt180 = resolveWidgetLayout(
+            appWidgetId = 61,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_AUTO,
+            width = 300.dp,
+            height = 180.dp
+        )
+        assertEquals(WidgetLayoutType.EXPANDED, autoExpandedAt180)
+
+        // 150dp yükseklik ama dar genişlik (180dp < 220dp) -> COMPACT
+        val autoCompactNarrow = resolveWidgetLayout(
+            appWidgetId = 62,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_AUTO,
+            width = 180.dp,
+            height = 150.dp
+        )
+        assertEquals(WidgetLayoutType.COMPACT, autoCompactNarrow)
+
+        // Manuel Geniş kilitli iken 140dp+ -> EXPANDED
+        val manualExpandedAt140 = resolveWidgetLayout(
+            appWidgetId = 63,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_EXPANDED,
+            width = 100.dp,
+            height = 140.dp
+        )
+        assertEquals(WidgetLayoutType.EXPANDED, manualExpandedAt140)
+
+        // Manuel Kompakt kilitli iken 140dp+ -> COMPACT
+        val manualCompactAt140 = resolveWidgetLayout(
+            appWidgetId = 64,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_COMPACT,
+            width = 300.dp,
+            height = 140.dp
+        )
+        assertEquals(WidgetLayoutType.COMPACT, manualCompactAt140)
+    }
 }
