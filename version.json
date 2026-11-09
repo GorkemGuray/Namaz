@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "versionCode": 8,
-  "releaseUrl": "https://github.com/GorkemGuray/Namaz/releases/tag/v1.1.0",
-  "releaseNotes": "fix(ci): GITHUB_TOKEN env eksikligi (same-repo push auth)  "
+  "version": "1.2.0",
+  "versionCode": 9,
+  "releaseUrl": "https://github.com/GorkemGuray/Namaz/releases/tag/v1.2.0",
+  "releaseNotes": "feat(wear): birlesik siradaki vakit komplikasyonu (WR-3)  "
 }
