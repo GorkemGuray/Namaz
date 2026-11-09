@@ -1,11 +1,18 @@
 package co.gorkem.namaz.service
 
+import androidx.compose.ui.unit.dp
 import co.gorkem.namaz.R
 import co.gorkem.namaz.ui.theme.AppThemeSelection
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 class WidgetLayoutResolutionTest {
+
+    @Before
+    fun setUp() {
+        WidgetLayoutResolver.clearMemoryCache()
+    }
 
     @Test
     fun allKnownThemes_resolveToOwnLayout() {
@@ -36,5 +43,149 @@ class WidgetLayoutResolutionTest {
                 getChronometerLayoutRes(theme, true)
             )
         }
+    }
+
+    @Test
+    fun manualCompact_resolvesToCompact_regardlessOfReportedSize() {
+        // (a) manuel Kompakt küçük size'da da Kompakt
+        val compactSmall = resolveWidgetLayout(
+            appWidgetId = 1,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_COMPACT,
+            width = 100.dp,
+            height = 100.dp
+        )
+        assertEquals(WidgetLayoutType.COMPACT, compactSmall)
+
+        // Büyük size bildirilse de Kompakt kilitli kalır
+        val compactLarge = resolveWidgetLayout(
+            appWidgetId = 1,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_COMPACT,
+            width = 320.dp,
+            height = 200.dp
+        )
+        assertEquals(WidgetLayoutType.COMPACT, compactLarge)
+    }
+
+    @Test
+    fun manualExpanded_resolvesToExpanded_regardlessOfReportedSize() {
+        // (b) manuel Geniş küçük size'da Geniş (Tecno HiOS reboot/glitch durumunda da Geniş kalır)
+        val expandedSmall = resolveWidgetLayout(
+            appWidgetId = 2,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_EXPANDED,
+            width = 100.dp,
+            height = 100.dp
+        )
+        assertEquals(WidgetLayoutType.EXPANDED, expandedSmall)
+
+        // Normal büyük size'da da Geniş
+        val expandedLarge = resolveWidgetLayout(
+            appWidgetId = 2,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_EXPANDED,
+            width = 320.dp,
+            height = 200.dp
+        )
+        assertEquals(WidgetLayoutType.EXPANDED, expandedLarge)
+    }
+
+    @Test
+    fun autoMode_singleSmallFrame_doesNotFlip_twoConsecutiveFrames_flips() {
+        // (c) otomatik modda tek karelik küçük size flip ETMEZ, iki kare üst üste ederse eder
+        val widgetId = 10
+
+        // 1. Kare: Başlangıçta normal geniş boyut bildirilir -> Geniş
+        val frame1 = resolveWidgetLayout(
+            appWidgetId = widgetId,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_AUTO,
+            width = 300.dp,
+            height = 200.dp
+        )
+        assertEquals(WidgetLayoutType.EXPANDED, frame1)
+
+        // 2. Kare: Launcher anlık küçük size bildirdi (tek kare) -> flip ETMEZ!
+        val frame2 = resolveWidgetLayout(
+            appWidgetId = widgetId,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_AUTO,
+            width = 100.dp,
+            height = 100.dp
+        )
+        assertEquals(WidgetLayoutType.EXPANDED, frame2)
+
+        // 3. Kare: İkinci kez üst üste küçük size bildirildi -> flip EDER!
+        val frame3 = resolveWidgetLayout(
+            appWidgetId = widgetId,
+            layoutPreference = NamazWidgetPrefs.LAYOUT_AUTO,
+            width = 100.dp,
+            height = 100.dp
+        )
+        assertEquals(WidgetLayoutType.COMPACT, frame3)
+    }
+
+    @Test
+    fun autoMode_transientSmallGlitch_recoversWithoutFlipping() {
+        val widgetId = 20
+
+        // 1. Kare: Normal geniş
+        val frame1 = resolveWidgetLayout(widgetId, NamazWidgetPrefs.LAYOUT_AUTO, 300.dp, 200.dp)
+        assertEquals(WidgetLayoutType.EXPANDED, frame1)
+
+        // 2. Kare: Anlık küçük glitch
+        val frame2 = resolveWidgetLayout(widgetId, NamazWidgetPrefs.LAYOUT_AUTO, 100.dp, 100.dp)
+        assertEquals(WidgetLayoutType.EXPANDED, frame2)
+
+        // 3. Kare: Tekrar geniş boyuta döndü -> glitch absorbe edildi, pending sıfırlandı
+        val frame3 = resolveWidgetLayout(widgetId, NamazWidgetPrefs.LAYOUT_AUTO, 300.dp, 200.dp)
+        assertEquals(WidgetLayoutType.EXPANDED, frame3)
+
+        // 4. Kare: Gelecekte tek karelik başka bir küçük glitch gelirse yine flip etmez
+        val frame4 = resolveWidgetLayout(widgetId, NamazWidgetPrefs.LAYOUT_AUTO, 100.dp, 100.dp)
+        assertEquals(WidgetLayoutType.EXPANDED, frame4)
+    }
+
+    @Test
+    fun autoMode_compactToExpanded_requiresTwoConsecutiveLargeFrames() {
+        val widgetId = 25
+
+        // 1. Kare: Kompakt boyut
+        val frame1 = resolveWidgetLayout(widgetId, NamazWidgetPrefs.LAYOUT_AUTO, 100.dp, 100.dp)
+        assertEquals(WidgetLayoutType.COMPACT, frame1)
+
+        // 2. Kare: Tek karelik geniş boyut -> hemen flip etmez
+        val frame2 = resolveWidgetLayout(widgetId, NamazWidgetPrefs.LAYOUT_AUTO, 300.dp, 200.dp)
+        assertEquals(WidgetLayoutType.COMPACT, frame2)
+
+        // 3. Kare: İkinci karede de geniş boyut -> flip eder
+        val frame3 = resolveWidgetLayout(widgetId, NamazWidgetPrefs.LAYOUT_AUTO, 300.dp, 200.dp)
+        assertEquals(WidgetLayoutType.EXPANDED, frame3)
+    }
+
+    @Test
+    fun legacyPreferences_0and1_mapCorrectly() {
+        // Eski kayıt 0: Auto gibi çalışmalı (büyük boyutta Expanded)
+        val legacyAuto = resolveWidgetLayout(30, 0, 300.dp, 200.dp)
+        assertEquals(WidgetLayoutType.EXPANDED, legacyAuto)
+
+        // Eski kayıt 1: Kompakt olarak kilitli kalmalı (büyük boyutta da Compact)
+        val legacyCompact = resolveWidgetLayout(31, 1, 300.dp, 200.dp)
+        assertEquals(WidgetLayoutType.COMPACT, legacyCompact)
+    }
+
+    @Test
+    fun multipleWidgets_haveIsolatedState() {
+        val widgetA = 40
+        val widgetB = 41
+
+        // Widget A geniş başlatıldı
+        resolveWidgetLayout(widgetA, NamazWidgetPrefs.LAYOUT_AUTO, 300.dp, 200.dp)
+
+        // Widget B kompakt başlatıldı
+        resolveWidgetLayout(widgetB, NamazWidgetPrefs.LAYOUT_AUTO, 100.dp, 100.dp)
+
+        // Widget A tek kare glitch aldı -> hala EXPANDED
+        val aState = resolveWidgetLayout(widgetA, NamazWidgetPrefs.LAYOUT_AUTO, 100.dp, 100.dp)
+        assertEquals(WidgetLayoutType.EXPANDED, aState)
+
+        // Widget B hala COMPACT
+        val bState = resolveWidgetLayout(widgetB, NamazWidgetPrefs.LAYOUT_AUTO, 100.dp, 100.dp)
+        assertEquals(WidgetLayoutType.COMPACT, bState)
     }
 }

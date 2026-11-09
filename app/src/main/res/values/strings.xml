@@ -223,8 +223,10 @@
     <string name="widget_theme_dynamic">Dinamik Renkler</string>
     <string name="widget_theme_dynamic_desc">Duvar kağıdınıza göre değişen Material You renkleri (Android 12+).</string>
     <string name="widget_setting_layout">Widget Arayüzü</string>
-    <string name="widget_layout_detailed">Detaylı (Sıradaki Vakit + Bugünün Vakitleri)</string>
-    <string name="widget_layout_compact">Sade (Sadece Sıradaki Vakit ve Geri Sayım)</string>
+    <string name="widget_layout_auto">Otomatik (Boyuta Göre)</string>
+    <string name="widget_layout_compact">Kompakt (Sabit)</string>
+    <string name="widget_layout_detailed">Geniş (Sabit)</string>
+    <string name="widget_layout_expanded">@string/widget_layout_detailed</string>
     <string name="widget_settings_save">Ayarları Kaydet</string>
     <string name="settings_theme">Tema</string>
     <string name="theme_emerald_oasis">Emerald Oasis</string>

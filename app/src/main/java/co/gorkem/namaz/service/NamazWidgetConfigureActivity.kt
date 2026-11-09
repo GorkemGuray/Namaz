@@ -142,14 +142,19 @@ private fun ConfigurationScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         LayoutOptionRow(
-            title = stringResource(R.string.widget_layout_detailed),
-            selected = selectedLayout == 0,
-            onClick = { selectedLayout = 0 }
+            title = stringResource(R.string.widget_layout_auto),
+            selected = selectedLayout == NamazWidgetPrefs.LAYOUT_AUTO,
+            onClick = { selectedLayout = NamazWidgetPrefs.LAYOUT_AUTO }
         )
         LayoutOptionRow(
             title = stringResource(R.string.widget_layout_compact),
-            selected = selectedLayout == 1,
-            onClick = { selectedLayout = 1 }
+            selected = selectedLayout == NamazWidgetPrefs.LAYOUT_COMPACT,
+            onClick = { selectedLayout = NamazWidgetPrefs.LAYOUT_COMPACT }
+        )
+        LayoutOptionRow(
+            title = stringResource(R.string.widget_layout_detailed),
+            selected = selectedLayout == NamazWidgetPrefs.LAYOUT_EXPANDED,
+            onClick = { selectedLayout = NamazWidgetPrefs.LAYOUT_EXPANDED }
         )
 
         Spacer(modifier = Modifier.height(32.dp))

@@ -89,6 +89,82 @@ internal fun getChronometerLayoutRes(appTheme: AppThemeSelection, isKerahatActiv
     }
 }
 
+enum class WidgetLayoutType {
+    COMPACT,
+    EXPANDED
+}
+
+object WidgetLayoutResolver {
+    private data class LayoutRecord(
+        var activeLayout: WidgetLayoutType,
+        var pendingBucket: WidgetLayoutType? = null
+    )
+
+    private val layoutCache = java.util.concurrent.ConcurrentHashMap<Int, LayoutRecord>()
+
+    fun clearMemoryCache() {
+        layoutCache.clear()
+    }
+
+    fun clear(appWidgetId: Int) {
+        layoutCache.remove(appWidgetId)
+    }
+
+    fun setActiveLayoutForTesting(appWidgetId: Int, layout: WidgetLayoutType) {
+        layoutCache[appWidgetId] = LayoutRecord(activeLayout = layout, pendingBucket = null)
+    }
+
+    @Synchronized
+    fun resolve(
+        appWidgetId: Int,
+        layoutPreference: Int,
+        width: androidx.compose.ui.unit.Dp,
+        height: androidx.compose.ui.unit.Dp
+    ): WidgetLayoutType {
+        if (layoutPreference == NamazWidgetPrefs.LAYOUT_COMPACT) {
+            layoutCache.remove(appWidgetId)
+            return WidgetLayoutType.COMPACT
+        }
+        if (layoutPreference == NamazWidgetPrefs.LAYOUT_EXPANDED) {
+            layoutCache.remove(appWidgetId)
+            return WidgetLayoutType.EXPANDED
+        }
+
+        val currentBucket = if (width < 220.dp || height < 140.dp) {
+            WidgetLayoutType.COMPACT
+        } else {
+            WidgetLayoutType.EXPANDED
+        }
+
+        val record = layoutCache[appWidgetId]
+        if (record == null) {
+            layoutCache[appWidgetId] = LayoutRecord(activeLayout = currentBucket, pendingBucket = null)
+            return currentBucket
+        }
+
+        if (currentBucket == record.activeLayout) {
+            record.pendingBucket = null
+            return record.activeLayout
+        }
+
+        if (record.pendingBucket == currentBucket) {
+            record.activeLayout = currentBucket
+            record.pendingBucket = null
+            return record.activeLayout
+        } else {
+            record.pendingBucket = currentBucket
+            return record.activeLayout
+        }
+    }
+}
+
+internal fun resolveWidgetLayout(
+    appWidgetId: Int,
+    layoutPreference: Int,
+    width: androidx.compose.ui.unit.Dp,
+    height: androidx.compose.ui.unit.Dp
+): WidgetLayoutType = WidgetLayoutResolver.resolve(appWidgetId, layoutPreference, width, height)
+
 @Composable
 internal fun WidgetContent(state: NamazWidgetState, appWidgetId: Int, appTheme: AppThemeSelection) {
     val context = LocalContext.current
@@ -129,7 +205,14 @@ internal fun WidgetContent(state: NamazWidgetState, appWidgetId: Int, appTheme: 
             .padding(8.dp)
             .clickable(actionStartActivity<MainActivity>())
     ) {
-        if (size.width < 220.dp || size.height < 140.dp || state.layoutPreference == 1) {
+        val layoutType = resolveWidgetLayout(
+            appWidgetId = appWidgetId,
+            layoutPreference = state.layoutPreference,
+            width = size.width,
+            height = size.height
+        )
+
+        if (layoutType == WidgetLayoutType.COMPACT) {
             CompactLayout(
                 cityName = state.cityName,
                 nextPrayerName = nextPrayerName,

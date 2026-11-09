@@ -223,8 +223,10 @@
     <string name="widget_theme_dynamic">Dynamic Colors</string>
     <string name="widget_theme_dynamic_desc">Material You colors that change based on your wallpaper (Android 12+).</string>
     <string name="widget_setting_layout">Widget Layout</string>
-    <string name="widget_layout_detailed">Detailed (Next Prayer + Today\'s Times)</string>
-    <string name="widget_layout_compact">Compact (Next Prayer &amp; Countdown Only)</string>
+    <string name="widget_layout_auto">Automatic (Based on Size)</string>
+    <string name="widget_layout_compact">Compact (Fixed)</string>
+    <string name="widget_layout_detailed">Expanded (Fixed)</string>
+    <string name="widget_layout_expanded">@string/widget_layout_detailed</string>
     <string name="widget_settings_save">Save Settings</string>
     <string name="settings_theme">Theme</string>
     <string name="theme_emerald_oasis">Emerald Oasis</string>
