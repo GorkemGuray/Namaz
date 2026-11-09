@@ -113,6 +113,8 @@ jobs:
         run: python3 website/generate_static.py
 
       - name: Push version.json to gh-pages (same repo)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.version.outputs.versionName }}"
           VERSION_CODE="${{ steps.version.outputs.versionCode }}"

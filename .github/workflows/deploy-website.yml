@@ -27,6 +27,8 @@ jobs:
         run: python3 website/generate_static.py
 
       - name: Deploy to gh-pages (same repo)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Clone this repo's gh-pages branch
           if git clone --branch gh-pages "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" public-repo; then
